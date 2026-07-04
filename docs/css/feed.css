@@ -1,0 +1,87 @@
+/* The surface — recently-conceived images as a seamless wall of tiles, flush
+   against each other, over the starfield, under the animated Mememage wordmark
+   (the wordmark + subtitle come straight from layout.css + mememage.css, exactly
+   like the decoder). Click a tile → full-res in a lightbox. No chrome. */
+.feed-body {
+  background: #060609;
+  color: #e8e8ef;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* The one bit of chrome: a quiet link to the hosted decoder / validator so a
+   visitor can go verify an image. Sits right under the subtitle. */
+.feed-tools {
+  position: relative;
+  z-index: 1;
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  word-spacing: 0.7rem;   /* gap between the two links (no divider) */
+  color: #6f6f7b;
+}
+.feed-tools a {
+  color: #b9b9c6;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  padding-bottom: 1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.feed-tools a:hover { color: #fff; border-bottom-color: rgba(255, 255, 255, 0.6); }
+
+.feed-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);   /* five across — a touch smaller than 4 */
+  gap: 0;                 /* tiles flush against each other */
+  padding: 0;
+}
+.feed-tile {
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  cursor: zoom-in;
+  background: rgba(255, 255, 255, 0.03);
+}
+.feed-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.6s ease;
+}
+.feed-tile img[src] { opacity: 1; }
+.feed-tile:hover img { transform: scale(1.04); }
+
+/* Infinite-scroll trip wire — a thin spacer below the grid. The observer fires
+   well before it reaches the viewport (rootMargin), so the next page is already
+   loading by the time you near the bottom. Invisible; just needs to exist. */
+.feed-sentinel {
+  position: relative;
+  z-index: 1;
+  height: 1px;
+  width: 100%;
+}
+
+/* Lightbox — appended to <html> (not <body>) so mememage.css's `body > *`
+   rule can't force position:relative and break the fixed centering. */
+.feed-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5vmin;
+  background: rgba(2, 2, 4, 0.94);
+  cursor: zoom-out;
+}
+.feed-lightbox.open { display: flex; }
+.feed-lightbox-img {
+  max-width: 96vw;
+  max-height: 96vh;
+  object-fit: contain;
+  box-shadow: 0 0 70px rgba(0, 0, 0, 0.7);
+}

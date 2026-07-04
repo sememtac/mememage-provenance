@@ -1,0 +1,87 @@
+name: Build Desktop Apps
+
+# Builds the double-click Mememage desktop app for macOS, Windows, and Linux.
+# PyInstaller can't cross-compile, so each target builds on its own runner.
+#
+# Triggers:
+#   - release published → binaries attach to the Release (what users download)
+#   - workflow_dispatch → manual run; grab binaries from the run's Artifacts.
+#     Use dispatch to SHAKE OUT platform issues before cutting a real release.
+#
+# Known gaps (documented, not blockers):
+#   - macOS/Windows binaries are UNSIGNED — Gatekeeper/SmartScreen will warn on
+#     first launch. Code-signing + notarization is a follow-up (needs certs).
+#   - Linux tray needs GTK/AppIndicator; without it the app falls back to a
+#     foreground server (by design — see the spec's pystray guard).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # attach binaries to the Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package + build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller pystray
+
+      - name: macOS tray deps (pyobjc)
+        if: runner.os == 'macOS'
+        run: pip install pyobjc-framework-Cocoa pyobjc-framework-Quartz
+
+      - name: Build the app
+        run: python tools/build_app.py
+
+      # Download filenames are prefixed "Mememage-Provenance" so the desktop app
+      # download is never mistaken for the `pip install mememage` core package.
+      # (The bundle a user runs is still Mememage.app / Mememage.exe — the product
+      # name — only the release ASSET is namespaced.)
+      - name: Package — macOS (.app → zip, preserving bundle metadata)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --sequesterRsrc --keepParent dist/Mememage.app Mememage-Provenance-macOS.zip
+
+      - name: Package — Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: cp dist/Mememage.exe Mememage-Provenance-Windows.exe
+
+      - name: Package — Linux
+        if: runner.os == 'Linux'
+        run: cp dist/Mememage Mememage-Provenance-Linux
+
+      - name: Upload run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mememage-Provenance-${{ runner.os }}
+          path: |
+            Mememage-Provenance-macOS.zip
+            Mememage-Provenance-Windows.exe
+            Mememage-Provenance-Linux
+          if-no-files-found: ignore
+
+      - name: Attach to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Mememage-Provenance-macOS.zip
+            Mememage-Provenance-Windows.exe
+            Mememage-Provenance-Linux
+          fail_on_unmatched_files: false

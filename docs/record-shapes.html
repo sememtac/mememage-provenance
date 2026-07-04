@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<!-- Iteration page (private). Provenance: catalogs the record shape archetypes (public/private/locked/anon variants). -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mememage — Record Shapes</title>
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/mememage.css">
+<style>
+  body { padding: 2.5rem 1.2rem 4rem; }
+  .doc-wrap { max-width: 920px; margin: 0 auto; }
+  .doc-header { text-align: center; margin-bottom: 2.5rem; }
+  .doc-header h1 { font-size: 2.2rem; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 0.4rem; color: #fff; text-shadow: 0 0 40px rgba(120, 140, 220, 0.2); }
+  .doc-header .subtitle { font-size: 0.78rem; font-weight: 300; letter-spacing: 0.08em; color: rgba(220,220,235,0.65); }
+
+  .doc-section { margin: 0 0 3rem; }
+  .doc-section h2 {
+    font-size: 0.95rem; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0.4rem; margin: 0 0 0.6rem;
+  }
+  .doc-section h2 .tag {
+    font-size: 0.62rem; letter-spacing: 0.12em; padding: 2px 8px;
+    border-radius: 3px; margin-left: 0.6rem; vertical-align: middle;
+    font-weight: 400;
+  }
+  .doc-section h2.public  { color: #88c8a8; }
+  .doc-section h2.public  .tag { background: rgba(136,200,168,0.12); color: #88c8a8; border: 1px solid rgba(136,200,168,0.25); }
+  .doc-section h2.light   { color: #d4b87b; }
+  .doc-section h2.light   .tag { background: rgba(212,184,123,0.12); color: #d4b87b; border: 1px solid rgba(212,184,123,0.25); }
+  .doc-section h2.dark    { color: #8898b8; }
+  .doc-section h2.dark    .tag { background: rgba(136,152,184,0.12); color: #8898b8; border: 1px solid rgba(136,152,184,0.25); }
+  .doc-section h2.unlock  { color: #b8c8e8; }
+  .doc-section h2.unlock  .tag { background: rgba(184,200,232,0.12); color: #b8c8e8; border: 1px solid rgba(184,200,232,0.25); }
+  .doc-section h2.anon    { color: #c47bbb; }
+  .doc-section h2.anon    .tag { background: rgba(196,123,187,0.12); color: #c47bbb; border: 1px solid rgba(196,123,187,0.25); }
+
+  .doc-section p, .doc-section li {
+    font-size: 0.78rem; line-height: 1.6; color: rgba(220,220,235,0.78);
+    margin: 0 0 0.6rem;
+  }
+  .doc-section em { color: rgba(255,235,200,0.95); font-style: italic; }
+  .doc-section strong { color: #fff; font-weight: 500; }
+  .doc-section code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+    background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 3px;
+    color: #d8d8e8;
+  }
+
+  /* Visibility summary band per config */
+  .vis-summary {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+    margin: 0.5rem 0 0.8rem;
+  }
+  .vis-cell {
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px; padding: 0.6rem 0.8rem;
+    background: rgba(255,255,255,0.02);
+  }
+  .vis-cell h4 {
+    font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+    margin: 0 0 0.3rem;
+    color: rgba(220,220,235,0.55);
+  }
+  .vis-cell ul { list-style: none; padding: 0; margin: 0; }
+  .vis-cell li {
+    font-size: 0.7rem; line-height: 1.5; margin-bottom: 0.15rem;
+    color: rgba(220,220,235,0.85);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .vis-cell.public-side h4 { color: #88c8a8; }
+  .vis-cell.sealed-side h4 { color: #c8a888; }
+  @media (max-width: 679px) {
+    .vis-summary { grid-template-columns: 1fr; }
+  }
+
+  /* JSON code block — single source of truth for highlighting */
+  pre.json {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 1rem 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; line-height: 1.6;
+    color: #c8c8d8;
+    overflow-x: auto;
+    margin: 0.6rem 0 0.8rem;
+    white-space: pre;
+  }
+  pre.json .k    { color: #ffd2a0; }
+  pre.json .s    { color: #a8d4a8; }
+  pre.json .n    { color: #b8c8e8; }
+  pre.json .b    { color: #c8a8e8; }
+  pre.json .com  { color: #6a6a78; font-style: italic; }
+  pre.json .seal { color: #d4a880; }
+  pre.json .frame {
+    background: rgba(184,200,232,0.05);
+    display: block;
+    margin: 0 -1.2rem;
+    padding: 0 1.2rem;
+    border-left: 2px solid rgba(184,200,232,0.3);
+  }
+
+  /* Diff badge — shows what's added/removed compared to baseline */
+  .diff-add    { color: #88c8a8; font-weight: 500; }
+  .diff-remove { color: #c87a7a; font-weight: 500; }
+
+  .doc-footer {
+    text-align: center;
+    margin-top: 3rem; padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.7rem; line-height: 1.7;
+    color: rgba(220,220,235,0.55);
+  }
+  .doc-footer em { color: rgba(255,235,200,0.85); }
+  .doc-footer a { color: rgba(184,200,232,0.85); text-decoration: none; }
+  .doc-footer a:hover { text-decoration: underline; }
+
+  .nav-pills {
+    display: flex; gap: 0.4rem; flex-wrap: wrap;
+    margin: 1rem 0 2rem; justify-content: center;
+  }
+  .nav-pill {
+    font-size: 0.62rem; letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    color: rgba(220,220,235,0.75);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .nav-pill:hover {
+    background: rgba(255,255,255,0.04);
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<div class="doc-wrap">
+
+  <div class="doc-header">
+    <h1>Record Shapes</h1>
+    <p class="subtitle">final JSON for every chain visibility</p>
+  </div>
+
+  <nav class="nav-pills">
+    <a class="nav-pill" href="#public">Public</a>
+    <a class="nav-pill" href="#light">Light Energy</a>
+    <a class="nav-pill" href="#dark-locked">Dark Matter · Locked</a>
+    <a class="nav-pill" href="#dark-unlocked">Dark Matter · Unlocked</a>
+    <a class="nav-pill" href="#anon">Anonymous Dark Matter</a>
+  </nav>
+
+  <div class="doc-section">
+    <p>
+      The same record, the same image, the same constellation —
+      represented in each chain visibility. Identifier, content hash,
+      and signature are identical across all forms (the bar carries
+      identifier + content_hash; the signature covers both). What
+      changes is which fields are plaintext, which are sealed, and
+      whether the structure of the record itself is visible.
+    </p>
+    <p>
+      Every dark_matter record has the <strong>same top-level shape</strong>.
+      No sentinel values, no leaked field set. The only way to learn
+      what a dark_matter record contains is to unlock it.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section" id="public">
+    <h2 class="public">Public Chain <span class="tag">no chain_visibility</span></h2>
+    <p>
+      Default. No password ever set. Every field plaintext. GPS rides
+      the time-lock puzzle inside <code>gps_time_locked</code> — anyone
+      can recover it in ~10 years via sequential squaring; nobody can
+      shortcut without the trapdoor (already discarded at mint time).
+    </p>
+
+    <div class="vis-summary">
+      <div class="vis-cell public-side">
+        <h4>Public</h4>
+        <ul>
+          <li>identifier, content_hash, hash_version</li>
+          <li>signature, public_key, key_fingerprint</li>
+          <li>creator_name, parent_id, constellation_*</li>
+          <li>prompt, seed, generation params (cfg_scale, model, …)</li>
+          <li>birth (celestial + machine)</li>
+          <li>birth_traits (codes — readings derived at display)</li>
+          <li>rarity, rarity_score, thumbnail</li>
+          <li>chunks (decoder, truth, schematic, ...)</li>
+        </ul>
+      </div>
+      <div class="vis-cell sealed-side">
+        <h4>Sealed</h4>
+        <ul>
+          <li><em>(none — full plaintext)</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <pre class="json">{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">1</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2c8d1e4f602...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="k">"creator_name"</span>: <span class="s">"Andy"</span>,
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+  <span class="k">"decoder_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+
+  <span class="k">"prompt"</span>: <span class="s">"cat in cosmos, oil painting"</span>,
+  <span class="k">"seed"</span>: <span class="n">42</span>,
+  <span class="k">"width"</span>: <span class="n">1024</span>,
+  <span class="k">"height"</span>: <span class="n">1024</span>,
+  <span class="k">"steps"</span>: <span class="n">28</span>,
+  <span class="k">"cfg_scale"</span>: <span class="n">3.5</span>,
+  <span class="k">"sampler"</span>: <span class="s">"euler"</span>,
+  <span class="k">"model"</span>: <span class="s">"flux1-dev"</span>,
+  <span class="k">"conceived"</span>: <span class="s">"2026-04-25T19:42:11Z"</span>,
+  <span class="k">"rendered"</span>: <span class="s">"2026-04-25T19:38:02Z"</span>,
+
+  <span class="k">"birth"</span>: {
+    <span class="k">"sun"</span>: <span class="s">"Pisces"</span>,
+    <span class="k">"moon"</span>: <span class="s">"Waxing Crescent"</span>,
+    <span class="k">"moon_phase"</span>: <span class="s">"Waxing Crescent"</span>,
+    <span class="k">"mercury"</span>: <span class="s">"Aries"</span>,
+    <span class="k">"venus"</span>: <span class="s">"Pisces"</span>,
+    <span class="k">"mars"</span>: <span class="s">"Capricorn"</span>,
+    <span class="k">"jupiter"</span>: <span class="s">"Cancer"</span>,
+    <span class="k">"saturn"</span>: <span class="s">"Pisces"</span>,
+    <span class="k">"angular_spread"</span>: <span class="n">147.3</span>,
+    <span class="k">"machine"</span>: {
+      <span class="k">"cpu"</span>: <span class="s">"M2 Max"</span>, <span class="k">"cores"</span>: <span class="n">12</span>,
+      <span class="k">"load"</span>: <span class="s">"0.42"</span>, <span class="k">"power"</span>: <span class="s">"battery"</span>,
+      <span class="k">"entropy"</span>: <span class="s">"a3f9b2c8d1e4f602..."</span>
+    },
+    <span class="k">"gps_time_locked"</span>: {
+      <span class="k">"ct"</span>: <span class="s">"9af3b2c8d1e4..."</span>,
+      <span class="k">"N"</span>:  <span class="s">"c4f1d8a92b6e..."</span>,
+      <span class="k">"T"</span>:  <span class="n">1000000000000000000</span>,
+      <span class="k">"e"</span>:  <span class="n">3</span>,
+      <span class="k">"salt_len"</span>: <span class="n">8</span>,
+      <span class="k">"len"</span>: <span class="n">25</span>
+    }
+  },
+
+  <span class="k">"constellation_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+  <span class="k">"birth_traits"</span>: [<span class="s">"sure_footed"</span>, <span class="s">"cautious"</span>],
+  <span class="c">// Readings, summary, and temperament are derived at display time</span>
+  <span class="c">// from birth_traits via temperament.py + docs/js/birth-text.js.</span>
+  <span class="k">"rarity_score"</span>: <span class="n">78</span>,
+  <span class="k">"rarity"</span>: {
+    <span class="k">"tier"</span>: <span class="s">"epic"</span>,
+    <span class="k">"celestial"</span>: [{<span class="k">"trait"</span>: <span class="s">"angular_spread"</span>, <span class="k">"points"</span>: <span class="n">12</span>}],
+    <span class="k">"machine"</span>:   [{<span class="k">"trait"</span>: <span class="s">"low_load"</span>, <span class="k">"points"</span>: <span class="n">8</span>}],
+    <span class="k">"entropy"</span>:   [{<span class="k">"trait"</span>: <span class="s">"high_entropy"</span>, <span class="k">"points"</span>: <span class="n">10</span>}]
+  },
+  <span class="k">"machine_fingerprint"</span>: <span class="s">"M2-cores12-..."</span>,
+  <span class="k">"thumbnail"</span>: <span class="s">"data:image/jpeg;base64,/9j/4AAQ..."</span>,
+
+  <span class="k">"chunks"</span>: {
+    <span class="k">"decoder"</span>: {
+      <span class="k">"age"</span>: <span class="n">1</span>, <span class="k">"age_name"</span>: <span class="s">"Age of Aries"</span>,
+      <span class="k">"version"</span>: <span class="s">"1.0.0"</span>,
+      <span class="k">"index"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">12</span>,
+      <span class="k">"hash"</span>: <span class="s">"abc123def456"</span>,
+      <span class="k">"data"</span>: <span class="s">"&lt;HTML fragment&gt;"</span>
+    },
+    <span class="k">"truth"</span>: {
+      <span class="k">"version"</span>: <span class="s">"1.0.0"</span>,
+      <span class="k">"index"</span>: <span class="n">142</span>, <span class="k">"total"</span>: <span class="n">365</span>,
+      <span class="k">"hash"</span>: <span class="s">"9af3b2c8d1e4"</span>,
+      <span class="k">"data"</span>: <span class="s">"&lt;text fragment&gt;"</span>
+    }
+  },
+
+  <span class="k">"about"</span>: <span class="s">"I was born through Mememage..."</span>
+}</pre>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section" id="light">
+    <h2 class="light">Light Energy <span class="tag">chain_visibility: "light_energy"</span></h2>
+    <p>
+      Password set at genesis, used only for GPS. Every other field
+      stays plaintext. GPS gets a second lock alongside the time-lock
+      puzzle: <em>strangers wait for time-lock to mature, creator
+      unlocks instantly with password</em>. Same coordinates, two
+      paths.
+    </p>
+
+    <div class="vis-summary">
+      <div class="vis-cell public-side">
+        <h4>Public</h4>
+        <ul>
+          <li>everything from public chain</li>
+          <li class="diff-add">+ chain_visibility: "light_energy"</li>
+        </ul>
+      </div>
+      <div class="vis-cell sealed-side">
+        <h4>Sealed</h4>
+        <ul>
+          <li class="diff-add">+ gps_password_locked (envelope)</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre class="json">{
+  <span class="com">// Identical to public chain, with two additions:</span>
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="com">// ... all public fields, identical ...</span>
+  <span class="k">"prompt"</span>: <span class="s">"cat in cosmos, oil painting"</span>,
+  <span class="k">"birth"</span>: { <span class="com">/* full plaintext, including gps_time_locked */</span> },
+  <span class="k">"birth_traits"</span>: [<span class="s">"sure_footed"</span>, <span class="s">"cautious"</span>],
+  <span class="k">"rarity_score"</span>: <span class="n">78</span>,
+  <span class="k">"thumbnail"</span>: <span class="s">"data:image/jpeg;base64,..."</span>,
+  <span class="k">"chunks"</span>: { <span class="com">/* full plaintext */</span> },
+
+<span class="frame">  <span class="k">"chain_visibility"</span>: <span class="s">"light_energy"</span>,
+
+  <span class="k">"gps_password_locked"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"a3f9b2c8d1e4f602b1c4d8a9..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"8c1d2e3f4a5b6c7d8e9f0a1b"</span>,
+    <span class="k">"ct"</span>:   <span class="s">"6f4a9b2c8d1e3f5a7b8c9d0e..."</span>,
+    <span class="k">"tag"</span>:  <span class="s">"92e3a8b4c7d1f6e2a5b8c9d0"</span>
+  }</span>
+}</pre>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section" id="dark-locked">
+    <h2 class="dark">Dark Matter · Locked <span class="tag">chain_visibility: "dark_matter"</span></h2>
+    <p>
+      Full opacity. The protected fields and the <code>chunks</code>
+      namespace are <strong>deleted from the record</strong>, not
+      replaced with sentinel values. Every dark_matter record has the
+      identical top-level shape — no per-record field-set leak. A
+      LoRA-using record looks the same as a non-LoRA one. An
+      epagomenal-day record looks the same as a regular Tuesday.
+    </p>
+
+    <div class="vis-summary">
+      <div class="vis-cell public-side">
+        <h4>Public — required for system function</h4>
+        <ul>
+          <li>identifier, content_hash, hash_version</li>
+          <li>signature, public_key, key_fingerprint</li>
+          <li>creator_name</li>
+          <li>parent_id</li>
+          <li>constellation_name, heart_star_id, constellation_index</li>
+          <li>decoder_hash <span class="com">(cross-Age constant)</span></li>
+          <li>chain_visibility: "dark_matter"</li>
+        </ul>
+      </div>
+      <div class="vis-cell sealed-side">
+        <h4>Sealed (deleted from record + envelope-only)</h4>
+        <ul>
+          <li class="diff-remove">− prompt, seed, generation params</li>
+          <li class="diff-remove">− birth (celestial + machine)</li>
+          <li class="diff-remove">− birth_traits</li>
+          <li class="diff-remove">− rarity, rarity_score</li>
+          <li class="diff-remove">− thumbnail</li>
+          <li class="diff-remove">− constellation_hash</li>
+          <li class="diff-remove">− chunks (the entire namespace)</li>
+          <li class="diff-add">+ encrypted_fields (envelope)</li>
+          <li class="diff-add">+ encrypted_chunks (envelope)</li>
+          <li class="diff-add">+ gps_password_locked (envelope)</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre class="json">{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">1</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2c8d1e4f602...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="k">"creator_name"</span>: <span class="s">"Andy"</span>,
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+  <span class="k">"decoder_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+
+<span class="frame">  <span class="k">"chain_visibility"</span>: <span class="s">"dark_matter"</span>,
+
+  <span class="k">"encrypted_fields"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"f2c8d1e4a3b9..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"1d2e3f4a5b6c..."</span>,
+    <span class="k">"ct"</span>:   <span class="s">"&lt;encrypted JSON of all PROTECTED_FIELDS&gt;"</span>,
+    <span class="k">"tag"</span>:  <span class="s">"7e2a5b8c9d0e..."</span>
+  },
+
+  <span class="k">"encrypted_chunks"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"b4c7d1f6e2a5..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"4f5a6b7c8d9e..."</span>,
+    <span class="k">"ct"</span>:   <span class="s">"&lt;encrypted JSON of the entire chunks namespace&gt;"</span>,
+    <span class="k">"tag"</span>:  <span class="s">"a8b4c7d1f6e2..."</span>
+  },
+
+  <span class="k">"gps_password_locked"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"a3f9b2c8d1e4..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"8c1d2e3f4a5b..."</span>,
+    <span class="k">"ct"</span>:   <span class="s">"6f4a9b2c8d1e..."</span>,
+    <span class="k">"tag"</span>:  <span class="s">"92e3a8b4c7d1..."</span>
+  },</span>
+
+  <span class="k">"about"</span>: <span class="s">"I was born through Mememage..."</span>
+}</pre>
+
+    <p>
+      Notice <strong>what's not there</strong>: no <code>prompt</code>
+      key, no <code>birth</code>, no <code>chunks</code>, no
+      <code>thumbnail</code>. They aren't shown as <code>"[encrypted]"</code>
+      sentinels — they're absent entirely. A stranger reading the file
+      cannot tell which protected fields the creator filled, only that
+      the record exists, who signed it, and which constellation it
+      belongs to.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section" id="dark-unlocked">
+    <h2 class="unlock">Dark Matter · Unlocked <span class="tag">in-memory only</span></h2>
+    <p>
+      The same record after the viewer enters the password. The
+      browser runs PBKDF2 + AES-GCM via SubtleCrypto, decrypts the
+      three envelopes, parses each JSON blob, substitutes the fields
+      back into the record. The result is rendered, then forgotten.
+      Refresh the page = sealed again. The plaintext below is what
+      the decoder holds in memory between unlock and the next
+      navigation.
+    </p>
+
+    <div class="vis-summary">
+      <div class="vis-cell public-side">
+        <h4>In-memory (post-unlock)</h4>
+        <ul>
+          <li>everything from public chain</li>
+          <li>chain_visibility: "dark_matter" <span class="com">(retained)</span></li>
+          <li>three envelopes <span class="com">(retained for re-seal)</span></li>
+        </ul>
+      </div>
+      <div class="vis-cell sealed-side">
+        <h4>On disk / on IA</h4>
+        <ul>
+          <li><em>(unchanged — still the locked shape above)</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <pre class="json">{
+  <span class="com">// Public fields (unchanged)</span>
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">1</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="k">"creator_name"</span>: <span class="s">"Andy"</span>,
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+  <span class="k">"decoder_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+  <span class="k">"chain_visibility"</span>: <span class="s">"dark_matter"</span>,
+
+<span class="frame">  <span class="com">// Substituted from encrypted_fields plaintext</span>
+  <span class="k">"prompt"</span>: <span class="s">"cat in cosmos, oil painting"</span>,
+  <span class="k">"seed"</span>: <span class="n">42</span>,
+  <span class="k">"width"</span>: <span class="n">1024</span>,
+  <span class="k">"steps"</span>: <span class="n">28</span>,
+  <span class="k">"sampler"</span>: <span class="s">"euler"</span>,
+  <span class="k">"model"</span>: <span class="s">"flux1-dev"</span>,
+  <span class="k">"cfg_scale"</span>: <span class="n">3.5</span>,
+  <span class="k">"conceived"</span>: <span class="s">"2026-04-25T19:42:11Z"</span>,
+  <span class="k">"birth"</span>: {
+    <span class="k">"sun"</span>: <span class="s">"Pisces"</span>,
+    <span class="k">"machine"</span>: { <span class="com">/* full machine vitals */</span> },
+    <span class="k">"gps_time_locked"</span>: { <span class="com">/* time-lock puzzle */</span> }
+  },
+  <span class="k">"constellation_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+  <span class="k">"birth_traits"</span>: [<span class="s">"sure_footed"</span>, <span class="s">"cautious"</span>],
+  <span class="k">"rarity_score"</span>: <span class="n">78</span>,
+  <span class="k">"rarity"</span>: { <span class="com">/* full breakdown */</span> },
+  <span class="k">"thumbnail"</span>: <span class="s">"data:image/jpeg;base64,..."</span>,
+
+  <span class="com">// Substituted from encrypted_chunks plaintext</span>
+  <span class="k">"chunks"</span>: {
+    <span class="k">"decoder"</span>: { <span class="k">"index"</span>: <span class="n">5</span>, <span class="k">"total"</span>: <span class="n">12</span>, <span class="k">"data"</span>: <span class="s">"..."</span> },
+    <span class="k">"truth"</span>: { <span class="k">"index"</span>: <span class="n">142</span>, <span class="k">"total"</span>: <span class="n">365</span>, <span class="k">"data"</span>: <span class="s">"..."</span> }
+  },</span>
+
+  <span class="com">// GPS unlocked from gps_password_locked (lat,lon plaintext)</span>
+  <span class="com">// — substituted into birth.gps if the renderer wants it; envelope retained</span>
+
+  <span class="com">// Envelopes still present (so re-render after navigation works)</span>
+  <span class="k">"encrypted_fields"</span>:   { <span class="com">/* envelope */</span> },
+  <span class="k">"encrypted_chunks"</span>: { <span class="com">/* envelope */</span> },
+  <span class="k">"gps_password_locked"</span>:    { <span class="com">/* envelope */</span> }
+}</pre>
+
+    <p>
+      Identical render to a public-chain record — same cert, same
+      bands, same audio. The only persistent difference is
+      <code>chain_visibility: "dark_matter"</code> remaining on the
+      record so chain navigation knows other records will need the
+      same password.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section" id="anon">
+    <h2 class="anon">Anonymous Dark Matter <span class="tag">optional knob</span></h2>
+    <p>
+      A creator who wants their chain anonymous (not just sealed but
+      unattributed) can move <code>creator_name</code> into
+      <code>PROTECTED_FIELDS</code>, so it ends up inside
+      <code>encrypted_fields</code>. Viewers see only the
+      <code>key_fingerprint</code> until unlock — the chain is still
+      identifiable by key (signatures need it), but no human name is
+      attached.
+    </p>
+
+    <div class="vis-summary">
+      <div class="vis-cell public-side">
+        <h4>Public</h4>
+        <ul>
+          <li>identifier, content_hash, hash_version</li>
+          <li>signature, public_key, key_fingerprint</li>
+          <li class="diff-remove">− creator_name <span class="com">(moved into encrypted_fields)</span></li>
+          <li>parent_id, constellation_*</li>
+          <li>decoder_hash, chain_visibility</li>
+        </ul>
+      </div>
+      <div class="vis-cell sealed-side">
+        <h4>Sealed</h4>
+        <ul>
+          <li>everything from dark_matter</li>
+          <li class="diff-add">+ creator_name <span class="com">(now inside encrypted_fields)</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <pre class="json">{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">1</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="com">// no creator_name — it lives in encrypted_fields</span>
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+  <span class="k">"decoder_hash"</span>: <span class="s">"5e84a3b9c601d4d7"</span>,
+  <span class="k">"chain_visibility"</span>: <span class="s">"dark_matter"</span>,
+
+  <span class="k">"encrypted_fields"</span>:   { <span class="com">/* now also seals creator_name */</span> },
+  <span class="k">"encrypted_chunks"</span>: { <span class="com">/* envelope */</span> },
+  <span class="k">"gps_password_locked"</span>:    { <span class="com">/* envelope */</span> }
+}</pre>
+
+    <p>
+      <code>key_fingerprint</code> can never be sealed — it's how the
+      signature verifies, so it's always public. A persistent observer
+      can still see <em>"a chain by 86cb:4ed6 made these records"</em>,
+      but cannot connect that fingerprint to a human name without
+      either out-of-band knowledge or unlocking a record.
+    </p>
+
+    <p>
+      <strong>This is a knob, not a default.</strong> The system ships
+      with <code>creator_name</code> public for TOFU naming. Creators
+      who want anonymity opt in by extending <code>PROTECTED_FIELDS</code>.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <div class="doc-section">
+    <h2 style="color: #c8c8d8;">The Envelope <span class="tag" style="background:rgba(255,255,255,0.06);color:#c8c8d8;border:1px solid rgba(255,255,255,0.15);">internal structure</span></h2>
+    <p>
+      Every <code>*_encrypted</code> field has the same four-key shape.
+      AES-256-GCM with a key derived via PBKDF2-HMAC-SHA256 (600,000
+      iterations). Per-record salt blocks rainbow tables; per-field
+      IV ensures structural distinctness even when two records seal
+      identical plaintext under the same password.
+    </p>
+
+    <pre class="json">{
+  <span class="k">"salt"</span>: <span class="s">"&lt;16 bytes hex&gt;"</span>,    <span class="com">// PBKDF2 salt — fresh per record</span>
+  <span class="k">"iv"</span>:   <span class="s">"&lt;12 bytes hex&gt;"</span>,    <span class="com">// AES-GCM nonce — fresh per encryption</span>
+  <span class="k">"ct"</span>:   <span class="s">"&lt;N bytes hex&gt;"</span>,     <span class="com">// AES-256-GCM ciphertext (no tag appended)</span>
+  <span class="k">"tag"</span>:  <span class="s">"&lt;16 bytes hex&gt;"</span>     <span class="com">// GCM authentication tag, separate field</span>
+}</pre>
+
+    <p>
+      Wrong password → GCM tag fails → <code>InvalidTag</code>
+      exception → <em>Wrong password</em> in the UI. No partial
+      decryption. No oracle. No timing leak from a constant-time
+      comparison.
+    </p>
+  </div>
+
+  <div class="doc-footer">
+    <p>
+      <em>Mememage</em> — record shapes for the access layer<br>
+      <a href="access-layer.html">access layer explainer</a> ·
+      <a href="index.html">decoder</a> ·
+      <a href="validator.html">validator</a>
+    </p>
+  </div>
+
+</div>
+
+<script src="js/starfield.js"></script>
+</body>
+</html>

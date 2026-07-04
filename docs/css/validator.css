@@ -1,0 +1,814 @@
+/* ================================================================
+   YIN THEME — inverse of decoder (yang)
+   White background, dark stars, dark UI plates
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  background: #f4f4f0;
+  color: #1a1a22;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1.2rem 3rem;
+  position: relative;
+  /* overflow-x: clip — prevents horizontal overflow without creating a
+     scroll container. `hidden` would break position: sticky on the
+     cosmic player (sticky needs the document scroll, not a body scroll
+     container). */
+  overflow-x: clip;
+}
+
+/* Starfield — dark stars on light background */
+#starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+body > *:not(#starfield):not(.touch-tooltip):not(.planetarium):not(.cosmic-player):not(.config-modal):not(.payload-modal) { position: relative; z-index: 1; }
+
+.container { max-width: 680px; width: 100%; }
+
+/* Header — structure in layout.css; theme overrides here */
+.page-header h1 { color: #1a1a22; }
+.page-header .subtitle { color: #8a8a90; }
+
+/* ========================================================================
+   YIN THEME OVERRIDES
+   Structural rules (.input-section, .input-tabs, .input-tab, .input-panel,
+   .drop-zone) live in css/mememage.css with yang colors by default. The
+   rules below only flip the yang → yin colors and accents. Anything that's
+   purely structural should be edited in mememage.css so both pages pick it
+   up.
+   ======================================================================== */
+
+.input-section {
+  background: var(--system-box-bg-yin);
+  background-color: var(--system-box-bg-color-yin);
+  border-color: rgba(255,255,255,0.06);
+}
+
+.input-tabs {
+  border-bottom-color: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+}
+.input-tab { color: #6a6a74; text-shadow: none; }
+.input-tab:not(:last-child) { border-right-color: rgba(255,255,255,0.04); }
+.input-tab.active { color: #d0d0d4; background: rgba(255,255,255,0.05); }
+/* C/Y/M — mirrored bar colors (yin inverts the outer bands) */
+.input-tab:nth-child(1).active::after { background: linear-gradient(90deg, transparent, rgb(60,200,220), transparent); }
+.input-tab:nth-child(2).active::after { background: linear-gradient(90deg, transparent, rgb(220,200,60), transparent); }
+.input-tab:nth-child(3).active::after { background: linear-gradient(90deg, transparent, rgb(220,80,220), transparent); }
+.input-tab:nth-child(1).active { color: #50c8d8; }
+.input-tab:nth-child(2).active { color: #d8c850; }
+.input-tab:nth-child(3).active { color: #d88ad8; }
+.input-tab:hover { color: #a0a0a8; }
+
+#tab-img, #tab-meta { overflow: hidden; }
+
+/* Attack mode — #tab-attack takes the tab slot, same dimensions */
+#tab-attack { display: none; min-height: 365px; }
+#tab-attack > div { padding: 0.8rem 1.2rem 1rem; }
+
+/* Mobile: compact the attack lab so it fits in one page alongside
+   the header and DECODER portal. Shorter textareas, tighter labels,
+   smaller dhash cells — same UX, a third less vertical space. */
+@media (max-width: 679px) {
+  #tab-attack { min-height: 0; }
+  #tab-attack > div { padding: 0.5rem 0.8rem 0.6rem; }
+  #tab-attack > div > p:first-child { font-size: 0.6rem; margin: 0 0 0.25rem; }
+  .atk-sec { margin: 0.3rem 0 0.15rem; font-size: 0.56rem; }
+  .atk-field { padding: 0.3rem; font-size: 0.6rem; }
+  .atk-field#atk-record { height: 70px !important; }
+  .atk-field#atk-sig { height: 44px; }
+  .atk-field#atk-pub { height: 28px; }
+  .atk-status { font-size: 0.58rem; margin-top: 0.25rem; }
+  .atk-dhash { margin-top: 0.2rem; gap: 0.7rem; }
+  .atk-dhash-pair td { width: 2.5px; height: 2.5px; }
+  .atk-dhash-label { font-size: 0.48rem; }
+  #atk-drop { padding: 0.3rem 0.5rem !important; font-size: 0.6rem !important; }
+  #atk-reset { padding: 0.3rem 0.6rem !important; font-size: 0.56rem !important; }
+}
+.input-section.attack-active .input-tabs,
+.input-section.attack-active .input-panel.active { display: none; }
+.input-section.attack-active #tab-attack { display: block; }
+/* Observatory tab — drop zone for .soul files. Was a chain of
+   inline style attrs (overflow, padding, min-height, opacity,
+   text colors). All parked here as classes now. */
+#tab-meta.meta-panel { overflow: hidden; }
+.meta-drop { padding: 2rem; min-height: 0; }
+.meta-drop-icon { opacity: 0.3; }
+.meta-drop-text { color: #8a8a94; font-size: 0.82rem; }
+.meta-drop-text > strong { color: #c8c8d0; }
+
+/* Audit-tab Source picker (lookup-source <details>) — was three
+   inline style attrs scattered across validator.html. Single class
+   target now. */
+.lookup-source { margin-top: 0.5rem; font-size: 0.62rem; color: #707078; }
+.lookup-source > summary { cursor: pointer; color: #808088; letter-spacing: 0.05em; }
+/* Evidence wrap variant: top hairline divider for the page-foot
+   portal link. */
+.evidence-wrap-divided { border-top: 1px dashed rgba(255,255,255,0.06); }
+
+.atk-sec { font-size: 0.6rem; color: #808088; text-transform: uppercase; letter-spacing: 0.12em; margin: 0.5rem 0 0.25rem; }
+.atk-sec:first-child { margin-top: 0; }
+.atk-field { width: 100%; background: rgba(255,255,255,0.02); color: #c0c0c8; border: 1px solid rgba(255,255,255,0.06); border-radius: 5px; padding: 0.4rem; font-family: inherit; font-size: 0.62rem; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.atk-field.atk-record { height: 120px; resize: none; }
+.atk-field.atk-sig + .atk-field.atk-pub { margin-top: 4px; }
+.atk-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.atk-drop { flex: 1; border: 1px dashed rgba(255,255,255,0.1); border-radius: 5px; padding: 0.4rem 0.6rem; text-align: center; cursor: pointer; color: #707078; font-size: 0.62rem; transition: all 0.2s; }
+.atk-reset { padding: 0.4rem 0.8rem; background: rgba(90,90,104,0.1); border: 1px solid rgba(90,90,104,0.25); color: #8a8a94; border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 0.6rem; letter-spacing: 0.08em; }
+.atk-intro { color: #6a6a74; font-size: 0.62rem; margin: 0 0 0.4rem; }
+.atk-intro-em { color: #a0a0b0; }
+/* Generic file-load button used by Observatory tab. The hover state
+   was previously inline JS (onmouseover); now driven by :hover. */
+.folder-btn {
+  display: inline-block;
+  padding: 0.35rem 1rem;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: #8a8a9a;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.folder-btn:hover {
+  border-color: rgba(74,158,74,0.4);
+  color: #b0b0c0;
+}
+.folder-btn-wrap { text-align: center; padding: 0.3rem 0 0.8rem; }
+.json-input-hidden { display: none; }
+.atk-field::-webkit-scrollbar { width: 5px; }
+.atk-field::-webkit-scrollbar-track { background: transparent; }
+.atk-field::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+.atk-field::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+.atk-field:focus { outline: none; border-color: rgba(110,168,254,0.4); }
+.atk-field.hex { font-size: 0.58rem; resize: none; word-break: break-all; white-space: pre-wrap; }
+.atk-field#atk-sig { height: 52px; }
+.atk-field#atk-pub { height: 32px; }
+.atk-status { font-size: 0.6rem; color: #6a6a80; margin-top: 0.35rem; line-height: 1.5; }
+.atk-status .ok { color: #4ade80; }
+.atk-status .bad { color: #f87171; }
+.atk-status .neu { color: #6ea8fe; }
+.atk-dhash { display: flex; gap: 1rem; justify-content: center; margin-top: 0.3rem; }
+.atk-dhash-pair { text-align: center; }
+.atk-dhash-pair table { border-collapse: collapse; margin: 0 auto 2px; }
+.atk-dhash-pair td { width: 3px; height: 3px; }
+.atk-dhash-pair td.on { background: #6ea8fe; }
+.atk-dhash-pair td.off { background: rgba(255,255,255,0.06); }
+/* A differing cell tints by THIS grid's own bit: set => bright red, unset =>
+   faded red. At a diff position the two grids hold opposite bits, so one reads
+   bright and the other faded — the fingerprints look different, as they should. */
+.atk-dhash-pair td.on.diff { background: #f87171; }
+.atk-dhash-pair td.off.diff { background: rgba(248,113,113,0.28); }
+.atk-dhash-label { font-size: 0.5rem; color: #5a5a70; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Drop zones — yin palette overrides. Structure (padding, transitions,
+   pulse glow, typography sizes/weights, compact collapse) inherits from
+   the shared base in mememage.css. Only palette tokens differ here so
+   yin/yang handling stays structurally one-to-one. */
+.drop-zone {
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+}
+/* Pulse glow — yin keeps the same rhythm as yang with a palette-adjusted
+   highlight (lower-alpha white over the darker yin plate). */
+.drop-zone::before {
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, transparent 70%);
+}
+.drop-zone p { color: #8a8a94; text-shadow: none; }
+.drop-zone p strong { color: #c8c8d0; }
+.drop-zone .drop-icon { color: #a0a0a8; }
+.drop-zone .drop-hint { color: #5a5a64; }
+
+/* Audit tab wrapper — replaces the former inline style="padding:1.2rem".
+   Class form lets the mobile shrink rule in mememage.css reduce padding
+   without fighting inline-style specificity. */
+.audit-wrap { padding: 1.2rem; }
+@media (max-width: 679px) { .audit-wrap { padding: 0.7rem 0.8rem; } }
+
+/* Attack toggle — class form so the mobile .console-example rule in
+   mememage.css can trim its padding without fighting inline styles. */
+#attackToggle { border-top: 1px solid rgba(255,255,255,0.04); }
+#attackToggleLink {
+  color: #606060; font-size: 0.72rem; font-weight: 300;
+  text-decoration: none; letter-spacing: 0.04em; transition: color 0.3s;
+}
+#attackToggleLink:hover { color: #909098; }
+
+/* Compact state — uniformly triggered by .panel-layout.layout-active
+   so all three tabs collapse their 323px reserve when a cert/result is
+   rendered on the right. Matches the decoder's compact rules and uses
+   the shared --compact-duration / --compact-ease tokens so the motion
+   is identical across both pages. */
+.panel-layout.layout-active .input-panel { min-height: 0; }
+.panel-layout.layout-active #tab-img .drop-zone { padding: 1.2rem 2rem; }
+.panel-layout.layout-active #tab-img .drop-zone .drop-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+.panel-layout.layout-active #tab-img .drop-zone .drop-hint {
+  max-height: 0; opacity: 0; margin-top: 0;
+}
+
+/* Same compact treatment when the img-console is in error-only state.
+   Without this, the error text bumps the Reliquary below it past the
+   bottom of the 365px input panel (scrollbar is hidden) so the button
+   becomes inaccessible. Shrinking the drop zone reclaims the room. */
+#tab-img:has(.img-console.error-only) .drop-zone { padding: 1.2rem 2rem; }
+#tab-img:has(.img-console.error-only) .drop-zone .drop-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+#tab-img:has(.img-console.error-only) .drop-zone .drop-hint {
+  max-height: 0; opacity: 0; margin-top: 0;
+}
+.panel-layout.layout-active #tab-meta #jsonDrop { padding: 0.9rem 2rem !important; }
+.panel-layout.layout-active #tab-meta #jsonDrop .drop-icon { font-size: 1rem; margin-bottom: 0.3rem; }
+.panel-layout.layout-active #tab-meta #jsonDrop .drop-hint {
+  max-height: 0; opacity: 0; margin-top: 0;
+}
+/* Compact-mode collapse + transitions for .how inherit from the
+   shared .lookup-hint,.how rules in mememage.css. */
+
+/* Image console — compact preview + id + status under the drop zone,
+   shown after an image is analyzed. Mirrors the decoder's console-* flow
+   but in yin. Drop zone stays at the top; this fills in below. */
+.img-console { display: none; padding: 0.6rem 0 0.8rem; text-align: center; }
+.img-console.visible { display: block; }
+/* Error-only state: status line only, no thumbnail/id/hash. Does NOT
+   match the compact-trigger selector (#tab-img:has(.img-console.visible)),
+   so the drop zone stays full-height and the tab doesn't reshape. Used
+   when upload/decode fails and nothing forensic-worthy can be shown. */
+.img-console.error-only { display: block; margin-top: auto; padding: 0.6rem 0 0.2rem; text-align: center; }
+.img-console.error-only .img-console-thumb,
+.img-console.error-only .img-console-id,
+.img-console.error-only .img-console-hash { display: none; }
+.img-console.error-only .img-console-status { margin: 0; padding: 0.2rem 0; }
+/* Reconstruct zone — sits below the main drop on the Image tab.
+   User drops the three saved band PNGs and the box assembles the
+   canonical bar PNG for download. Styling stays subtle so the main
+   drop zone remains the primary action; this is the "or" path. */
+/* Conform to the image drop-zone above it: full width (no side inset), same
+   2px dashed border, radius, and background so the two read as a matching pair. */
+.reconstruct-zone {
+  margin: 0.6rem 0 0.4rem;
+  padding: 0.85rem 2rem 0.9rem;
+  border: 2px dashed rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s, background 0.2s;
+}
+.reconstruct-zone.drag-over {
+  border-color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06);
+}
+.reconstruct-title {
+  font-size: 0.7rem; color: #9a9aa4; margin: 0 0 0.15rem;
+  letter-spacing: 0.04em; font-weight: 500; text-align: center;
+}
+.reconstruct-hint {
+  font-size: 0.62rem; color: #5a5a64; margin: 0 0 0.55rem;
+  text-align: center; line-height: 1.45;
+}
+.reconstruct-slots {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem;
+  margin-bottom: 0.55rem;
+}
+/* Slots carry their identity in a 3px M/Y/C strip along the bottom —
+   miniature fragments of the bar itself. The strip's opacity tracks
+   the validation state (dim when empty, full when filled, surfaces
+   above a red wash on mismatch). All transitions are 0.7s ease so
+   the state changes settle slowly, in the cosmic tempo. */
+.reconstruct-slot {
+  position: relative; overflow: hidden;
+  padding: 0.35rem 0.4rem; border-radius: 5px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.08);
+  text-align: center; font-size: 0.62rem; line-height: 1.3;
+  transition: background 0.7s ease, border-color 0.7s ease;
+}
+.reconstruct-slot::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: var(--slot-color, transparent);
+  opacity: 0.3;
+  transition: opacity 0.7s ease;
+}
+.reconstruct-slot[data-slot="gen"]     { --slot-color: rgb(220,80,220);  border-color: rgba(220,80,220,0.25); }
+.reconstruct-slot[data-slot="sky"]     { --slot-color: rgb(220,200,60);  border-color: rgba(220,200,60,0.25); }
+.reconstruct-slot[data-slot="machine"] { --slot-color: rgb(60,200,220);  border-color: rgba(60,200,220,0.25); }
+.reconstruct-slot.filled::after  { opacity: 1; }
+.reconstruct-slot.mismatch       { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.35); }
+.reconstruct-slot.mismatch::after { opacity: 0.5; }
+.reconstruct-slot-label {
+  display: block; font-weight: 500; color: #b0b0b8;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.reconstruct-slot-state { display: block; color: #6a6a74; font-size: 0.6rem; margin-top: 0.1rem; }
+.reconstruct-slot.filled .reconstruct-slot-state { color: #f4f4fa; }
+.reconstruct-slot.mismatch .reconstruct-slot-state { color: #f87171; }
+.reconstruct-status {
+  font-size: 0.62rem; color: #7a7a84; text-align: center;
+  min-height: 1.1rem; line-height: 1.4; margin-bottom: 0.5rem;
+}
+.reconstruct-status.error { color: #f87171; }
+
+/* Button: dark grey neutral interior, the M/Y/C only at the boundary
+   — same logic as the bar itself (B/W data flanked by M/Y/C bands).
+   Hover lifts the bg slightly and fades in the bottom strip, which
+   then scrolls left-to-right at 12s/cycle. The strip is 2x button
+   wide carrying 2 cycles of M-Y-C-Y-M, and a one-cycle slide loops
+   seamlessly through M/Y/C -> C/Y/M -> M/Y/C. */
+.reconstruct-btn {
+  position: relative; overflow: hidden;
+  display: block; margin: 0 auto; padding: 0.4rem 1rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #1a1a20;
+  color: #d8d8e0; border-radius: 5px;
+  font-size: 0.7rem; font-family: inherit; letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.7s ease, border-color 0.7s ease, color 0.7s ease;
+}
+.reconstruct-btn:hover:not(:disabled) {
+  background: #26262e;
+  border-color: rgba(255,255,255,0.2);
+  color: #f4f4fa;
+}
+.reconstruct-btn:disabled {
+  opacity: 0.4; cursor: default;
+  border-color: rgba(255,255,255,0.06);
+  color: #707078;
+}
+.reconstruct-btn::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 200%; height: 3px;
+  background: linear-gradient(90deg,
+    rgb(220,80,220) 0%,
+    rgb(220,200,60) 12.5%,
+    rgb(60,200,220) 25%,
+    rgb(220,200,60) 37.5%,
+    rgb(220,80,220) 50%,
+    rgb(220,200,60) 62.5%,
+    rgb(60,200,220) 75%,
+    rgb(220,200,60) 87.5%,
+    rgb(220,80,220) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+.reconstruct-btn:hover:not(:disabled)::after {
+  opacity: 1;
+  animation: reliquaryBarScroll 12s linear infinite;
+}
+@keyframes reliquaryBarScroll {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+/* Shared inline error line (Observatory, Audit). Same rule: show
+   message in the left panel, don't open the right panel, don't
+   compact the drop zone. Hidden when empty. */
+.tab-error { margin-top: auto; padding: 0.5rem 0.8rem; font-size: 0.72rem; color: #f87171; text-align: center; line-height: 1.55; }
+.tab-error:empty { display: none; }
+/* Yin override for the shared .panel-error-head color — decoder's
+   --accent-red (#a62828) is tuned for a light background; on the dark
+   validator theme we need the brighter red used elsewhere here. */
+.panel-error-head { color: #f87171; }
+.panel-error-body { color: #8a8a94; }
+.panel-error-body strong { color: #c0c0c8; }
+.img-console-thumb { max-width: 100%; max-height: 160px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); display: block; margin: 0 auto 0.6rem; }
+.img-console-id { font-family: monospace; font-size: 0.78rem; font-weight: 600; color: #d0d0d8; }
+.img-console-id a { color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.25); cursor: pointer; }
+.img-console-hash { font-family: monospace; font-size: 0.66rem; color: #7a7a84; margin-top: 0.15rem; }
+.img-console-status { font-size: 0.72rem; margin-top: 0.4rem; text-align: center; }
+.img-console-status.ok { color: #4ade80; }
+.img-console-status.fail { color: #f87171; }
+
+/* .how — yin palette overrides for the shared .lookup-hint,.how
+   structural rules in mememage.css. Only ink shifts. */
+.how {
+  background: rgba(0,0,0,0.15);
+  border-color: rgba(255,255,255,0.04);
+  color: #8a8a94;
+}
+.how b { color: #c0c0c8; }
+
+/* Evidence cards — yin palette (warm dark grays) */
+.ev { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 10px; overflow: hidden; margin: 1rem 1.2rem; }
+.ev-h { padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; }
+.ev-h.both { background: rgba(255,255,255,0.03); border-left: 3px solid rgba(255,255,255,0.15); }
+.ev-h.bar-only { background: rgba(180,160,60,0.06); border-left: 3px solid rgba(180,160,60,0.4); }
+.ev-h.wm-only { background: rgba(74,120,190,0.06); border-left: 3px solid rgba(74,120,190,0.4); }
+.ev-h.lost { background: rgba(180,60,60,0.06); border-left: 3px solid rgba(180,60,60,0.4); }
+/* Sealed state — dark_matter record with ciphertext still in place.
+   Distinct warm-tan from bar-only (yellow) so "we can't verify yet"
+   reads differently from "no stored hash" or "mismatch". */
+.ev-h.sealed { background: rgba(200,176,128,0.06); border-left: 3px solid rgba(200,176,128,0.4); }
+.ev-t { font-size: 0.8rem; color: #b0b0b8; }
+.ev-b { font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 600; }
+.ev-b.both { background: rgba(74,158,74,0.12); color: #4ade80; }
+.ev-b.bar-only { background: rgba(180,160,60,0.1); color: #facc15; }
+.ev-b.wm-only { background: rgba(74,120,190,0.1); color: #60a5fa; }
+.ev-b.lost { background: rgba(180,60,60,0.1); color: #f87171; }
+.ev-b.sealed { background: rgba(200,176,128,0.12); color: #c8b080; }
+.ev-mv.sealed { color: #c8b080; }
+.ev-body { padding: 0.8rem 1rem; }
+.ev-sec { font-size: 0.68rem; color: #808088; text-transform: uppercase; letter-spacing: 0.1em; margin: 0.8rem 0 0.3rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); }
+.ev-sec:first-child { border: none; margin-top: 0; padding-top: 0; }
+.ev-g { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
+.ev-m { padding: 0.3rem 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; }
+.ev-m.w { grid-column: 1/-1; }
+.ev-ml { font-size: 0.6rem; color: #707078; text-transform: uppercase; letter-spacing: 0.06em; }
+.ev-mv { font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; color: #c0c0c8; }
+.ev-mv.pass { color: #4ade80; }
+.ev-mv.fail { color: #f87171; }
+
+/* Mobile: tighten Observatory evidence cards + orbit inspector + audit
+   rows so nested forensic content doesn't squish on narrow viewports.
+   Collapse 2-col grids to single columns, shrink card margins/padding,
+   and make the fixed-width orbit-ages window scale to viewport width. */
+@media (max-width: 600px) {
+  .ev { margin: 0.6rem 0.4rem; }
+  .ev-body { padding: 0.6rem 0.7rem; }
+  .ev-g { grid-template-columns: 1fr; gap: 0.25rem; }
+  .ev-h { padding: 0.5rem 0.7rem; }
+  .ev-t { font-size: 0.75rem; }
+  .orbit-ages-window { width: 100%; max-width: 100%; }
+  .orbit-age { width: 33.333%; }
+  .orbit-age.near-1, .orbit-age.near-2 { width: 20%; }
+  .orbit-grid { margin: 0; overflow-x: auto; }
+  .orbit-controls { gap: 0.4rem; }
+  .orbit-vbtn { font-size: 0.64rem; padding: 0.2rem 0.55rem; }
+
+  /* Audit report — reduce section margins and let rows stack when
+     the value would otherwise wrap weirdly next to a label. */
+  .audit-section { margin: 0.6rem 0.6rem; }
+  .audit-row { flex-wrap: wrap; row-gap: 0.1rem; }
+  .audit-val { text-align: left; flex: 1 1 100%; min-width: 0; }
+
+  /* iOS auto-zooms on input focus when font-size < 16px and never
+     auto-zooms back out. Bump the GPS password field to 16px on
+     mobile so focus doesn't trap the viewport at 2x scale. */
+  .gps-pw-input { font-size: 16px !important; }
+}
+.bar-img { width: 100%; image-rendering: pixelated; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); }
+
+/* Click-to-enlarge bar previews + the full-screen lightbox they open. */
+.bar-zoom, .img-zoom { cursor: zoom-in; }
+.bar-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  background: rgba(2, 2, 6, 0.93);
+  cursor: zoom-out;
+}
+.bar-lightbox.open { display: flex; }
+.bar-lightbox-img {
+  max-width: 96vw;
+  max-height: 92vh;
+  image-rendering: pixelated;
+  border-radius: 4px;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
+}
+/* The full image preview enlarges smooth (a photo, not bar pixels to inspect). */
+.bar-lightbox-img.smooth { image-rendering: auto; }
+
+/* NCM grid */
+.ncm { border-collapse: collapse; width: 100%; font-size: 0.5rem; }
+.ncm td { padding: 0; }
+.ncm-c { height: 18px; line-height: 18px; text-align: center; cursor: pointer; transition: filter 0.1s; }
+.ncm-c:hover { filter: brightness(1.4); }
+
+/* Portal link structure + .portal-yang color live in layout.css + mememage.css */
+
+/* Source disclosure — yin palette overrides for the internals that
+   mememage.css defines with yang colors. Structure (margin, flex
+   layout, font-size) inherits; only ink shifts. */
+.lookup-source-row label { color: #606060; }
+.lookup-source-row input[type="text"] {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.06);
+  color: #b0b0b8;
+  font-size: 0.6rem;
+}
+.lookup-source-hint { color: #505058; font-size: 0.52rem; }
+/* Source mode toggle — yin palette override. */
+.lookup-source-mode {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #a0a0a8;
+}
+
+/* Offline folder-picker — yin palette override. Structural geometry
+   (padding, flex layout) inherits from mememage.css. */
+.offline-pick-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #a0a0a8;
+}
+.offline-pick-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.18);
+  color: #d0d0d8;
+}
+.offline-count { color: #707078; }
+
+/* Audit input/button — yin palette. Structure (padding, font-size,
+   border-radius, transitions, min-width, flex) inherits from the
+   shared .lookup-input/.audit-input + .lookup-btn/.audit-btn rules
+   in mememage.css. Yang and yin only disagree on colors. */
+.audit-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #d0d0d4;
+}
+.audit-input:focus { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 10px rgba(255,255,255,0.04) inset; }
+.audit-input::placeholder { color: #5a5a64; }
+.audit-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #a0a0a8;
+}
+.audit-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+  color: #d0d0d8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* Audit report sections */
+.audit-section { margin: 0.8rem 1.2rem; }
+.audit-section-label {
+  font-size: 0.62rem; font-weight: 600; letter-spacing: 0.15em;
+  text-transform: uppercase; color: #6a6a80; margin-bottom: 0.5rem;
+  padding-bottom: 0.3rem; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.audit-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0.35rem 0; font-size: 0.75rem; gap: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.audit-row:last-child { border-bottom: none; }
+.audit-label { color: #7a7a88; font-size: 0.68rem; }
+.audit-label { flex-shrink: 0; }
+.audit-val { color: #c0c0cc; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; word-break: break-word; text-align: right; }
+.audit-pass { color: #4ade80; }
+.audit-fail { color: #f87171; }
+.audit-warn { color: #facc15; }
+.audit-info { color: #60a5fa; }
+.audit-dim { color: #5a5a68; }
+
+/* Clickable notes. user-select:none keeps the glyph from being
+   highlighted during repeated clicks — scale notes are pure buttons,
+   not text, and selecting them reads as broken feedback. */
+.audit-note {
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #a0a0cc;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.audit-note:hover {
+  color: #d0d0f0;
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.15);
+}
+.audit-note.ringing {
+  color: #60a5fa;
+  background: rgba(96,165,250,0.12);
+  border-color: rgba(96,165,250,0.3);
+}
+/* Octave-up tonic — same pitch class as note 1, rendered with a dashed
+   outline + lighter tint to read as "tonic at the top" without looking
+   like a different scale degree. */
+.audit-note.audit-note-octave {
+  border-style: dashed;
+  color: #8888b0;
+}
+.audit-note.audit-note-octave:hover { color: #c0c0e0; }
+.audit-rec-btn, .audit-play-btn {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.6rem;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+.audit-rec-btn {
+  color: #8a8a94;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.audit-rec-btn:hover { color: #f87171; border-color: rgba(248,113,113,0.3); }
+.audit-rec-btn.recording {
+  color: #f87171;
+  background: rgba(248,113,113,0.1);
+  border-color: rgba(248,113,113,0.4);
+  animation: recPulse 1s ease-in-out infinite;
+}
+@keyframes recPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0); }
+  50% { box-shadow: 0 0 8px 2px rgba(248,113,113,0.2); }
+}
+.audit-play-btn {
+  color: #4ade80;
+  background: rgba(74,222,128,0.06);
+  border: 1px solid rgba(74,222,128,0.15);
+}
+.audit-play-btn:hover { background: rgba(74,222,128,0.12); border-color: rgba(74,222,128,0.3); }
+.audit-play-btn.playing { animation: recPulse 1s ease-in-out infinite; }
+/* Disabled look for when there's nothing to play back. Keeps the
+   button present (so the record/play pair is always discoverable)
+   without offering interactivity that would no-op. */
+.audit-play-btn.disabled {
+  color: #3a3a48;
+  background: rgba(255,255,255,0.02);
+  border-color: rgba(255,255,255,0.05);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Orbit Inspector — unified cosmic chain + cycle map
+   Yin palette: warm dark grays matching the .input-section plate.
+   Pinned at the top of metaSidebarResults via flex layout (not
+   position:sticky) so the .meta-body scrollbar sits visually below
+   the carousel, not alongside it. */
+#orbitInspector {
+  flex: 0 0 auto;
+  z-index: 50;
+  background: rgba(34,34,38,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px 14px 0 0;
+  padding: 0.6rem 0.8rem 0.5rem;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+#orbitInspector.visible { opacity: 1; }
+
+.orbit-ages { display:flex; align-items:center; justify-content:center; margin-bottom:0.3rem; user-select:none; }
+.orbit-ages-window { overflow:hidden; width:550px; flex-shrink:0; }
+.orbit-ages-track { display:flex; align-items:center; will-change:transform; }
+.orbit-ages-track.sliding { transition:transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.orbit-age { flex-shrink:0; width:110px; text-align:center; font-size:0.6rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; padding:0.18rem 0; border-radius:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.orbit-age.center { color:#c8b080; background:rgba(200,176,128,0.08); }
+.orbit-age.near-1 { color:rgba(200,176,128,0.35); font-size:0.52rem; cursor:pointer; }
+.orbit-age.near-1:hover { color:rgba(200,176,128,0.55); }
+.orbit-age.near-2 { color:rgba(200,176,128,0.15); font-size:0.44rem; cursor:pointer; }
+.orbit-age.near-2:hover { color:rgba(200,176,128,0.3); }
+.orbit-age.off { opacity:0; font-size:0.38rem; }
+.orbit-arrow { font-size:0.7rem; cursor:pointer; color:#606060; transition:color 0.2s; padding:0 0.5rem; flex-shrink:0; }
+.orbit-arrow:hover { color:#c8b080; }
+
+.orbit-controls { display:flex; justify-content:center; gap:0.6rem; align-items:center; margin-bottom:0.3rem; flex-wrap:wrap; }
+.orbit-vbtn {
+  font-size:0.58rem; padding:0.15rem 0.5rem; border-radius:4px;
+  border:1px solid rgba(255,255,255,0.06); background:transparent;
+  color:#707078; cursor:pointer; font-family:inherit; transition:all 0.25s;
+  letter-spacing:0.05em;
+  /* Long custom role names should ellipsize, not push the bar out. */
+  max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.orbit-vbtn:hover { border-color:rgba(255,255,255,0.12); color:#a0a0a8; }
+.orbit-vbtn.active { border-color:rgba(255,255,255,0.15); color:#c0c0c8; background:rgba(255,255,255,0.04); }
+
+.orbit-filter {
+  background:rgba(0,0,0,0.15); color:#909098;
+  border:1px solid rgba(255,255,255,0.06); border-radius:4px;
+  padding:0.15rem 0.4rem; font-size:0.58rem; font-family:inherit;
+  /* Many-layer chains can emit lots of filter options; cap width so
+   * the select doesn't push the +N/M tally off the right edge. */
+  max-width: 9rem; text-overflow: ellipsis;
+}
+/* Dropdown <option> labels can't ellipsize directly in <select> on most
+ * browsers — the option list still expands. The wrap below ensures the
+ * collapsed-button itself stays tidy even when an option is long. */
+.orbit-filter option { font-family: inherit; }
+
+.orbit-grid { margin:0 -0.2rem; }
+.orbit-tbl { border-collapse:collapse; width:100%; table-layout:fixed; border-spacing:0; }
+.orbit-tbl td { padding:0; }
+
+.orbit-hdr { text-align:center; color:#606060; font-size:0.38rem; padding:1px 0; }
+
+.orbit-row { transition: height 0.4s ease, opacity 0.4s ease; }
+.orbit-row.collapsed { height:0; opacity:0; overflow:hidden; line-height:0; }
+.orbit-row.collapsed td { padding:0; border:0; height:0; line-height:0; }
+.orbit-row.collapsed .orbit-c { height:0; border:0; margin:0; padding:0; font-size:0; overflow:hidden; }
+.orbit-row.collapsed .orbit-lbl { height:0; overflow:hidden; padding:0; font-size:0; }
+.orbit-row.near { opacity:0.35; }
+.orbit-tbl.has-selection .orbit-row:not(.row-selected) .orbit-c.supplied { opacity:0.35; }
+.orbit-tbl.has-selection .orbit-row:not(.row-selected) .orbit-lbl { opacity:0.35; }
+
+.orbit-lbl { font-size:0.4rem; color:#505058; padding:0 3px 0 0; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:68px; vertical-align:middle; transition: height 0.4s ease, opacity 0.4s ease, padding 0.4s ease, font-size 0.4s ease; }
+.orbit-lbl.has-name { color:#909098; cursor:pointer; }
+.orbit-lbl.has-name:hover { color:#b8b8c0; }
+.orbit-lbl.selected { color:#d0d0d8; font-weight:600; }
+/* Void row (records outside the constellation cadence) — warm, italic,
+   a dimmer sibling of the ◆ pinned marker. Empty future rows recede further. */
+.orbit-lbl.void-row { color:#8a7050; font-style:italic; }
+.orbit-lbl.empty-row { color:#3a3a42; }
+
+.orbit-c { display:flex; align-items:center; justify-content:center; font-size:0.36rem; color:#38383e; background:rgba(255,255,255,0.02); border:none; transition:all 0.2s; cursor:default; box-sizing:border-box; height:14px; }
+.orbit-c.supplied { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.65); cursor:pointer; }
+.orbit-c.supplied.tampered { background:rgba(196,123,123,0.3); color:#c47b7b; }
+.orbit-c.supplied.focused { color:#fff; z-index:1; position:relative; }
+.orbit-c.dark { color:#48443e; background:rgba(138,112,80,0.1); }
+.orbit-c.dark.supplied { background:rgba(180,152,112,0.35); color:#c8b080; }
+.orbit-c.epag { color:#48443e; background:rgba(200,176,128,0.08); }
+.orbit-c.epag.supplied { background:rgba(200,176,128,0.35); color:#c8b080; }
+
+.orbit-stats { display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; margin-top:0.3rem; font-size:0.46rem; color:#606060; }
+.orbit-stats span { display:flex; align-items:center; gap:0.15rem; }
+.orbit-stats .pass { color:#4ade80; }
+.orbit-stats .warn { color:#facc15; }
+.orbit-stats .sealed { color:#c8b080; }
+
+.orbit-assembly {
+  display:flex; gap:0.4rem; justify-content:center; align-items:center;
+  margin-top:0.2rem;
+  /* Many-layer chains can produce 8+ download buttons. Wrap to a new
+   * line rather than overflow horizontally. */
+  flex-wrap: wrap;
+}
+
+#imgResults, #certResults, #metaResults, #attackLab { padding: 0; }
+
+/* --- Desktop layout ---
+   The shared two-panel shell (fixed left + fixed right, body scroll
+   lock, fade animations) lives in css/layout.css. Validator-specific
+   palette only here: the right panel wears yin — a dark plate that
+   echoes the input-section. */
+.results-wrap {
+  background: linear-gradient(180deg, #3a3a3e 0%, #2a2a2e 30%, #222226 70%, #1c1c20 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+/* Panel-left scrollbar stays hidden — same rationale as the decoder
+   (see mememage.css): a bar would flash during the compact-mode
+   transition. Wheel / keyboard still scroll if content doesn't fit. */
+.panel-layout.layout-active .panel-left {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.panel-layout.layout-active .panel-left::-webkit-scrollbar { display: none; }
+
+/* Observatory split-scroll layout:
+   When a .soul drop renders the orbit inspector, the carousel + grid
+   + stats stay pinned at the top of the panel and a thin yin
+   scrollbar lives on the body content (records + chain panels) beneath.
+   Without this the panel scrollbar runs the full panel height, which
+   reads as "page scroll" rather than "content beneath the carousel
+   scrolls". The :has() selector scopes this to Observatory mode only —
+   Image / Audit tabs keep their original full-panel scroll behavior. */
+.panel-layout.layout-active .results-wrap:has(#orbitInspector:not(:empty)) {
+  overflow: hidden;
+}
+.panel-layout.layout-active .results-wrap:has(#orbitInspector:not(:empty)) #metaSidebarResults {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+#metaSidebarResults > .meta-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,176,128,0.3) transparent;
+  -ms-overflow-style: auto;
+}
+#metaSidebarResults > .meta-body::-webkit-scrollbar {
+  width: 8px;
+}
+#metaSidebarResults > .meta-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+#metaSidebarResults > .meta-body::-webkit-scrollbar-thumb {
+  background: rgba(200,176,128,0.25);
+  border-radius: 4px;
+}
+#metaSidebarResults > .meta-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(200,176,128,0.5);
+}
+/* Sample cert (attack lab) sits at a fixed 720px inside this wrap, so
+   the dark yin frame otherwise reads as a 1-2px black outline around
+   the plate rim. Drop bg + border for the sample state so the plate
+   is the only visible surface; cream page bg takes over the margin. */
+.results-wrap:has(.plate-sample) {
+  background: none;
+  border-color: transparent;
+}

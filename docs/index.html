@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mememage — decode the origin story of an image</title>
+<meta name="description" content="Every conceived image carries a hidden signature. Drop an image to reveal its birth certificate — celestial positions, machine state, kernel entropy, and a time-locked birthplace.">
+<meta property="og:title" content="Mememage">
+<meta property="og:description" content="Steganographic provenance for images. A 2-pixel bar holds everything.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sememtac.github.io/mememage-decoder/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mememage">
+<meta name="twitter:description" content="Every conceived image carries a hidden signature. Drop an image to decode its origin story.">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
+<link rel="stylesheet" href="css/theme.css?v=98fa85e">
+<link rel="stylesheet" href="css/layout.css?v=98fa85e">
+<link rel="stylesheet" href="css/mememage.css?v=98fa85e">
+<link rel="stylesheet" href="css/cosmic-planetarium.css?v=98fa85e">
+<script>if(location.search.indexOf('from=')>=0)document.documentElement.classList.add('portal-transit');</script>
+<!--MEMEMAGE_SOULS_BASE--><!-- a self-hosted mint server replaces the preceding marker comment with a <script> setting window.MEMEMAGE_SOULS_BASE, so the decoder defaults its record Source to the local souls face; on GitHub Pages the comment stays inert and the IA default applies -->
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<!-- Source URL suggestions (this host's default + Internet Archive), filled by
+     populateSourceSuggestions() so a self-hoster can one-click switch surfaces. -->
+<datalist id="sourceSuggest"></datalist>
+
+<div class="panel-layout">
+<div class="panel-left">
+
+<div class="page-header">
+  <h1>Mememage</h1>
+  <p class="subtitle">decode the origin story of an image</p>
+</div>
+
+<div class="input-section">
+  <div class="input-tabs">
+    <button class="input-tab active" data-panel="imagePanel">By Sight</button>
+    <button class="input-tab" data-panel="lookupPanel">By Word</button>
+    <button class="input-tab" data-panel="verifyPanel">By Soul</button>
+  </div>
+  <div class="input-panel active" id="imagePanel">
+    <div class="input-panel-wrap">
+      <div class="drop-zone" id="dropZone">
+        <span class="drop-icon">&#9883;</span>
+        <p><strong>Drop, paste,</strong> or click to browse</p>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+      <details class="lookup-source" open data-source-mode="online">
+        <summary>Source</summary>
+        <div class="lookup-source-mode-row">
+          <select class="lookup-source-mode" data-source-mode-select>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+        <div class="lookup-source-row" data-mode-scope="online">
+          <input id="imageSource" type="text" list="sourceSuggest" placeholder="https://souls.mememage.art/">
+        </div>
+        <p class="lookup-source-hint" data-mode-scope="online">Where your records are stored online.</p>
+        <div class="offline-row" data-mode-scope="offline">
+          <button type="button" class="offline-pick-btn" data-offline-pick>Load local folder</button>
+          <span class="offline-count" data-offline-count>0 records offline</span>
+          <input type="file" class="offline-input" webkitdirectory directory multiple>
+        </div>
+        <p class="lookup-source-hint" data-mode-scope="offline">Pick the folder of your <em>.soul</em> files.</p>
+      </details>
+      <div class="drop-error" id="imageError"></div>
+    </div>
+  </div>
+  <div class="input-panel" id="lookupPanel">
+    <div class="input-panel-wrap">
+      <div class="lookup-form">
+        <input class="lookup-input" id="lookupInput" type="text" placeholder="mememage-identifier">
+        <button class="lookup-btn" id="lookupBtn">Fetch</button>
+      </div>
+      <details class="lookup-source" open data-source-mode="online">
+        <summary>Source</summary>
+        <div class="lookup-source-mode-row">
+          <select class="lookup-source-mode" data-source-mode-select>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+        <div class="lookup-source-row" data-mode-scope="online">
+          <input id="lookupSource" type="text" list="sourceSuggest" placeholder="https://souls.mememage.art/">
+        </div>
+        <p class="lookup-source-hint" data-mode-scope="online">Where your records are stored online.</p>
+        <div class="offline-row" data-mode-scope="offline">
+          <button type="button" class="offline-pick-btn" data-offline-pick>Load local folder</button>
+          <span class="offline-count" data-offline-count>0 records offline</span>
+          <input type="file" class="offline-input" webkitdirectory directory multiple>
+        </div>
+        <p class="lookup-source-hint" data-mode-scope="offline">Pick the folder of your <em>.soul</em> files.</p>
+      </details>
+      <div class="lookup-hint">Enter an identifier to fetch and verify a record from configured source. Drop image into <em>By Sight</em> to see full certificate. Soul alone renders a partial read.</div>
+      <div class="panel-error-head" id="lookupErrorHead"></div>
+      <div class="panel-error-body" id="lookupErrorBody"></div>
+    </div>
+  </div>
+  <div class="input-panel" id="verifyPanel">
+    <div class="input-panel-wrap">
+      <div class="verify-pair">
+        <div class="verify-slot" id="verifyImageSlot">
+          <div class="drop-zone" id="verifyImageDrop">
+            <span class="drop-icon">&#9883;</span>
+            <p><strong>Body</strong></p>
+            <p class="drop-hint">image</p>
+            <input type="file" id="verifyImageInput" accept="image/*">
+          </div>
+        </div>
+        <div class="verify-link"></div>
+        <div class="verify-slot" id="verifyJsonSlot">
+          <div class="drop-zone" id="verifyJsonDrop">
+            <span class="drop-icon">{}</span>
+            <p><strong>Soul</strong></p>
+            <p class="drop-hint">.soul record</p>
+            <input type="file" id="verifyJsonInput">
+          </div>
+        </div>
+      </div>
+      <!-- Body preview — shows the uploaded body image (like By Sight's
+           preview) so the creator sees what they dropped. -->
+      <div class="verify-preview" id="verifyPreview" hidden><img id="verifyPreviewImg" alt="uploaded body"></div>
+      <div class="verify-status" id="verifyStatus"></div>
+    </div>
+  </div>
+  <div class="input-panel" id="examplePanel">
+    <div class="input-panel-wrap example-blurb">
+      <p class="example-heading">Example certificate</p>
+      <p class="example-body">A real Mememage certificate — origin, the sky and machine at conception, rarity, and the creator&rsquo;s signature, all rebuilt from the record its 2-pixel bar points to. Any image can carry that bar; drop one that does to verify it yourself.</p>
+    </div>
+  </div>
+  <div class="console-preview" id="preview"><img class="preview-img" id="previewImg"></div>
+  <div class="console-status" id="status"></div>
+  <div class="console-ia" id="iaLinkBanner"></div>
+  <div class="console-example" id="tryExample"><a href="#" id="tryExampleLink">see an example</a></div>
+  <div class="evidence-wrap"><a href="validator.html" class="portal-link portal-yin" id="portalLink">Validator</a></div>
+</div>
+
+<div class="bar-card" id="barCard"></div>
+
+</div><!-- end panel-left -->
+<div class="cert-wrap panel-right panel-right-has-player" id="certWrap"></div>
+<div class="panel-footer">
+  <p class="note">This decoder was distributed across soul fragments and reconstructed from the cosmic chain.</p>
+  <footer class="page-footer">mememage &mdash; steganographic provenance for images</footer>
+</div>
+</div><!-- end panel-layout -->
+
+<script src="js/theme.js?v=98fa85e"></script>
+<script src="js/data.js?v=98fa85e"></script>
+<script src="js/rs.js?v=98fa85e"></script>
+<script src="js/codec.js?v=98fa85e"></script>
+<script src="js/image-decode.js?v=98fa85e"></script>
+<script src="js/rng.js?v=98fa85e"></script>
+<script src="js/cosmic-starfield.js?v=98fa85e"></script>
+<script src="js/starfield.js?v=98fa85e"></script>
+<script src="js/cosmic-planetarium.js?v=98fa85e"></script>
+<script src="js/png-meta.js?v=98fa85e"></script>
+<script src="js/nacl.min.js?v=98fa85e"></script>
+<script src="js/html2canvas-pro.min.js?v=98fa85e"></script>
+<script src="js/verify.js?v=98fa85e"></script>
+<script src="js/access.js?v=98fa85e"></script>
+<script src="js/birth-text.js?v=98fa85e"></script>
+<script src="js/rarity-helpers.js?v=98fa85e"></script>
+<script src="js/age-names.js?v=98fa85e"></script>
+<script src="js/cert-renderer.js?v=98fa85e"></script>
+<script src="js/sky-band.js?v=98fa85e"></script>
+<script src="js/gen-band.js?v=98fa85e"></script>
+<script src="js/machine-band.js?v=98fa85e"></script>
+<script src="js/cosmic-audio.js?v=98fa85e"></script>
+<script src="js/cosmic-player.js?v=98fa85e"></script>
+<script src="js/portal.js?v=98fa85e"></script>
+<script src="js/ui.js?v=98fa85e"></script>
+<script src="js/typewriter.js?v=98fa85e"></script>
+</body>
+</html>

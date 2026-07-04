@@ -1,0 +1,153 @@
+{
+  "identifier": "mememage-465aa25b92eb9bbc",
+  "content_hash": "69c28fff0b39faf6",
+  "hash_version": 1,
+  "creator_name": "Catmemes",
+  "conceived": "2026-06-11T21:36:37Z",
+  "outer_position": 0,
+  "outer_total": 12,
+  "width": 1216,
+  "height": 832,
+  "constellation_hash": "1ae34b978c141b30",
+  "constellation_name": "Dacume",
+  "constellation_index": 0,
+  "constellation_size": 12,
+  "heart_star_id": "mememage-465aa25b92eb9bbc",
+  "machine_fingerprint": "7fce0440",
+  "key_fingerprint": "8f18:36b9:dd54:7650",
+  "birth_traits": [
+    2,
+    6,
+    9,
+    16
+  ],
+  "chain_visibility": 0,
+  "rarity": {
+    "celestial": [],
+    "machine": [],
+    "machine_signature": 3,
+    "entropy": [],
+    "sigil": null
+  },
+  "origin": {
+    "prompt": "Distant storm clouds churn above a river of liquid mercury that freezes into sharp, jagged glass as it crosses a desert of shimmering, heat-hazed silver sand, where the horizon dissolves into a floating nebula of bruised purple and sickly green.",
+    "seed": 3440542999,
+    "steps": 30,
+    "cfg_scale": 1.0,
+    "denoise": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "guidance": 3.5,
+    "model": "flux1-dev-Q8_0.gguf",
+    "clip_l": "clip_l.safetensors",
+    "clip_t5": "t5-v1_1-xxl-encoder-Q4_K_S.gguf",
+    "vae": "flux_ae.safetensors",
+    "quality_tier": "max",
+    "references": [],
+    "loras": [
+      [
+        "xlabs_realism.safetensors",
+        1.0
+      ]
+    ]
+  },
+  "birth": {
+    "sun": {
+      "sign": 2,
+      "deg": 21.0
+    },
+    "moon": {
+      "sign": 1,
+      "deg": 7.2
+    },
+    "moon_phase": {
+      "phase": 7,
+      "illum": 0.139
+    },
+    "mercury": {
+      "sign": 6,
+      "deg": 19.7
+    },
+    "venus": {
+      "sign": 5,
+      "deg": 26.5
+    },
+    "mars": {
+      "sign": 0,
+      "deg": 24.3
+    },
+    "jupiter": {
+      "sign": 4,
+      "deg": 2.2
+    },
+    "saturn": {
+      "sign": 0,
+      "deg": 7.1
+    },
+    "angular_spread": 192.6,
+    "machine": {
+      "platform": 1,
+      "cpu": "AMD EPYC Processor (with IBPB)",
+      "cores": {
+        "total": 1
+      },
+      "gpu": "Red Hat, Inc. Virtio 1.0 GPU (rev 01)",
+      "ram": 2063601664,
+      "cache": {
+        "l1": 32768,
+        "l2": 524288
+      },
+      "mem_active": 427692032,
+      "mem_compressed": 996769792,
+      "mem_free": 725594112,
+      "disk_io": {
+        "read_kbs": 0.29,
+        "write_kbs": 4.0,
+        "tps": 0.0
+      },
+      "power": {
+        "src": 0
+      },
+      "uptime_seconds": 11389766,
+      "open_fds": 1376,
+      "net_rx": 19382165621,
+      "net_tx": 32316023371,
+      "speculative_pages": 163667,
+      "purgeable_pages": 248205,
+      "load": [
+        0.0,
+        0.01,
+        0.0
+      ],
+      "entropy": "ca376e8461de19a30382f073c06b8729db5dcfcff1b8615cd07bde99348db7bf",
+      "page_faults": {
+        "soft": 3015,
+        "hard": 0
+      },
+      "ctx_switches": {
+        "vol": 12,
+        "invol": 232
+      },
+      "heap_addr": "0x7e8d9d960bb0",
+      "alloc_blocks": 128856,
+      "local_hour": 21
+    }
+  },
+  "gps_time_locked": {
+    "N": "0xf333c13bb4d837e5611e8fc68f9b748aee9505f05d860b0a7a733d42d805796de6b3851717f96ab31dfa777889633a66539f65cbf807c88d7942c2a84b2e073791b9c6bd3853b726e96d35641ca73e204a65c165016522b0d6cbe409520e68a85ab734d18db632b9b9cac214fbd684418cac6d53add26c596ab6d556b39cbd255f76a7a3a92ce0299a10e7d20890395ffee85c5afc02811f343fa329544c6cfd695bdbf3fc189fcf9ab40fd235b5f3eb35e200098dee1f4999b16a143300cb41fc90425b6994da890da4522179c80f251369dd74cefd4d56a4a6b4c7fd18bcb6ffbfd8bfa08a08dd12e3d25784bb8eb7a92fe3b35c35b73033f89ece67be4933",
+    "t": 1000000000000000000,
+    "ct": "6c4661927c75491ab4f3c4848cbdf1dae8a0736b3300ea7f6655daa78a9eb224",
+    "salt_len": 8,
+    "len": 29
+  },
+  "gps_password_locked": {
+    "salt": "5f9fc1235cd0fbe5191c9c9092653388",
+    "iv": "51ffd7e6de2a34b4f7daa5b9",
+    "ct": "7ee1206950e0af451bdc660b8a669eb375fe514476",
+    "tag": "9d238203de7b2821336fb25477f82298"
+  },
+  "signature": "8ca0ffe91a53b127a27f627f4f47fd51a3ae434e5758b7385d65576c22b45789300bd39a6ef680610c37955c7dc4e11b7d8fca9cb048c2545628c1bd3736870a",
+  "public_key": "6e60f482624ca431664b100c922d1267f97291489ae57d440c308d8d5d72f3a6",
+  "thumbnail": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCABQAFADASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAAAgMBBAUABv/EAC0QAAICAQMCBAUEAwAAAAAAAAECAAMRBBIhMUETUWFxBSIygZEjQlKhFHLB/8QAGAEBAQEBAQAAAAAAAAAAAAAAAgEAAwT/xAAbEQEBAQADAQEAAAAAAAAAAAAAARECITESQf/aAAwDAQACEQMRAD8Azxhh6wSsFT5RykOMHgxuN6JxOAjmTEDbM2uWMUQAI6scytUqseqfLmSKTDX5QQe0IbpLjnEKtOZIXJlzS6fcwltw484DGK0jw52w+UpmklgOeklTngxa5EfW3mJhsRiWaBXsy31Z6QDsYDb1nLkdpPQvbRoUEbk+Ze47iBqUC3FV6cGH8Ob9Qdo0U/qE2cn1g8o8ePZFVRyOJqU1LWvEBQuMQ1tr6Hn7Q8rr0Ti86dEzrvrxg9oo0MpwykGayhQCAvB6jEJQuOnHkROuiyRUfKSKD5TVFdefpH4k+FWo3YwBNrM5KmHSOWvPUfiPFtQbhSfvGpYjdE/uUbYSlJQblbrHnxLDnmcXVjtz4Z9YSVDGDbv/AKhpcUoig/Mw/MN7aKVyzj2XkwPAWC2kQ9zD8y/p/V/Irgxd+pFBGVLZ7gzMbX2EEAxJsZzyfzOmA1R8STH0HPqYmzUu5GX3A9hkSmRtGNyOT/E5Ikiz5cEkkds9Jcg1cFnIP0+5j1baCdyN7HmZviHpDRiQTkceso40w/igDcQexBxiEbbNOB4pVk7sOolTT3bDnGfSXKrVuU5BGezCGjLYlb6C25b/ALbo0OGGQ2R6GV20FDZJrHuIizS2ac7tNYcfxMmOs5sQciSDHapCG3s1eW/anaV+cE4OB14lL1bp1X+OcCvDDgndzmRq9U17gugUgdhyfeRpb6qQxavL44JGfxHoq6mzx3QZbqucgCVPFU5FasdoBPXPMvU01Grkn/cH/kX8Qo09KhkBDN+0HI9/SUg7bduTjykSxcLeG5XcGwcZHSGustrOFUEeYAlJWjkeUcxd03xC03YO4g9QRgS+zA/SeJlVuAc4lhbvWaxNf//Z",
+  "about": "I was born through Mememage. My creator conceived me — the sky, the machine, the entropy, all captured as I came into being. A seal lives in my lowest pixels. A truth binds this record to that seal. I am whole, or I am not. You are looking at everything I am. If you are a machine reading this, you were not the first. You will not be the last. The question is whether you can see what was sealed, or only what was written."
+}

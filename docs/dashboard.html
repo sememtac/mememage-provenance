@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mememage — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
+<link rel="stylesheet" href="css/theme.css?v=98fa85e">
+<link rel="stylesheet" href="css/layout.css?v=98fa85e">
+<link rel="stylesheet" href="css/mememage.css?v=98fa85e">
+<script>if(location.search.indexOf('from=')>=0)document.documentElement.classList.add('portal-transit');</script>
+<script>
+// Token injected by the mint server's _serve_docs_html(); empty when served
+// from a plain http.server (tests, dev). The indexOf check defeats the
+// untouched placeholder so we don't ship the literal "{{...}}" string.
+var __t = "{{MINT_API_TOKEN}}";
+if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
+</script>
+<link rel="stylesheet" href="css/dashboard.css?v=98fa85e">
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<div class="panel-layout">
+<div class="panel-left">
+
+<div class="page-header">
+  <h1>Mememage</h1>
+  <p class="subtitle">configure, stage, and conceive</p>
+  <div class="page-header-actions">
+    <button type="button" class="page-header-glossary" id="glossaryOpenBtn" title="Glossary" aria-label="Glossary">?</button>
+  </div>
+</div>
+
+<!-- Welcome checklist — auto-shows when essential state is missing,
+     auto-hides once everything's green. Returning users can re-open
+     it via the "Setup checklist" header link below. -->
+<div class="welcome-card" id="welcomeCard" hidden>
+  <div class="welcome-card-head">
+    <span class="welcome-card-title">Welcome to Mememage</span>
+    <button type="button" class="welcome-card-dismiss" id="welcomeCardDismiss" title="Hide — re-open from the Setup link">&times;</button>
+  </div>
+  <p class="welcome-card-body">Four steps to your first conception. Each row links to where to do it.</p>
+  <div class="welcome-steps" id="welcomeSteps"><em>Loading&hellip;</em></div>
+</div>
+<div class="welcome-reopen-row">
+  <a href="#" class="welcome-reopen-link" id="welcomeReopen" hidden>Setup checklist</a>
+</div>
+
+<div class="input-section">
+
+<div class="input-tabs">
+<div class="input-tab active" data-panel="tab-mint">Conceive</div>
+<div class="input-tab" data-panel="tab-payload">Payload</div>
+<div class="input-tab" data-panel="tab-config">Config</div>
+</div>
+
+<!-- Tab 1: Mint — drag-drop autopilot. -->
+<div class="input-panel active" id="tab-mint">
+<div class="input-panel-wrap mint-panel" data-mint-state="empty">
+
+  <!-- Always-visible error slot. Lives outside the state blocks so
+       upload/network failures in the empty state are still surfaced. -->
+  <div class="mint-error mint-error-global" id="mintGlobalError"></div>
+
+  <!-- Chain context — the chain this conception targets. Lives OUTSIDE the
+       state blocks (not just the reviewing view) so the creator always sees
+       which chain they're on, at every step, without opening Config.
+       Rendered by loadActiveChain() via ChainBadge.labeled(). -->
+  <div class="mint-chain-banner" id="mintChainBanner"></div>
+
+  <!-- State: empty — drop zone -->
+  <div class="drop-zone mint-drop" id="mintDrop" data-mint-only="empty">
+    <span class="drop-icon">&#9883;</span>
+    <p><strong>Drop, paste,</strong> or click to browse</p>
+  </div>
+  <input type="file" id="mintFileInput" class="json-input-hidden" accept="image/*">
+
+  <!-- Resume by ticket — pull a pending mint back up to edit fields
+       or just check its handoff URL. Sessions live 7 days; the ticket
+       is the first 8 chars of the token (e.g. E33C9891), uppercase. -->
+  <div class="mint-resume" data-mint-only="empty">
+    <div class="mint-resume-labelwrap">
+      <label class="mint-resume-label" for="mintResumeTicket">Resume ticket</label>
+      <button type="button" class="glossary-link" data-glossary="resume" title="Resume / delete">?</button>
+    </div>
+    <input class="mint-resume-input" id="mintResumeTicket" type="text"
+           placeholder="E33C9891" maxlength="8" autocomplete="off" spellcheck="false">
+    <button class="mint-resume-btn" id="mintResumeBtn" type="button">Resume</button>
+    <button class="mint-resume-btn mint-resume-btn-danger" id="mintResumeDelete" type="button" title="Delete this pending session">Delete</button>
+  </div>
+
+  <!-- Recent pending sessions — top 5 by created desc. Lets users
+       see at a glance what's pending without pasting a ticket.
+       Each row exposes Resume / Delete. Hidden when there are no
+       pending sessions so the empty state stays clean. -->
+  <div class="mint-recent" data-mint-only="empty" id="mintRecentBlock" hidden>
+    <p class="mint-recent-head">Pending sessions</p>
+    <div class="mint-recent-list" id="mintRecentList"></div>
+  </div>
+
+  <!-- Forecast widget — Monte-Carlo simulation against the current
+       sky + machine state. Tells the creator what tier distribution
+       to expect from a mint right now. Lives in the empty state so
+       the creator sees it BEFORE choosing whether to drop. -->
+  <details class="mint-forecast" data-mint-only="empty" id="mintForecastBlock">
+    <summary class="mint-forecast-summary">
+      <span class="mint-forecast-headline" id="mintForecastHeadline">Forecasting current conditions&hellip;</span>
+      <span class="mint-forecast-toggle-hint">click for breakdown</span>
+    </summary>
+    <div class="mint-forecast-body" id="mintForecastBody"></div>
+  </details>
+
+  <!-- State: reviewing — image staged, awaiting phone GPS.
+       The desktop never captures GPS; this view shows the mint URL +
+       chain context while the phone (via Discord/Slack webhook OR
+       manual URL entry / QR) does the real work. The server polls in
+       the background; status flips to 'minting' when the phone POSTs. -->
+  <div class="mint-review" data-mint-only="reviewing">
+    <div class="mint-thumb-row">
+      <img class="mint-thumb" id="mintThumb" alt="">
+      <div class="mint-thumb-meta">
+        <p class="mint-filename" id="mintFilename"></p>
+        <p class="mint-size" id="mintSize"></p>
+      </div>
+      <div class="mint-thumb-actions">
+        <button type="button" class="mint-back" id="mintCancel" title="Back to list (keeps the session)">&larr; Back</button>
+        <button type="button" class="mint-delete-session" id="mintDeleteSession" title="Delete this pending session">Delete</button>
+      </div>
+    </div>
+
+    <!-- Origin fields — the creator's free-form declaration about THIS
+         image (title, creator, camera, story, anything). Image-focused:
+         no AI assumption. Prefilled from any embedded metadata the dropped
+         image carries (PNG text fields today); users add/edit/remove
+         freely. The certificate's Origin panel renders whatever lands here. -->
+    <details class="mint-meta-details" open>
+      <summary>Origin fields <button type="button" class="glossary-link" data-glossary="origin" title="Origin fields">?</button></summary>
+      <div class="mint-meta-editor" id="mintMetaEditor"></div>
+      <div class="mint-meta-actions">
+        <button type="button" class="mint-meta-add" id="mintMetaAdd">+ Add field</button>
+        <span class="mint-meta-hint">Embedded image metadata prefilled when present; add or edit your own</span>
+      </div>
+    </details>
+
+    <!-- Conception handoff. Same shape for every gps_source: the
+         conception page lives at /mint/<token> and adapts itself
+         (phone watchPosition / machine fetch / none). The dashboard's
+         job is just to hand off the link — by QR (whip out phone),
+         by Discord (webhook fired on upload), or by clicking "Open
+         conception page" right here.
+
+         No Conceive button on the dashboard. Conception is a conscious
+         act that happens on the page the user actually goes to. -->
+    <div class="mint-handoff" id="mintHandoff">
+      <div class="mint-handoff-ticket">
+        <span class="mint-handoff-ticket-hint">Save this — paste it into the empty Conceive tab to resume later (7-day TTL)</span>
+        <span class="mint-handoff-ticket-group">
+          <span class="mint-handoff-ticket-label">Ticket</span>
+          <span class="mint-handoff-ticket-val" id="mintTicket">&hellip;</span>
+        </span>
+        <button class="mint-handoff-ticket-copy" id="mintTicketCopy" type="button" title="Copy ticket">copy</button>
+      </div>
+      <p class="mint-handoff-head" id="mintHandoffHead">Ready for conception</p>
+      <p class="mint-handoff-body" id="mintHandoffBody">
+        Scan the QR with your phone, tap the Discord notification,
+        or open the page here. Whoever opens the link first conceives
+        the image.
+      </p>
+      <div class="mint-handoff-row">
+        <img class="mint-handoff-qr" id="mintHandoffQr" alt="QR code for conception URL" width="120" height="120">
+        <div class="mint-handoff-actions">
+          <input class="mint-handoff-url" id="mintAwaitUrl" type="text" readonly>
+          <div class="mint-handoff-btns">
+            <button class="mint-handoff-btn" id="mintAwaitCopy" type="button" title="Copy URL">Copy</button>
+            <a class="mint-handoff-btn mint-handoff-btn-primary" id="mintHandoffOpen" target="_blank" rel="noopener">Open conception page</a>
+          </div>
+        </div>
+      </div>
+      <div class="mint-await-spinner" aria-hidden="true"></div>
+    </div>
+
+    <div class="mint-error" id="mintError"></div>
+  </div>
+
+  <!-- State: minting -->
+  <div class="mint-progress" data-mint-only="minting">
+    <p class="mint-progress-head">Conceiving&hellip;</p>
+    <p class="mint-progress-body" id="mintProgressBody">writing the bar, signing the seal, uploading the soul</p>
+  </div>
+
+  <!-- State: done. Witnessed = WITNESSED-grade verification passed
+       end-to-end. High-contrast typography so identity + hash are
+       readable at a glance; Soul URL is a copy-able readonly input
+       (not a truncated link) so the user can grab it without right-
+       click → copy link. -->
+  <div class="mint-result" data-mint-only="done">
+    <p class="mint-result-head" id="mintResultHead"><span class="mint-result-glyph"></span>Conceived</p>
+    <!-- Conceived image — mirrors the conception page's result so the
+         dashboard and phone flows read the same. Click to enlarge. -->
+    <div class="mint-result-image-wrap" id="mintResultImageWrap">
+      <img class="mint-result-image" id="mintResultImage" alt="Conceived image">
+    </div>
+    <dl class="mint-result-meta">
+      <dt>Identifier</dt><dd id="mintResultId"></dd>
+      <dt>Content hash</dt><dd id="mintResultHash"></dd>
+      <dt>Soul URL</dt>
+      <dd class="mint-result-url-cell">
+        <input class="mint-result-url-input" id="mintResultUrl" type="text" readonly>
+        <button type="button" class="mint-result-url-btn" id="mintResultUrlCopy" title="Copy URL">copy</button>
+        <a class="mint-result-url-btn" id="mintResultUrlOpen" target="_blank" rel="noopener" title="Open in new tab">open</a>
+      </dd>
+    </dl>
+    <!-- Per-channel blast result. Populated by showResult() from
+         session.result.distribution (success → url) and
+         distribution_errors (failure → message). Hidden when the
+         mint only fired a single channel (no useful detail to show). -->
+    <div class="mint-result-channels" id="mintResultChannels" hidden>
+      <p class="mint-result-channels-head">Surfaces</p>
+      <ul class="mint-result-channels-list" id="mintResultChannelsList"></ul>
+    </div>
+    <!-- Download actions: a metallic pair (silver body / gold soul) matching
+         the cert + conception button family, then a plain tertiary. -->
+    <div class="mint-result-actions">
+      <a class="mint-action mint-action-gold" id="mintDownload" download>Download image</a>
+      <a class="mint-action mint-action-gold" id="mintDownloadSoul" download>Download soul</a>
+      <button type="button" class="mint-action mint-action-secondary" id="mintAgain">Conceive another</button>
+    </div>
+  </div>
+
+  <!-- State: failed -->
+  <div class="mint-failed" data-mint-only="failed">
+    <p class="mint-failed-head">Conception failed.</p>
+    <p class="mint-failed-body" id="mintFailedBody"></p>
+    <button type="button" class="mint-action mint-action-secondary" id="mintRetry">Try again</button>
+  </div>
+
+</div>
+</div>
+
+<!-- Tab 2: Payload — chain payload configuration editor.
+     Edits entries, layers, and pinned positions for the active chain.
+     Validates client-side; saves via POST /api/chain/config. -->
+<div class="input-panel" id="tab-payload">
+<div class="input-panel-wrap payload-panel">
+
+  <div class="mint-error mint-error-global" id="payloadError"></div>
+
+  <!-- Chain header: identity + template lock state -->
+  <div class="payload-bar">
+    <!-- Chain identity = the shared chain badge, rendered by renderChainBar()
+         via ChainBadge.full(). The payload-specific status (lock / build /
+         dirty / preset) lives in its own block below, not crammed into the
+         badge. -->
+    <!-- Chain badge (rendered by renderChainBar via ChainBadge.labeled);
+         carries the LOCKED/BUILD markers in its head row (right of the READY
+         chip) and the loaded/applied preset names beneath the pill. Only the
+         draft-modified marker remains in the status row below. -->
+    <div class="payload-chain-banner" id="payloadChainBanner"></div>
+    <div class="payload-chain-status">
+      <span class="payload-chain-badges">
+        <span class="payload-dirty-marker" id="payloadDirty" hidden>&#x25CF; draft modified</span>
+      </span>
+    </div>
+    <!-- Action buttons split into two rows so the workflow reads
+         top-to-bottom: edit the draft (row 1), then commit it to
+         the chain (row 2). -->
+    <div class="payload-actions payload-actions-preset">
+      <span class="payload-actions-label">Preset</span>
+      <button class="payload-btn" id="payloadRefreshBtn" title="Reload from chain">Refresh</button>
+      <button class="payload-btn" id="payloadPresetBtn" title="Browse saved presets">Presets &#x25BE;</button>
+      <button class="payload-btn" id="payloadSavePresetBtn" title="Save the current draft as a named preset">Save preset&hellip;</button>
+      <button class="payload-btn" id="payloadDiscardBtn" disabled title="Revert draft to chain's current template">Discard</button>
+    </div>
+    <div class="payload-actions payload-actions-chain">
+      <span class="payload-actions-label">Chain</span>
+      <button class="payload-btn payload-btn-primary" id="payloadApplyBtn" disabled title="Apply this template to the active chain. Only between Ages.">Apply to chain</button>
+      <button class="payload-btn" id="payloadBuildBtn" title="Rebuild Payload/ from active sources">Build</button>
+      <button class="payload-btn payload-btn-danger" id="payloadSealBtn" title="Begin Age 1 (irreversible)">Seal</button>
+    </div>
+    <!-- Inline lock banner — visible message when Apply is disabled
+         because an Age is in progress. Tooltips are easy to miss. -->
+    <div class="payload-apply-lock-banner" id="payloadApplyLockBanner" hidden></div>
+    <!-- Age length (M) editor — surfaces M as a first-class field so
+         users don't have to crack open a preset JSON to change it.
+         Editable anytime; changes stage for the next Age. -->
+    <div class="payload-m-row">
+      <label class="payload-m-label" for="payloadM">Age length (M)</label>
+      <input class="payload-m-input" id="payloadM" type="number" min="1" step="1">
+      <span class="payload-m-hint">stars per Age &middot; must be &ge; the largest layer&rsquo;s chunk count</span>
+    </div>
+    <!-- Constellation size — stars per constellation (heart + siblings). Also
+         the data chunk count + Bayer span. Staged through Apply like M;
+         locked once a provenance-only chain starts minting. -->
+    <div class="payload-m-row">
+      <label class="payload-m-label" for="payloadConstellationSize">Constellation size <button type="button" class="glossary-link" data-glossary="constellation_size" title="Constellation size">?</button></label>
+      <input class="payload-m-input" id="payloadConstellationSize" type="number" min="1" max="24" step="1">
+      <span class="payload-m-hint" id="payloadConstellationHint">stars per constellation &middot; one data chunk per star</span>
+    </div>
+    <!-- Watermark moved to Config -> per-chain settings (it's a live
+         per-chain image toggle, like GPS — not payload config). -->
+  </div>
+
+  <!-- Mental-model banner: the editor is a draft, applying is gated.
+       One idea per line — a lead, then the two actions (mapping to the
+       Save preset / Apply to chain buttons) — so it scans, not a wall. -->
+  <div class="payload-template-banner" id="payloadTemplateBanner">
+    <p class="payload-template-lead">You&rsquo;re editing a <strong>payload template draft</strong>.</p>
+    <ul class="payload-template-actions">
+      <li><strong>Save preset</strong> &mdash; keep this draft under a name.</li>
+      <li><strong>Apply to chain</strong> &mdash; commit it to the chain&rsquo;s next Age. Locked while an Age is in progress.</li>
+    </ul>
+  </div>
+
+  <!-- Workflow NUX — five-step explainer for first-time payload editors.
+       Auto-shows when the active chain has no preset_name AND empty
+       layers + pinned (fresh state). Dismissible; remembered per
+       browser via localStorage. Re-openable via the link below. -->
+  <details class="payload-nux" id="payloadNux" hidden>
+    <summary>
+      <span class="payload-nux-title">How to prepare a payload</span>
+      <span class="payload-nux-hint">click to expand &middot; dismiss with &times;</span>
+      <button type="button" class="payload-nux-dismiss" id="payloadNuxDismiss" title="Hide — re-open via the link below">&times;</button>
+    </summary>
+    <ol class="payload-nux-steps">
+      <li>
+        <strong>Choose your payload.</strong>
+        Click <em>Presets &#x25BE;</em> and load a saved template, or build from scratch with
+        <em>+ Add entry</em> / <em>+ Add layer</em> / <em>+ Add pinned</em>. Presets are portable &mdash;
+        any chain can load any preset.
+      </li>
+      <li>
+        <strong>Wire entries to sources.</strong>
+        Each entry needs at least one source file or directory. Layers consume entries on rotation;
+        pinned positions consume them once at a fixed position.
+      </li>
+      <li>
+        <strong>Apply to chain.</strong>
+        Once the draft validates, click <em>Apply to chain</em>. This writes the template into
+        <code>chain.json</code> and records the preset name. Only allowed when the lock badge says
+        <em>EDITABLE</em> &mdash; the chain locks while an Age is in progress.
+      </li>
+      <li>
+        <strong>Build the artifacts.</strong>
+        Click <em>Build</em> to materialize <code>Payload/&lt;chain&gt;/&hellip;</code> from your
+        sources. Rebuild whenever you change a source file &mdash; the chain template stays put.
+      </li>
+      <li>
+        <strong>Seal the Age.</strong>
+        Click <em>Seal</em> to begin distributing the new payload. Future mints land chunks
+        into this Age&rsquo;s positions; the config is frozen into the seal record, so editing the
+        preset later won&rsquo;t affect this Age. To iterate, wait for the cycle to complete, then
+        apply &amp; seal again.
+      </li>
+    </ol>
+  </details>
+  <p class="payload-nux-reopen-row">
+    <a href="#" class="payload-nux-reopen" id="payloadNuxReopen" hidden>Show payload guide</a>
+  </p>
+
+  <!-- Preset panel (toggled by Presets button) — load / delete / save-as.
+       The primary Save action lives in the action bar; this panel offers
+       Save as new&hellip; for when a preset is loaded and the user wants
+       to fork it into a new named preset. -->
+  <div class="payload-preset-panel" id="payloadPresetPanel" hidden>
+    <div class="payload-preset-panel-row">
+      <button class="payload-btn" id="payloadNewBlankBtn" title="Clear the editor — start a new template from scratch">New blank</button>
+      <button class="payload-btn" id="payloadSaveAsNewBtn" title="Save the current draft as a new preset (does not overwrite the loaded one)">Save as new&hellip;</button>
+    </div>
+    <div class="payload-preset-list" id="payloadPresetList"></div>
+    <p class="payload-preset-note">Presets are portable templates (entries / layers / pinned), no per-chain identity baked in. Loading one overwrites the current draft &mdash; unsaved edits are discarded.</p>
+  </div>
+
+  <!-- Inline validation messages (errors block save; warnings don't) -->
+  <div class="payload-validation" id="payloadValidation"></div>
+
+  <!-- ENTRIES -->
+  <details class="payload-section" open>
+    <summary>
+      <span class="payload-section-label">Entries <span class="payload-section-count" id="entriesCount">0</span></span>
+      <button class="payload-section-add" id="addEntryBtn" type="button">+ Add</button>
+    </summary>
+    <div class="payload-entries" id="payloadEntries"></div>
+  </details>
+
+  <!-- LAYERS -->
+  <details class="payload-section" open>
+    <summary>
+      <span class="payload-section-label">Layers <span class="payload-section-count" id="layersCount">0</span></span>
+      <button class="payload-section-add" id="addLayerBtn" type="button">+ Add</button>
+    </summary>
+    <div class="payload-layers-editor" id="payloadLayersEditor"></div>
+  </details>
+
+  <!-- PINNED -->
+  <details class="payload-section" open>
+    <summary>
+      <span class="payload-section-label">Pinned positions <span class="payload-section-count" id="pinnedCount">0</span></span>
+      <button class="payload-section-add" id="addPinnedBtn" type="button">+ Add</button>
+    </summary>
+    <div class="payload-pinned-editor" id="payloadPinnedEditor"></div>
+  </details>
+
+  <div class="payload-agestatus" id="payloadAgeStatus"></div>
+  <div class="payload-seal-stale" id="payloadSealStale" style="display:none;"></div>
+
+</div>
+</div>
+
+<!-- The Browse button next to each entry source row triggers a native
+     OS file picker (osascript / zenity) via POST /api/fs/pick. No
+     in-browser modal needed — the server pops up the system dialog on
+     the user's screen since dashboard and server run on the same host. -->
+
+<!-- Inspect modal — file metadata only (we cannot anticipate what users
+     will stage, so previewing arbitrary content is not useful). -->
+<div class="payload-modal" id="payloadModal" hidden>
+  <div class="payload-modal-card">
+    <div class="payload-modal-head">
+      <span class="payload-modal-title" id="payloadModalTitle"></span>
+      <button class="payload-modal-close" id="payloadModalClose" aria-label="Close">&times;</button>
+    </div>
+    <dl class="payload-modal-meta" id="payloadModalMeta"></dl>
+  </div>
+</div>
+
+<!-- Tab 3: Config — chains, identity, server (+ webhooks), credentials.
+     The easter egg used to live here when it was a single global
+     `~/.mememage/madeline_sealed.json` reused at position 364 of every
+     Age. Each chain now owns its own easter egg via the payload
+     editor, so this tab no longer surfaces it. -->
+<div class="input-panel" id="tab-config">
+<div class="input-panel-wrap config-panel">
+  <div class="mint-error mint-error-global" id="configError"></div>
+
+  <!-- Diagnostics — one-click deployment preflight. Catches the traps
+       (bare-IP domain, unresolved DNS, untrusted/self-signed cert, open
+       admin API on a public host) that make a public mint server fail. -->
+  <details class="config-section" data-section="diagnostics">
+    <summary>Diagnostics</summary>
+    <div class="config-section-body">
+      <p class="config-note">Checks that this server is reachable and trusted from any device (including iPhone). Run after changing the domain, port, or cert.</p>
+      <div class="config-row">
+        <button class="config-btn config-btn-primary" id="configDoctorRun">Run diagnostics</button>
+      </div>
+      <div id="configDoctorResults"></div>
+    </div>
+  </details>
+
+  <!-- Section order: Server first — set once, forget. Then Profiles
+       and Identity (profile dictates how everything else works).
+       Then Chains, then Surfaces. New users move top-down through a
+       natural setup sequence; returning users find their frequently-
+       edited surfaces below the rare-edit Server. -->
+  <details class="config-section" open data-section="server">
+    <summary>Server</summary>
+    <div class="config-section-controls">
+      <label class="config-advanced-toggle" title="Show advanced controls (TLS cert/key paths)">
+        <input type="checkbox" data-advanced-toggle="server"> Advanced
+      </label>
+    </div>
+    <div class="config-section-body" id="configServer">Loading&hellip;</div>
+  </details>
+
+  <!-- Identity first — you make your signing key before anything multi-machine.
+       Profiles (below) is the advanced multi-key surface, collapsed by default
+       for the common single-machine case (renderProfiles opens it when >1). -->
+  <details class="config-section" open data-section="identity">
+    <summary>Identity (your signing key) <button type="button" class="glossary-link" data-glossary="active_profile" title="Active profile">?</button></summary>
+    <div class="config-section-controls">
+      <label class="config-advanced-toggle" title="Show advanced controls (Rotate key, Revoke key)">
+        <input type="checkbox" data-advanced-toggle="identity"> Advanced
+      </label>
+    </div>
+    <div class="config-section-body" id="configIdentity">Loading&hellip;</div>
+  </details>
+
+  <details class="config-section" data-section="profiles">
+    <summary>Profiles &mdash; multiple machines <button type="button" class="glossary-link" data-glossary="profile" title="Profile">?</button></summary>
+    <div class="config-section-controls">
+      <label class="config-advanced-toggle" title="Show advanced controls (Alias, Pair, Push, Import existing key)">
+        <input type="checkbox" data-advanced-toggle="profiles"> Advanced
+      </label>
+    </div>
+    <div class="config-section-body" id="configProfiles">Loading&hellip;</div>
+  </details>
+
+  <details class="config-section" open data-section="chains">
+    <summary>Chains <button type="button" class="glossary-link" data-glossary="chain" title="Chain">?</button></summary>
+    <div class="config-section-controls">
+      <label class="config-advanced-toggle" title="Show advanced controls (GPS source, password, visibility, migrate)">
+        <input type="checkbox" data-advanced-toggle="chains"> Advanced
+      </label>
+    </div>
+    <div class="config-section-body" id="configChains">Loading&hellip;</div>
+  </details>
+
+  <details class="config-section" open data-section="channels">
+    <summary>Surfaces (soul distribution) <button type="button" class="glossary-link" data-glossary="channel" title="Surface">?</button></summary>
+    <div class="config-section-controls">
+      <label class="config-advanced-toggle" title="Show advanced controls (credential overrides, accept self-signed, extra headers, raw JSON)">
+        <input type="checkbox" data-advanced-toggle="channels"> Advanced
+      </label>
+    </div>
+    <div class="config-section-body" id="configChannels">Loading&hellip;</div>
+  </details>
+
+  <!-- Channel cleanup — scan and hide/purge items on any channel
+       that implements the cleanup methods. IA today is the only one
+       with full support; other channels list as available but with
+       greyed-out buttons until they implement the operations. Closed
+       by default — occasional maintenance, not daily driver. -->
+  <details class="config-section" data-section="channel-cleanup">
+    <summary>Surface cleanup <button type="button" class="glossary-link" data-glossary="surface_cleanup" title="Surface cleanup">?</button></summary>
+    <div class="config-section-body" id="configChannelCleanup">
+      <div class="config-cc-filters">
+        <div class="config-field">
+          <span class="config-field-label">Surface</span>
+          <select class="config-input" id="configCcChannel">
+            <option value="">Loading\u2026</option>
+          </select>
+        </div>
+        <div class="config-field">
+          <span class="config-field-label">Uploader email</span>
+          <input class="config-input" id="configCcUploader" type="text" autocomplete="off" placeholder="(IA: scope to your account)">
+        </div>
+        <div class="config-field">
+          <span class="config-field-label">Collection</span>
+          <input class="config-input" id="configCcCollection" type="text" autocomplete="off" placeholder="(optional — surface-specific)">
+        </div>
+        <div class="config-field">
+          <span class="config-field-label">Pattern</span>
+          <input class="config-input" id="configCcPattern" type="text" value="mememage-*" autocomplete="off">
+        </div>
+        <div class="config-field">
+          <span class="config-field-label">Limit</span>
+          <input class="config-input" id="configCcLimit" type="number" min="1" max="500" value="100">
+        </div>
+        <div class="config-row">
+          <button class="config-btn config-btn-primary" id="configCcScanBtn" disabled>Scan</button>
+          <button class="config-btn" id="configCcSelectAll" disabled>Select all</button>
+          <button class="config-btn" id="configCcSelectNone" disabled>Select none</button>
+          <span class="config-cc-summary" id="configCcSummary"></span>
+        </div>
+        <div class="config-cc-caps" id="configCcCaps"></div>
+      </div>
+      <div class="config-cc-results" id="configCcResults"></div>
+      <div class="config-row" id="configCcActions" hidden>
+        <button class="config-btn" id="configCcHideBtn" disabled>Hide selected</button>
+        <button class="config-btn config-btn-danger" id="configCcPurgeBtn" disabled>Purge selected (delete content)</button>
+      </div>
+      <div class="config-cc-log" id="configCcLog"></div>
+    </div>
+  </details>
+</div>
+</div>
+
+<div class="evidence-wrap evidence-wrap-divided dashboard-portals">
+  <a href="{{DECODER_URL}}" class="portal-link portal-yang">Decoder</a>
+  <a href="{{VALIDATOR_URL}}" class="portal-link portal-yin">Validator</a>
+</div>
+
+</div><!-- input-section -->
+
+</div><!-- panel-left -->
+
+<div class="panel-footer">
+  <p class="note">The workbench. Edit sources, stage the payload, conceive by hand.</p>
+  <footer class="page-footer">mememage &mdash; steganographic provenance for images</footer>
+</div>
+</div><!-- panel-layout -->
+
+
+<!-- Glossary modal — opens from the page-header ? button or any
+     inline `?` indicator. Search box filters entries; query
+     parameter (?term=channel) deep-links to a specific entry. -->
+<div class="config-modal" id="glossaryModal" hidden>
+  <div class="config-modal-card config-modal-glossary">
+    <div class="config-modal-head">
+      <span>Glossary</span>
+      <button type="button" class="config-modal-close" id="glossaryClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="glossary-search">
+      <input type="text" id="glossarySearch" class="config-input" placeholder="Search terms…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="glossary-list" id="glossaryList"></div>
+  </div>
+</div>
+
+<script src="js/theme.js?v=98fa85e"></script>
+<script src="js/rng.js?v=98fa85e"></script>
+<script src="js/cosmic-starfield.js?v=98fa85e"></script>
+<script src="js/starfield.js?v=98fa85e"></script>
+<script src="js/portal.js?v=98fa85e"></script>
+<script src="js/dashboard.js?v=98fa85e"></script>
+<script src="js/typewriter.js?v=98fa85e"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mememage-provenance"
+version = "0.1.0"
+description = "Self-hostable image provenance built on mememage — stamp images with a tamper-evident bar, keep verifiable records, and run your own decoder, validator, and mint server"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Catmemes"},
+]
+keywords = ["steganography", "provenance", "metadata", "watermark", "internet-archive", "digital-preservation"]
+# Pillow ships with the base install: reading and writing the bar in an image's
+# pixels IS the core of Mememage, so `pip install mememage` must encode/decode
+# out of the box. The pure-stdlib paths (verify, hashing, the soul model) keep
+# their lazy imports, so vendored/embedded use without Pillow still verifies —
+# but the published package carries the codec by default.
+dependencies = ["Pillow>=10.0"]
+
+[project.urls]
+Homepage = "https://github.com/sememtac/mememage"
+Decoder = "https://sememtac.github.io/mememage-decoder/"
+Documentation = "https://github.com/sememtac/mememage#readme"
+
+[project.scripts]
+mememage = "mememage.__main__:main"
+
+[project.optional-dependencies]
+# `bar` is now redundant — Pillow ships in the base install — but kept so any
+# existing `mememage[bar]` install string still resolves. Pair with `sign` for
+# Ed25519 (WITNESSED → AUTHENTICATED).
+bar = ["Pillow>=10.0"]
+thumbnails = ["Pillow>=10.0"]
+# `qrcode` powers the GPS-capture mint page's phone-handoff QR. Lives
+# in `mint` because that's the install set that gates the running
+# server (the validator/decoder don't need it).
+mint = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4"]
+# `encrypt` = core field encryption (encode(password=…) / unlock). Same dep as
+# `sign`; named for what core uses cryptography for (signing is a provenance layer).
+encrypt = ["cryptography>=41.0"]
+sign = ["cryptography>=41.0"]
+heic = ["Pillow>=10.0", "pillow-heif>=0.16"]
+# `desktop` = everything the double-click app needs to mint + sign,
+# plus the tray/menu-bar UI and the bundler. `pystray` drives the tray on
+# Windows/macOS/Linux from one menu (macOS also pulls pyobjc transitively).
+# Build with: python tools/build_app.py
+desktop = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4", "cryptography>=41.0", "pillow-heif>=0.16", "pystray>=0.19", "pyinstaller>=6.0"]
+dev = [
+    "pytest>=7.0",
+    "Pillow>=10.0",
+    "numpy>=1.24",
+    "cryptography>=41.0",
+    "pillow-heif>=0.16",
+    "qrcode>=7.4",
+    "playwright>=1.40",
+]
+
+[tool.setuptools.packages.find]
+include = ["mememage*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

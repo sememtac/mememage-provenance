@@ -1,0 +1,124 @@
+/* ================================================================
+   cosmic-planetarium.css — modal styling for the constellation
+   planetarium. Shared across decoder, validator, and the preview
+   prototype. Built dynamically by js/cosmic-planetarium.js; this
+   file just provides the visual chrome.
+   ================================================================ */
+
+.planetarium {
+  /* Transparent chrome only — the constellation and stars are drawn
+     onto the page-level Starfield canvas behind. The modal hosts the
+     name, mode toggle, hint, and close button only. Pointer events
+     on the modal capture drag/pinch and forward to Starfield.camera. */
+  position: fixed; inset: 0; z-index: 9999;
+  background: transparent;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.6s ease;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  /* Drag captures pointer events; without this the constellation
+     name, mode toggle text, and hint get text-selected mid-drag,
+     which the browser treats as a selection gesture and the drag
+     is dropped (camera stops responding to the rest of the move). */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.planetarium.visible { opacity: 1; pointer-events: auto; }
+.planetarium.dragging { cursor: grabbing; }
+.planetarium.earth-mode { cursor: default; }
+
+/* Page-UI fade orchestration. When body has .planetarium-open the
+   page chrome (header, panel layout, footer) fades to opacity 0 so
+   the cosmic starfield reads as the only visible layer behind the
+   planetarium. Removing the class fades them back in. The transition
+   on .panel-layout restates max-width so layout transitions still
+   work inside the panel during compact-mode toggles. */
+.page-header,
+.panel-footer {
+  transition: opacity 0.6s ease;
+}
+.panel-layout {
+  transition: max-width 0.5s ease, opacity 0.6s ease;
+}
+body.planetarium-open .page-header,
+body.planetarium-open .panel-layout,
+body.planetarium-open .panel-footer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.planetarium-name {
+  position: absolute; top: 4vh; left: 50%; transform: translateX(-50%);
+  color: #d8d8e0; font-size: 18px; font-weight: 300;
+  letter-spacing: 0.4em; text-transform: uppercase;
+  text-align: center; pointer-events: none;
+  text-shadow: 0 0 16px rgba(255,255,255,0.1);
+}
+
+.planetarium-hint {
+  position: absolute;
+  /* JS sets bottom inline based on the cosmic player's measured
+     position. This 130px is the initial fallback for the brief
+     moment before the first measurement lands — generous so the
+     hint never gets caught under the player even if measurement
+     stalls. */
+  bottom: 130px;
+  left: 50%; transform: translateX(-50%);
+  color: #707078; font-size: 11px; letter-spacing: 0.05em;
+  text-align: center; pointer-events: none;
+  opacity: 0.7;
+  transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.planetarium-close {
+  position: absolute; top: 16px; right: 20px;
+  background: transparent; border: none;
+  color: #909098; font-size: 26px; line-height: 1; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+.planetarium-close:hover { background: rgba(255,255,255,0.06); color: #f0f0f6; }
+
+.planetarium-mode {
+  position: absolute;
+  top: calc(4vh + 38px); /* sits just below the constellation name */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  overflow: hidden;
+  font-family: inherit;
+}
+.planetarium-mode button {
+  background: transparent; border: none; cursor: pointer;
+  color: #707078; padding: 6px 14px;
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  transition: background 0.5s ease, color 0.5s ease;
+  font-family: inherit;
+}
+.planetarium-mode button.active {
+  background: rgba(255,255,255,0.08);
+  color: #f0f0f6;
+}
+.planetarium-mode button:not(.active):hover { color: #b0b0b8; }
+
+/* Cosmic player when hosted by the planetarium — appended directly
+   to <body> (outside .planetarium) so it doesn't inherit the modal's
+   opacity transition and stays sharp during the open/close fade. Full
+   viewport width, no margins, sits above the planetarium (z-index
+   9999). */
+.cosmic-player.in-planetarium {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  margin: 0 !important;
+  width: 100vw;
+  max-width: none;
+  z-index: 10000;
+}

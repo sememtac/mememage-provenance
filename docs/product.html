@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mememage — own your image's data</title>
+<meta name="description" content="A free tool to take ownership of your image's data. Encode an image, and the data behind it is yours — stored where you choose, owned by no platform.">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/mememage.css">
+<link rel="stylesheet" href="css/product.css">
+</head>
+<body class="product-body">
+<canvas id="starfield"></canvas>
+
+<div class="product-wrap">
+
+  <!-- Hero -->
+  <header class="product-hero">
+    <div class="page-header"><h1>Mememage</h1></div>
+    <p class="product-tagline">Encode an image. Own its data.</p>
+    <p class="product-sub">An identifier encoded into the pixels survives compression and re-uploads. It points back to data you keep.</p>
+    <div class="cta-row">
+      <a class="cta cta-gold" id="ctaTry" href="#">See live examples &rarr;</a>
+      <a class="cta cta-code" href="#install">pip install mememage</a>
+    </div>
+    <!-- The actual minted genesis image (mememage-0000000000000000) — bar and
+         all, so it decodes + verifies if saved. Clicking opens it full-res in
+         the lightbox below. -->
+    <button class="product-hero-zoom" id="heroZoom" type="button"
+            aria-label="View the genesis image full size">
+      <img class="product-hero-img" src="img/genesis.png" alt="the genesis conception">
+    </button>
+  </header>
+
+  <!-- The mechanism: identifier → data → encryption -->
+  <section class="product-section">
+    <p class="section-lead">Encode an image. Look up your data. Encrypt what's private.</p>
+    <div class="tri">
+      <div class="tri-cell tri-m"><h4>Identifier</h4><p>A short code baked into the pixels. Survives compression and re-uploads.</p></div>
+      <div class="tri-cell tri-y"><h4>Data</h4><p>A record whose fields you define. Stored wherever you keep it.</p></div>
+      <div class="tri-cell tri-c"><h4>Encryption</h4><p>Mememage supports encrypting your data, in full or field by field.</p></div>
+    </div>
+  </section>
+
+  <!-- The API -->
+  <section class="product-section" id="install">
+    <p class="section-kicker">API</p>
+    <p class="section-lead">encode &middot; decode &middot; verify</p>
+    <div class="code-block"><pre><span class="cc"># pip install mememage</span>
+<span class="ck">result</span> = mememage.<span class="ck">encode</span>(<span class="cs">"photo.png"</span>, {<span class="cs">"title"</span>: <span class="cs">"Morning fog"</span>})  <span class="cc"># encode image</span>
+mememage.<span class="ck">decode</span>(<span class="cs">"photo.png"</span>)  <span class="cc"># return id + hash</span>
+mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, result.record)  <span class="cc"># True if match</span></pre></div>
+  </section>
+
+  <!-- Close -->
+  <footer class="product-coda">
+    <p class="section-lead">Give any image an identifier, and it carries a way home to its data.</p>
+    <p style="max-width:28rem;margin:0 auto;">Store, encrypt, share.</p>
+    <div class="product-foot-links">
+      <a id="linkFeed" href="#">Feed</a>
+      <a id="linkDecoder" href="#">Decoder</a>
+      <a id="linkValidator" href="#">Validator</a>
+    </div>
+    <div class="product-foot-links product-foot-source">
+      <!-- Source. Private until launch (these 404 for now); public at go-live so
+           anyone can read the code. Core = the pip package; Provenance = the full
+           self-host demo. (No Web repo link — the github-hosted decoder site is
+           being deprecated; the live decoder/validator ride the mint server.) -->
+      <a href="https://github.com/sememtac/mememage">Core</a>
+      <a href="https://github.com/sememtac/mememage-provenance">Provenance</a>
+    </div>
+    <p class="product-fineprint">Mememage is an image encoding technique. Check out the feed, decoder, and validator for our demo application.</p>
+  </footer>
+
+</div>
+
+<!-- Hero image lightbox — click the genesis image to examine it full-res. -->
+<div class="lightbox" id="heroLightbox" hidden>
+  <img class="lightbox-img" id="heroLightboxImg" src="" alt="the genesis conception, full resolution">
+</div>
+
+<script src="js/theme.js"></script>
+<script src="js/rng.js"></script>
+<script src="js/cosmic-starfield.js"></script>
+<script src="js/starfield.js"></script>
+<script src="js/typewriter.js"></script>
+<script>
+// "See live examples" → the FEED (a wall of minted images; it carries a decoder
+// link so visitors find their way). Defaults to the production souls/mint
+// subdomains; overridable via window.MEMEMAGE_SOULS_BASE.
+(function () {
+  var soulsOrigin = 'https://souls.mememage.art';
+  var feedOrigin = 'https://mint.mememage.art';
+  try {
+    if (window.MEMEMAGE_SOULS_BASE) soulsOrigin = new URL(window.MEMEMAGE_SOULS_BASE).origin;
+  } catch (e) {}
+  function set(id, href) { var el = document.getElementById(id); if (el) el.href = href; }
+  set('ctaTry', feedOrigin + '/');               // See it work → the feed
+  set('linkFeed', feedOrigin + '/');
+  set('linkDecoder', soulsOrigin + '/');
+  set('linkValidator', soulsOrigin + '/validator');
+})();
+
+// Hero image → full-res lightbox (examine the image; no navigation). Reads the
+// hero's own src so it follows automatically when genesis.png is swapped.
+(function () {
+  var trigger = document.getElementById('heroZoom');
+  var box = document.getElementById('heroLightbox');
+  var boxImg = document.getElementById('heroLightboxImg');
+  if (!trigger || !box || !boxImg) return;
+  // mememage.css forces `body > *` to position:relative, which would clobber
+  // the lightbox's position:fixed and drop it in-flow. Reparent to <html> so
+  // the fullscreen overlay escapes that rule (same approach as the feed page).
+  document.documentElement.appendChild(box);
+  var heroImg = trigger.querySelector('.product-hero-img');
+  function open() {
+    boxImg.src = heroImg ? heroImg.src : 'img/genesis.png';
+    box.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    box.hidden = true;
+    document.body.style.overflow = '';
+  }
+  trigger.addEventListener('click', open);
+  box.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !box.hidden) close();
+  });
+})();
+</script>
+</body>
+</html>

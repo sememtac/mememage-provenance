@@ -1,0 +1,128 @@
+/* =====================================================================
+ * theme.css — Mememage L1 visual theme tokens (vanilla skin)
+ *
+ * The "base game" skin. Every value here is a knob a future Age can
+ * turn without touching verification logic, badge semantics, the bar
+ * codec, or page structure. To reskin: copy this file, change values,
+ * ship as the active theme.
+ *
+ * What lives here:
+ *   - master palette (text / accent / glass / surface)
+ *   - plate material (rarity-tinted cert face)
+ *   - radii
+ *   - motion tempo (durations + easings)
+ *
+ * Companion: docs/js/theme.js carries the JS-side knobs (subtitle
+ * troves, starfield warmth, typewriter animation weights).
+ *
+ * What does NOT live here (L0 spine, locked):
+ *   - tab labels, MEMEMAGE wordmark
+ *   - badge labels (WITNESSED / AUTHENTICATED / EMBODIED)
+ *   - M/Y/C bar colors (recognition-critical)
+ *   - font family — JetBrains Mono is project DNA
+ *   - per-rarity rim palette — record-driven (L3), set via :has()
+ *     in mememage.css next to the .plate rule
+ *
+ * Load order: theme.css must come BEFORE mememage.css in <head> so
+ * mememage's rules can reference these tokens via var(...).
+ * ===================================================================== */
+:root {
+  /* --- Surface palette (the page) --- */
+  --bg-deep: #000000;
+  --bg-card: rgba(180, 180, 185, 0.08);
+  --bg-card-solid: rgba(160, 160, 168, 0.1);
+  --bg-cell: rgba(180, 180, 185, 0.06);
+  --border-subtle: rgba(180, 180, 190, 0.12);
+  --border-glow: rgba(200, 200, 210, 0.15);
+
+  /* --- Text palette --- */
+  --text-primary: #d0d0d4;
+  --text-secondary: #a0a0a8;
+  --text-muted: #606060;
+  --text-dim: #404048;
+
+  /* --- Accents (semantic, used across UI) --- */
+  --accent-purple: #9b8cd4;
+  --accent-blue: #8898b8;
+  --accent-gold: #d4b87b;
+  --accent-green: #7bc4a0;
+  --accent-green-dim: #3a5e4a;
+  --accent-red: #a62828;
+  --accent-red-dim: #5e3a3a;
+
+  /* --- Glass layers (frosted highlights and shines) --- */
+  --glass-bg: rgba(140, 140, 150, 0.06);
+  --glass-border: rgba(180, 180, 190, 0.1);
+  --glass-shine: rgba(200, 200, 210, 0.04);
+
+  /* --- System box material (the brushed-metal input panel) ---
+   * The chrome around the verification — tabs, drop zone. THIS is
+   * what a future Age skins (gold instead of silver, etc.). Two
+   * variants because the decoder runs yang (light) and the validator
+   * runs yin (dark); both belong to the same theme so a manifest can
+   * coordinate them.
+   *
+   * NOTE on cert plates: the .plate's silver gradient is NOT a theme
+   * token — it's the Common rarity baseline (other rarity tiers
+   * override with their own tinted gradients in mememage.css). Cert
+   * appearance stays bound to its mint-time rarity across all themes. */
+  --system-box-bg-yang: linear-gradient(180deg, #b8b8bc 0%, #a0a0a4 30%, #909094 70%, #808084 100%);
+  --system-box-bg-yin:  linear-gradient(180deg, #3a3a3e 0%, #2a2a2e 30%, #222226 70%, #1c1c20 100%);
+
+  /* --- System box backdrop blur ---
+   * Default `none` means no blur (zero GPU cost). Themes that opt in
+   * to a translucent system-box gradient (e.g. Glass / Aero) set
+   * this to e.g. `blur(10px) saturate(1.1)` so the starfield behind
+   * shows through with the glass effect. */
+  --system-box-blur: none;
+
+  /* --- System box blend mode ---
+   * Per-side because yang and yin can want different blends (yang
+   * might want `multiply` to tint a texture pink, yin usually wants
+   * `normal` because its dark overlay would crush textures with
+   * multiply). The yang token doubles as the legacy/default
+   * --system-box-blend-mode for any rule still reading that name. */
+  --system-box-blend-mode:     normal;
+  --system-box-blend-mode-yin: normal;
+
+  /* --- System box background-color fallback ---
+   * Sits behind the background-image stack. Catches any alpha holes
+   * in a texture image so transparent pixels render in-theme instead
+   * of exposing the page body bg. Yang gets a light fallback, yin
+   * gets a dark fallback, matching each side's palette. Default
+   * transparent for non-textured themes (their gradient is opaque so
+   * this is irrelevant). */
+  --system-box-bg-color-yang: transparent;
+  --system-box-bg-color-yin:  transparent;
+
+  /* --- System box edge glow ---
+   * Inset box-shadow forming a per-edge frame highlight. Default
+   * `none`. Aero-style themes set a 4-edge inset (brighter top) so
+   * the system-box reads as a glass pane with light catching the
+   * frame, especially when the body is mostly transparent. */
+  --system-box-shadow: none;
+
+  /* --- System box text colors (yang side only) ---
+   * Yang has hardcoded dark text because its default plate is silver.
+   * For aero themes where the plate becomes translucent and a busy
+   * starfield bleeds through, dark text needs to go darker AND grow a
+   * halo shadow so it reads on any underlying pixel. Yin doesn't need
+   * tokens here — its text is already light on dark, contrast is fine
+   * regardless of how transparent the yin plate gets. */
+  --system-box-text-yang:        #5a5a64;
+  --system-box-text-yang-strong: #2a2a32;
+  --system-box-text-shadow-yang: 0 1px 0 rgba(255,255,255,0.4);
+
+  /* --- Radii --- */
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  /* --- Motion tempo ---
+   * compact = system-box shrink/grow when a result loads
+   * pulse   = drop-zone breathing rhythm
+   * portal  = decoder ↔ validator card flip */
+  --compact-duration: 0.9s;
+  --compact-ease: cubic-bezier(0.45, 0, 0.2, 1);
+  --pulse-duration: 3s;
+  --portal-duration: 0.5s;
+}

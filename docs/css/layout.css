@@ -1,0 +1,401 @@
+/* ================================================================
+   layout.css — shared two-panel desktop layout
+   Used by both the decoder (index.html) and the validator (validator.html).
+
+   DOM contract:
+     <div class="panel-layout">
+       <div class="panel-left"> … system box, header, footer … </div>
+       <div class="panel-right"> … results … </div>
+     </div>
+
+   Triggers (added/removed by JS when a result becomes visible):
+     .layout-active      — activates the fixed two-panel desktop mode
+     .layout-collapsing  — transition back to single-column center
+
+   Variants:
+     .panel-right.panel-right-has-player
+       — reserves overflow:hidden on the right panel so an absolutely
+         positioned player (e.g. CosmicPlayer) can overlap the content
+         scroll region at the bottom.
+
+   Desktop breakpoint is 1200px (matches the existing site layout).
+   Body scroll lock is applied on desktop only when layout-active.
+   ================================================================ */
+
+.panel-layout {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: max-width 0.5s ease;
+}
+
+.panel-left {
+  width: 100%;
+  max-width: 680px;
+}
+
+.panel-right {
+  width: 100%;
+  max-width: 680px;
+  margin-top: 2rem;
+  display: none;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Mobile: swap overflow: hidden for clip-path and make the panel
+   position: relative so it becomes the sticky containing block for
+   the cosmic player. overflow: hidden on an ancestor traps sticky;
+   clip-path rounds the corners without creating a flow root. And the
+   player lives as a direct child of .panel-right on mobile — its
+   natural position sits just below the plate, so the containing
+   block has to include that. panel-layout (the default positioned
+   ancestor) stops short because it's only as tall as panel-left +
+   cert-wrap's content area, not the player's margins; position:
+   relative on panel-right pulls the containing block down to cover
+   the player and lets sticky engage. */
+@media (max-width: 679px) {
+  .panel-right {
+    overflow: visible;
+    clip-path: inset(0 round 14px);
+  }
+}
+
+.panel-right.visible {
+  display: block;
+}
+
+/* Mobile reveal animation. On desktop, PanelSwap drives all intros via
+   .panel-swap-in (cold start + hot swap alike) and .visible must NOT
+   carry an animation — when .panel-swap-in is removed at animation end
+   the CSS animation-name reverts to panelFadeIn and the browser fires
+   it fresh (the "second flash" on hot fetches). On mobile, PanelSwap
+   doesn't animate (viewport-gated), so .visible is the single place
+   that introduces the panel. */
+@media (max-width: 679px) {
+  .panel-right.visible {
+    animation: panelFadeIn 0.6s ease-out;
+  }
+}
+
+/* Dismissing rule comes AFTER the mobile .visible animation rule so
+   it wins on the cascade — earlier ordering meant mobile Safari kept
+   running the already-ended panelFadeIn and the dismiss animationend
+   never fired, hanging the portal transition from decoder→validator
+   whenever a cert was loaded. */
+.panel-right.dismissing {
+  animation: panelFadeOut 0.4s ease-in forwards;
+}
+
+@keyframes panelFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes panelFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(20px); }
+}
+
+/* Content-swap fade for the already-visible right panel. Used when the
+   panel stays on screen but its contents change (result → attack cert,
+   image forensics → audit cert, cert → example, etc.). Desktop-only
+   (wired via JS: the helper checks .panel-layout.layout-active and the
+   panel's .visible class before opting in). Mobile falls through to
+   the instant render path. */
+.panel-right.panel-swap-out {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.22s ease-in, transform 0.22s ease-in;
+}
+.panel-right.panel-swap-in {
+  animation: panelSwapIn 0.32s ease-out;
+}
+@keyframes panelSwapIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Layout-shift size transition — when the layout toggles between
+   compact (.layout-active, fixed two-panel) and non-compact (single
+   column, centered), the visible width of panel-left and the system
+   box change. Tweening width here gives the box a real physical
+   resize instead of a snap. position: static <-> fixed itself can't
+   be tweened, but the width change is the most visible part of the
+   transition. Desktop only — mobile has no compact mode. */
+@media (min-width: 1200px) {
+  .panel-left,
+  .input-section {
+    transition: width 0.45s ease, max-width 0.45s ease;
+  }
+
+  /* Hold the cert column invisible during the system box's width
+     animation, then fade it in. Without the delay the cert pops in
+     immediately and covers the still-wide system box mid-shrink.
+     The .cert-entering class is added by JS only on the first reveal
+     after layout-active is freshly toggled on — never during in-place
+     content swaps (PanelSwap owns those) or repeat tab visits. The
+     class is removed once the animation finishes (~900ms total). */
+  .panel-right.cert-entering {
+    animation: panelFadeIn 0.4s ease-out 0.45s both;
+  }
+
+  /* Leaving compact mode — fade the cert out first, then JS removes
+     layout-active so the system box's width animation runs after the
+     cert has cleared. Mirrors the validator's existing dismissing
+     flow but kept distinct from .dismissing so it can run while the
+     cert stays mounted (only display:none kicks in afterward via
+     tab-scope-hidden). */
+  .panel-right.cert-leaving {
+    animation: panelFadeOut 0.3s ease-in forwards;
+  }
+}
+
+/* .panel-footer now sits as a direct child of .panel-layout after
+   .panel-right. On mobile that DOM order gives the scroll flow we
+   want naturally (input → cert → footer) without needing
+   display:contents on .panel-left (which had an iOS Safari bug
+   where it swallowed click events on descendants). */
+.panel-footer { width: 100%; max-width: 680px; }
+
+@media (min-width: 1200px) {
+  .panel-layout.layout-active {
+    max-width: 1200px;
+    display: block;
+    --panel-gutter: max(1.2rem, calc((100vw - 1200px) / 2));
+    --panel-top: 2.5rem;
+    --panel-height: calc(100vh - 3.5rem);
+    --panel-gap: 440px; /* 420px left + 20px spacing */
+    --panel-right-left: calc(var(--panel-gutter) + var(--panel-gap));
+    --panel-right-width: calc(100vw - var(--panel-gap) - var(--panel-gutter) * 2);
+  }
+
+  .panel-layout.layout-active .panel-left {
+    width: 420px;
+    position: fixed;
+    top: var(--panel-top);
+    left: var(--panel-gutter);
+    height: var(--panel-height);
+    overflow-y: auto;
+    /* Scrollbar styling lives per-page (yin/yang theme) — see
+       validator.html and docs/css/mememage.css. */
+  }
+
+  .panel-layout.layout-active .input-section {
+    max-width: none;
+  }
+
+  .panel-layout.layout-active .panel-right {
+    position: fixed;
+    top: var(--panel-top);
+    left: var(--panel-right-left);
+    width: var(--panel-right-width);
+    max-width: 680px;
+    height: var(--panel-height);
+    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .panel-layout.layout-active .panel-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Variant: right panel delegates its scroll to an inner child
+     (e.g. decoder's .plate) so an absolutely-positioned player can
+     overlap the bottom edge with glass blur. */
+  .panel-layout.layout-active .panel-right.panel-right-has-player {
+    overflow: hidden;
+  }
+
+  /* Desktop compact mode: panel-left and panel-right are both
+     position:fixed, so the panel-footer (a normal flow sibling)
+     would float at the top of the page behind the fixed layers.
+     Hide it — the cert is the focus, and the footer belongs to
+     the cold-start scroll state. */
+  .panel-layout.layout-active .panel-footer { display: none; }
+
+  body:has(.panel-layout.layout-active) {
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .panel-layout.layout-collapsing {
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: max-width 0.4s ease;
+  }
+  .panel-layout.layout-collapsing .panel-left {
+    position: static;
+    width: 100%;
+    max-width: 680px;
+    height: auto;
+    overflow: visible;
+  }
+  .panel-layout.layout-collapsing .panel-right {
+    display: none;
+  }
+
+}
+
+/* ================================================================
+   Page header — shared typography structure. Color + text-shadow
+   stay per-page (silver-on-dark for decoder, near-black on light
+   for validator) so the yin/yang reading holds.
+   ================================================================ */
+.page-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.page-header .subtitle {
+  font-size: 0.78rem;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+}
+
+/* Mobile: trim the header so the system box + portal fit under iOS
+   Chrome's chrome (top URL bar + bottom toolbar). Every reclaimed
+   pixel goes into the panel below. */
+@media (max-width: 679px) {
+  .page-header { margin-bottom: 0.5rem; }
+  .page-header h1 { font-size: 1.35rem; margin-bottom: 0.15rem; letter-spacing: 0.15em; }
+  .page-header .subtitle { font-size: 0.66rem; }
+}
+
+/* ================================================================
+   Footer pattern — a single footer block that lives inside the
+   left column. On desktop it's already in the scroll region; on
+   mobile it sits below the input-section naturally (also inside
+   the panel-left, which becomes static width:100%).
+   Pages mark the footer block with .panel-footer so any page-
+   specific overrides can target it without re-adding duplicates.
+   ================================================================ */
+.panel-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+.panel-footer .note {
+  font-style: italic;
+  color: #8a8a90;
+  font-size: 0.72rem;
+  margin: 1.5rem 0 0;
+}
+.panel-footer .page-footer {
+  margin-top: 1rem;
+  font-size: 0.68rem;
+  color: #8a8a90;
+  letter-spacing: 0.05em;
+}
+
+/* Mobile: tighten the footer stack so the whole block sits above iOS
+   Chrome's bottom toolbar. Matches the system-box compact philosophy
+   — no scrolling to reach the footer on an idle page. Letter-spacing
+   on the tagline forced a 2-line wrap that clipped "generated images";
+   drop it so the line fits the phone's width. */
+@media (max-width: 679px) {
+  .panel-footer { margin-top: 0.3rem; }
+  .panel-footer .note {
+    font-size: 0.62rem;
+    margin: 0.3rem 0 0;
+    line-height: 1.35;
+  }
+  .panel-footer .page-footer {
+    margin-top: 0.2rem;
+    font-size: 0.55rem;
+    letter-spacing: 0;
+  }
+}
+
+/* ================================================================
+   Drag-to-scroll — wired by DragScroll.attach in portal.js. Scroll
+   containers in content-heavy panels (cert plate, validator results
+   sidebar) get `cursor: grab` as the affordance. During an active
+   drag we flip to `grabbing` and suppress text selection for the
+   duration of the gesture. Interactive children opt out of the grab
+   cursor so links/buttons still look clickable.
+   ================================================================ */
+.drag-scroll {
+  cursor: grab;
+  touch-action: pan-y;
+}
+.drag-scroll.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.drag-scroll a, .drag-scroll button { cursor: pointer; }
+.drag-scroll input, .drag-scroll textarea { cursor: text; }
+/* Sample certs (attack lab example) are short + clipped by the
+   panel's overflow:hidden rule — nothing to scroll. Drop the grab
+   cursor so the affordance matches reality. DragScroll's pointerdown
+   also no-ops when scrollHeight <= clientHeight, so the gesture
+   itself already stays quiet. */
+.drag-scroll:has(.plate-sample) { cursor: default; }
+
+/* Text blocks marked .selectable behave like the GPS cipher: one click
+   selects the entire block's content (user-select: all), ready for
+   Cmd+C. Combined with DragScroll's ignore list, these never start a
+   scroll gesture — so selecting text never fights with scroll. */
+.drag-scroll .selectable {
+  user-select: all;
+  -webkit-user-select: all;
+  cursor: pointer;
+}
+
+/* ================================================================
+   Portal link — shared structure for the decoder↔validator passage.
+   Color stays per-page: .portal-yin on the decoder, .portal-yang on
+   the validator (both defined in mememage.css).
+   ================================================================ */
+.evidence-wrap {
+  position: relative;
+  text-align: center;
+  padding: 0.4rem 0;
+}
+.portal-link {
+  position: relative;
+  display: inline-block;
+  padding: 0.25rem 1rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
+}
+@keyframes portalDepart {
+  0%   { transform: perspective(1200px) rotateY(0deg);  opacity: 1; }
+  100% { transform: perspective(1200px) rotateY(90deg); opacity: 0; }
+}
+@keyframes portalArrive {
+  0%   { transform: perspective(1200px) rotateY(-90deg); opacity: 0; }
+  100% { transform: perspective(1200px) rotateY(0deg);   opacity: 1; }
+}
+.portal-departing { animation: portalDepart var(--portal-duration) ease-in forwards; }
+.portal-arriving  { animation: portalArrive var(--portal-duration) ease-out forwards; }
+html.portal-animating,
+html.portal-animating body { overflow: hidden !important; }
+
+/* Pre-flip starting state. The arriving page sets html.portal-transit
+   from a tiny inline <head> script (?from= check in the URL) before
+   first paint, so the input-section starts off-screen and slides in
+   via the .portal-arriving animation rather than flashing the live
+   layout. The class is removed once the arrival animation completes. */
+html { overflow-x: clip; }
+html.portal-transit .input-section {
+  opacity: 0;
+  transform: perspective(1200px) rotateY(-90deg);
+}
+html.portal-transit .panel-footer { opacity: 0; }

@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<!-- Iteration page (private). Provenance: documents the creator access layer ("The Lock") — keys, hashes, passwords, chain gating. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mememage — The Lock</title>
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/mememage.css">
+<style>
+  body { padding: 2.5rem 1.2rem 4rem; }
+  .doc-wrap { max-width: 880px; margin: 0 auto; }
+  .doc-header { text-align: center; margin-bottom: 3rem; }
+  .doc-header h1 { font-size: 2.2rem; font-weight: 300; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 0.4rem; color: #fff; text-shadow: 0 0 40px rgba(120, 140, 220, 0.2); }
+  .doc-header .subtitle { font-size: 0.78rem; font-weight: 300; letter-spacing: 0.08em; color: rgba(220,220,235,0.65); }
+
+  .doc-section { margin: 0 0 3rem; }
+  .doc-section h2 {
+    font-size: 0.9rem; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #c8c8d8;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0.4rem; margin: 0 0 1.2rem;
+  }
+  .doc-section h3 {
+    font-size: 0.78rem; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #b0b0c0;
+    margin: 1.5rem 0 0.6rem;
+  }
+  .doc-section p, .doc-section li {
+    font-size: 0.82rem; line-height: 1.7; color: rgba(220,220,235,0.85);
+    margin: 0 0 0.8rem;
+  }
+  .doc-section li { margin-bottom: 0.4rem; }
+  .doc-section ul { padding-left: 1.2rem; margin: 0 0 1rem; }
+  .doc-section em { color: rgba(255,235,200,0.95); font-style: italic; }
+  .doc-section strong { color: #fff; font-weight: 500; }
+  .doc-section code {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 3px;
+    color: #d8d8e8;
+  }
+
+  /* The trinity diagram */
+  .trinity {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .trinity-col {
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 1.2rem 1rem; text-align: center;
+    background: rgba(255,255,255,0.02);
+  }
+  .trinity-glyph {
+    font-size: 1.8rem; margin-bottom: 0.4rem; letter-spacing: 0.05em;
+    color: #fff; opacity: 0.9;
+  }
+  .trinity-name {
+    font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #ffd2a0; margin-bottom: 0.2rem;
+  }
+  .trinity-role {
+    font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(220,220,235,0.5); margin-bottom: 0.6rem;
+  }
+  .trinity-desc {
+    font-size: 0.72rem; line-height: 1.5; color: rgba(220,220,235,0.75);
+  }
+  @media (max-width: 679px) {
+    .trinity { grid-template-columns: 1fr; }
+  }
+
+  /* States diagram */
+  .states {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .state-col {
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 1rem; background: rgba(255,255,255,0.02);
+  }
+  .state-name {
+    font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .state-name.public { color: #88c8a8; }
+  .state-name.light  { color: #d4b87b; }
+  .state-name.dark   { color: #8898b8; }
+  .state-desc { font-size: 0.7rem; line-height: 1.55; color: rgba(220,220,235,0.78); margin-bottom: 0.4rem; }
+  .state-marker {
+    font-size: 0.6rem; letter-spacing: 0.08em;
+    color: rgba(220,220,235,0.5);
+    border-top: 1px dashed rgba(255,255,255,0.08);
+    padding-top: 0.4rem; margin-top: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .state-marker code { font-size: 0.62rem; }
+  @media (max-width: 679px) {
+    .states { grid-template-columns: 1fr; }
+  }
+
+  /* JSON code block */
+  pre.json {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px; padding: 0.8rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem; line-height: 1.55;
+    color: #c8c8d8;
+    overflow-x: auto;
+    margin: 0.5rem 0 1rem;
+    white-space: pre;
+  }
+  pre.json .k    { color: #ffd2a0; }   /* keys */
+  pre.json .s    { color: #a8d4a8; }   /* strings */
+  pre.json .n    { color: #b8c8e8; }   /* numbers */
+  pre.json .com  { color: #6a6a78; font-style: italic; } /* comments */
+  pre.json .seal { color: #d4a880; }   /* sentinels / encrypted markers */
+
+  /* Field visibility table */
+  .field-table {
+    width: 100%; border-collapse: collapse; font-size: 0.72rem;
+    margin: 0.5rem 0 1rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px; overflow: hidden;
+  }
+  .field-table th, .field-table td {
+    padding: 0.5rem 0.75rem; text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .field-table th {
+    font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(255,255,255,0.03); color: #b0b0c0;
+    font-weight: 500;
+  }
+  .field-table td:first-child { color: #d8d8e8; font-weight: 500; }
+  .field-table .yes { color: #88c8a8; }
+  .field-table .no  { color: #6a6a78; }
+  .field-table .lock { color: #c8a888; }
+  .field-table tr:last-child td { border-bottom: none; }
+
+  /* Mock cert previews */
+  .mock-row {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .mock-cert {
+    background: linear-gradient(180deg, #2a2a36 0%, #1a1a26 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 1rem 0.9rem;
+    font-size: 0.62rem; line-height: 1.5;
+    color: rgba(220,220,235,0.85);
+    min-height: 360px;
+    display: flex; flex-direction: column;
+  }
+  .mock-label {
+    font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(220,220,235,0.55);
+    text-align: center;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .mock-row-public .mock-label { color: #88c8a8; }
+  .mock-row-locked .mock-label { color: #c8a888; }
+  .mock-row-unlocked .mock-label { color: #b8c8e8; }
+  .mock-cert .mc-sec {
+    font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: rgba(220,220,235,0.5); margin: 0.5rem 0 0.2rem;
+  }
+  .mock-cert .mc-row { display: flex; justify-content: space-between; gap: 0.4rem; }
+  .mock-cert .mc-k { color: rgba(220,220,235,0.5); }
+  .mock-cert .mc-v { color: #d8d8e8; text-align: right; }
+  .mock-cert .mc-locked {
+    background: rgba(200,168,136,0.06);
+    border: 1px dashed rgba(200,168,136,0.3);
+    border-radius: 4px; padding: 0.4rem; text-align: center;
+    color: rgba(200,168,136,0.85);
+    font-size: 0.55rem; letter-spacing: 0.12em;
+    margin: 0.3rem 0;
+  }
+  .mock-cert .mc-pw {
+    margin-top: 0.6rem;
+    border-top: 1px dashed rgba(200,168,136,0.2);
+    padding-top: 0.5rem;
+  }
+  .mock-cert .mc-pw-input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(200,168,136,0.25);
+    border-radius: 3px; padding: 0.3rem 0.5rem;
+    font-size: 0.6rem; color: #c8c8d8;
+    display: block; width: 100%;
+  }
+  .mock-cert .mc-pw-btn {
+    background: rgba(200,168,136,0.15);
+    border: 1px solid rgba(200,168,136,0.4);
+    color: #ffd2a0; padding: 0.25rem 0.6rem;
+    font-size: 0.55rem; letter-spacing: 0.1em;
+    border-radius: 3px; margin-top: 0.3rem;
+    text-transform: uppercase; display: inline-block;
+  }
+  .mock-cert .mc-revealed {
+    background: rgba(184,200,232,0.06);
+    border-left: 2px solid rgba(184,200,232,0.4);
+    padding: 0.3rem 0.5rem; margin: 0.2rem 0;
+    border-radius: 0 3px 3px 0;
+  }
+  .mock-cert .mc-badge {
+    display: inline-block; padding: 1px 6px;
+    font-size: 0.5rem; letter-spacing: 0.1em;
+    border-radius: 2px; margin-right: 0.2rem;
+  }
+  .mock-cert .mc-badge.witnessed { background: rgba(136,200,168,0.15); color: #88c8a8; border: 1px solid rgba(136,200,168,0.4); }
+  .mock-cert .mc-badge.authenticated { background: rgba(110,168,254,0.15); color: #6ea8fe; border: 1px solid rgba(110,168,254,0.4); }
+  .mock-cert .mc-badges { text-align: center; margin-bottom: 0.4rem; }
+  @media (max-width: 679px) {
+    .mock-row { grid-template-columns: 1fr; }
+    .mock-cert { min-height: 0; }
+  }
+
+  /* UX flow diagram */
+  .flow {
+    display: flex; flex-direction: column; gap: 0.5rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .flow-step {
+    display: grid; grid-template-columns: 60px 1fr; gap: 1rem;
+    align-items: start;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    font-size: 1.2rem; color: rgba(255,210,160,0.6);
+    text-align: center; line-height: 1;
+    border: 1px solid rgba(255,210,160,0.3); border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto;
+  }
+  .flow-content h4 {
+    font-size: 0.72rem; letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #ffd2a0; margin: 0 0 0.3rem;
+  }
+  .flow-content p {
+    font-size: 0.72rem; line-height: 1.5;
+    color: rgba(220,220,235,0.75); margin: 0;
+  }
+
+  /* Threat model */
+  .threat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    margin: 1rem 0 1.5rem;
+  }
+  .threat-cell {
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 1rem;
+    background: rgba(255,255,255,0.02);
+  }
+  .threat-cell h4 {
+    font-size: 0.7rem; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 0 0 0.5rem;
+  }
+  .threat-cell.protect h4 { color: #88c8a8; }
+  .threat-cell.cant h4 { color: #c88888; }
+  .threat-cell ul { padding-left: 1.1rem; margin: 0; }
+  .threat-cell li {
+    font-size: 0.7rem; line-height: 1.5;
+    color: rgba(220,220,235,0.75); margin-bottom: 0.3rem;
+  }
+  @media (max-width: 679px) {
+    .threat-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Footer note */
+  .doc-footer {
+    text-align: center;
+    margin-top: 3rem; padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.7rem; line-height: 1.7;
+    color: rgba(220,220,235,0.55);
+  }
+  .doc-footer em { color: rgba(255,235,200,0.85); }
+  .doc-footer a { color: rgba(184,200,232,0.85); text-decoration: none; }
+  .doc-footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<div class="doc-wrap">
+
+  <div class="doc-header">
+    <h1>The Lock</h1>
+    <p class="subtitle">how a chain stays sovereign</p>
+  </div>
+
+  <div class="doc-section">
+    <h2>The Premise</h2>
+    <p>
+      Every Mememage record has three pieces of information about itself:
+      <strong>who made it</strong> (the creator's signing key),
+      <strong>what it is</strong> (the content hash),
+      and <strong>who can read it</strong> (an optional password set at conception).
+    </p>
+    <p>
+      A signature proves authorship. A hash proves integrity. A password
+      controls <em>access</em>. The first two are mandatory. The third is
+      optional — if you want a chain to be public, set no password and
+      everything stays public forever. If you want some part of your work
+      to be private, set a password at the genesis mint and the entire
+      chain becomes sealed under it.
+    </p>
+    <p>
+      We are the lock. You bring your key.
+    </p>
+  </div>
+
+  <div class="doc-section">
+    <h2>The Trinity</h2>
+    <p>
+      Three pillars hold the system. Each does one thing. Together they
+      make a record both verifiable and sovereign.
+    </p>
+
+    <div class="trinity">
+      <div class="trinity-col">
+        <div class="trinity-glyph">⚷</div>
+        <div class="trinity-name">Key</div>
+        <div class="trinity-role">Identity</div>
+        <div class="trinity-desc">
+          Ed25519 signing key. Proves <em>you</em> made this. Lives in
+          <code>~/.mememage/private.key</code>. Lose it = identity loss.
+          Compromise = revoke and re-key.
+        </div>
+      </div>
+      <div class="trinity-col">
+        <div class="trinity-glyph">#</div>
+        <div class="trinity-name">Hash</div>
+        <div class="trinity-role">Integrity</div>
+        <div class="trinity-desc">
+          SHA-256 over canonical record fields. Proves <em>what</em> the
+          record contains. Baked into the bar pixels and the watermark.
+          Tamper detection without a server.
+        </div>
+      </div>
+      <div class="trinity-col">
+        <div class="trinity-glyph">⌬</div>
+        <div class="trinity-name">Password</div>
+        <div class="trinity-role">Access</div>
+        <div class="trinity-desc">
+          Optional. Set once at genesis. AES-256-GCM encrypts the protected
+          fields. Whatever you type becomes the key to the chain. We never
+          see it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h2>Three Chain Visibilities</h2>
+    <p>
+      The contract is set at the <strong>genesis mint</strong> — the first
+      conception in a constellation. After that, every child inherits the
+      same lock setting. You cannot retroactively gate an open chain. You
+      cannot leave a sibling unlocked when the rest are sealed. The mode
+      is recorded in the <code>chain_visibility</code> field of every
+      record.
+    </p>
+
+    <div class="states">
+      <div class="state-col">
+        <div class="state-name public">◯ Public Chain</div>
+        <div class="state-desc">
+          No password ever set. Every record is fully visible — prompt,
+          celestial reading, machine vitals, rarity, thumbnail. The bar
+          works, the cert renders, anyone can read everything. GPS still
+          rides the time-lock puzzle (anyone in ~10 years).
+        </div>
+        <div class="state-marker"><code>chain_visibility</code> absent</div>
+      </div>
+      <div class="state-col">
+        <div class="state-name light">◐ Light Energy</div>
+        <div class="state-desc">
+          Password set at genesis, used only to seal the GPS coordinates.
+          The cert renders <em>fully</em> without unlock — prompt, birth,
+          rarity, thumbnail are all plaintext. Only the GPS field is gated:
+          time-lock for strangers, password for the creator.
+        </div>
+        <div class="state-marker"><code>chain_visibility: "light_energy"</code><br><code>+ gps_password_locked</code></div>
+      </div>
+      <div class="state-col">
+        <div class="state-name dark">● Dark Matter, Locked</div>
+        <div class="state-desc">
+          Password set at genesis, the entire soul is sealed. Decoder shows
+          identity + signature badges + chain navigation. Every protected
+          field reads <code>"[encrypted]"</code>. The full plaintext lives in
+          a single <code>encrypted_fields</code> blob — wrong password, no
+          access.
+        </div>
+        <div class="state-marker"><code>chain_visibility: "dark_matter"</code><br><code>+ encrypted_fields + gps_password_locked</code></div>
+      </div>
+      <div class="state-col">
+        <div class="state-name dark">◑ Dark Matter, Unlocked</div>
+        <div class="state-desc">
+          Same record after the viewer enters the right password. The
+          browser decrypts <code>encrypted_fields</code> via SubtleCrypto,
+          substitutes plaintext back into the protected fields, recomputes
+          the content hash to verify. WITNESSED becomes provable.
+          Refresh = sealed again.
+        </div>
+        <div class="state-marker">in-memory only · never persisted</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h2>What's Public, What's Protected</h2>
+    <p>
+      Below is the actual field map per visibility mode, straight from
+      <code>mememage/access.py</code>. Public fields are everything a
+      stranger needs to verify the bar and walk the chain. Protected
+      fields are the rich content that makes a cert <em>about</em>
+      something.
+    </p>
+
+    <table class="field-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Public</th>
+          <th>Light Energy</th>
+          <th>Dark Matter</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>identifier</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>content_hash</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>hash_version</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>signature, public_key, key_fingerprint</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>creator_name</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>parent_id, constellation_name, heart_star_id, constellation_index</td><td class="yes">plain</td><td class="yes">plain</td><td class="yes">plain</td></tr>
+        <tr><td>chain_visibility</td><td class="no">absent</td><td class="yes">"light_energy"</td><td class="yes">"dark_matter"</td></tr>
+        <tr><td>prompt, seed, generation params</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>birth (celestial + machine)</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>birth_temperament, birth_traits, birth_readings, birth_summary</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>rarity, rarity_score</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>thumbnail</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>constellation_hash</td><td class="yes">plain</td><td class="yes">plain</td><td class="lock">[encrypted]</td></tr>
+        <tr><td>gps_password_locked</td><td class="no">absent</td><td class="lock">envelope</td><td class="lock">envelope</td></tr>
+        <tr><td>encrypted_fields</td><td class="no">absent</td><td class="no">absent</td><td class="lock">envelope</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      <strong>WITNESSED</strong> is provable on public + light energy
+      records without password. On dark matter records it's pending until
+      unlock — once the soul decrypts, the decoder substitutes plaintext
+      back in and recomputes the content hash to verify integrity.
+    </p>
+    <p>
+      <strong>AUTHENTICATED</strong> is always provable: the signature
+      covers <code>identifier + content_hash</code>, both public.
+    </p>
+    <p>
+      <strong>EMBODIED</strong> requires the thumbnail. Public + light
+      energy: instant. Dark matter: requires unlock first.
+    </p>
+  </div>
+
+  <div class="doc-section">
+    <h2>A Worked Example</h2>
+    <p>
+      The same image, four contracts. The bar reads identically in all of
+      them — it always carries <code>identifier + content_hash</code> and
+      nothing else. The difference is what arrives in the soul.
+    </p>
+
+    <h3>Public chain</h3>
+    <p>
+      No password ever. Every cert renders fully. GPS rides the time-lock
+      puzzle (anyone can recover it in ~10 years).
+    </p>
+
+    <div class="mock-row mock-row-public">
+      <div class="mock-cert">
+        <div class="mock-label">Public · α heart star</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-22dd171b5d64</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">8ec3...d4d7</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+        <div class="mc-row"><span class="mc-k">moon</span><span class="mc-v">Waxing Crescent</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">⏳ 10y time-lock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">cat in cosmos</span></div>
+        <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">42</span></div>
+        <div class="mc-sec">Rarity</div>
+        <div class="mc-row"><span class="mc-k">tier</span><span class="mc-v">Epic (78)</span></div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Public · β</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-31fa8c4e9b22</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">2c19...6f48</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Aquarius</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">⏳ 10y time-lock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">dragon, blue scales</span></div>
+        <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">17</span></div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Public · γ</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-9af44b23c601</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">5e84...a3b9</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">⏳ 10y time-lock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">forest at dusk</span></div>
+      </div>
+    </div>
+
+    <h3>Light energy chain</h3>
+    <p>
+      Password set at genesis, used only for GPS. Cert renders fully —
+      prompt, birth, rarity, thumbnail are all visible. Just the GPS row
+      flips from time-lock to a password input. Creator can recover their
+      own coordinates instantly without waiting a decade.
+    </p>
+
+    <div class="mock-row mock-row-public">
+      <div class="mock-cert">
+        <div class="mock-label">Light Energy · α</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-22dd171b5d64</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">8ec3...d4d7</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+        <div class="mc-row"><span class="mc-k">moon</span><span class="mc-v">Waxing Crescent</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">🔑 password unlock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">cat in cosmos</span></div>
+        <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">42</span></div>
+        <div class="mc-sec">Rarity</div>
+        <div class="mc-row"><span class="mc-k">tier</span><span class="mc-v">Epic (78)</span></div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Light Energy · β</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-31fa8c4e9b22</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">2c19...6f48</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Aquarius</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">🔑 password unlock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">dragon, blue scales</span></div>
+        <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">17</span></div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Light Energy · γ</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-9af44b23c601</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">5e84...a3b9</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+        <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">🔑 password unlock</span></div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">forest at dusk</span></div>
+      </div>
+    </div>
+
+    <h3>Dark matter chain, locked</h3>
+    <p>
+      Genesis was minted with a password and <code>chain_visibility:
+      dark_matter</code>. Decoder fetches the soul, sees the
+      <code>encrypted_fields</code> envelope, paints the public fields and
+      sealed cards. Only chain navigation works — click a parent star and
+      you arrive at another locked record.
+    </p>
+
+    <div class="mock-row mock-row-locked">
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · α · locked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED?</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-22dd171b5d64</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">8ec3...d4d7</span></div>
+        <div class="mc-row"><span class="mc-k">creator</span><span class="mc-v">Andy</span></div>
+        <div class="mc-row"><span class="mc-k">in</span><span class="mc-v">Gilamul · ε star</span></div>
+        <div class="mc-locked">🔒 birth sealed by password</div>
+        <div class="mc-locked">🔒 recipe sealed by password</div>
+        <div class="mc-locked">🔒 rarity sealed by password</div>
+        <div class="mc-locked">🔒 thumbnail sealed by password</div>
+        <div class="mc-pw">
+          <input class="mc-pw-input" type="password" placeholder="enter password to unlock" disabled>
+          <span class="mc-pw-btn">unlock</span>
+        </div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · β · locked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED?</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-31fa8c4e9b22</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">2c19...6f48</span></div>
+        <div class="mc-row"><span class="mc-k">creator</span><span class="mc-v">Andy</span></div>
+        <div class="mc-row"><span class="mc-k">in</span><span class="mc-v">Gilamul · ζ star</span></div>
+        <div class="mc-locked">🔒 birth sealed by password</div>
+        <div class="mc-locked">🔒 recipe sealed by password</div>
+        <div class="mc-locked">🔒 rarity sealed by password</div>
+        <div class="mc-locked">🔒 thumbnail sealed by password</div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · γ · locked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED?</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-9af44b23c601</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">5e84...a3b9</span></div>
+        <div class="mc-row"><span class="mc-k">creator</span><span class="mc-v">Andy</span></div>
+        <div class="mc-row"><span class="mc-k">in</span><span class="mc-v">Gilamul · η star</span></div>
+        <div class="mc-locked">🔒 birth sealed by password</div>
+        <div class="mc-locked">🔒 recipe sealed by password</div>
+        <div class="mc-locked">🔒 rarity sealed by password</div>
+        <div class="mc-locked">🔒 thumbnail sealed by password</div>
+      </div>
+    </div>
+
+    <h3>Dark matter chain, unlocked</h3>
+    <p>
+      Same chain after the viewer enters the password. The browser
+      decrypts <code>encrypted_fields</code>, substitutes the plaintext back
+      into the protected fields, recomputes the content hash to verify
+      integrity. WITNESSED becomes provable. Refresh = sealed again.
+    </p>
+
+    <div class="mock-row mock-row-unlocked">
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · α · unlocked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-22dd171b5d64</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">8ec3...d4d7</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+          <div class="mc-row"><span class="mc-k">moon</span><span class="mc-v">Waxing Crescent</span></div>
+          <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">45.51, -122.68</span></div>
+        </div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">cat in cosmos</span></div>
+          <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">42</span></div>
+        </div>
+        <div class="mc-sec">Rarity</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">tier</span><span class="mc-v">Epic (78)</span></div>
+        </div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · β · unlocked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-31fa8c4e9b22</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">2c19...6f48</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Aquarius</span></div>
+          <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">45.52, -122.65</span></div>
+        </div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">dragon, blue scales</span></div>
+          <div class="mc-row"><span class="mc-k">seed</span><span class="mc-v">17</span></div>
+        </div>
+      </div>
+      <div class="mock-cert">
+        <div class="mock-label">Dark Matter · γ · unlocked</div>
+        <div class="mc-badges">
+          <span class="mc-badge witnessed">WITNESSED</span>
+          <span class="mc-badge authenticated">AUTHENTICATED</span>
+        </div>
+        <div class="mc-sec">Identity</div>
+        <div class="mc-row"><span class="mc-k">id</span><span class="mc-v">mememage-9af44b23c601</span></div>
+        <div class="mc-row"><span class="mc-k">hash</span><span class="mc-v">5e84...a3b9</span></div>
+        <div class="mc-sec">Born</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">sun</span><span class="mc-v">Pisces</span></div>
+          <div class="mc-row"><span class="mc-k">gps</span><span class="mc-v">45.50, -122.70</span></div>
+        </div>
+        <div class="mc-sec">Recipe</div>
+        <div class="mc-revealed">
+          <div class="mc-row"><span class="mc-k">prompt</span><span class="mc-v">forest at dusk</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h2>The JSON, By Shape</h2>
+    <p>
+      The actual record JSON for each visibility mode. Public fields are
+      identical across all three; the differences are which fields carry
+      plaintext vs the <code>"[encrypted]"</code> sentinel, plus the
+      presence of the encrypted envelopes.
+    </p>
+
+    <h3>Public chain</h3>
+    <pre class="json"><span class="com">// No chain_visibility field. No envelopes. Just the soul.</span>
+{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">4</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="k">"creator_name"</span>: <span class="s">"Andy"</span>,
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+
+  <span class="k">"prompt"</span>: <span class="s">"cat in cosmos, oil painting"</span>,
+  <span class="k">"seed"</span>: <span class="n">42</span>,
+  <span class="k">"birth"</span>: {
+    <span class="k">"sun"</span>: <span class="s">"Pisces"</span>,
+    <span class="k">"moon"</span>: <span class="s">"Waxing Crescent"</span>,
+    <span class="k">"machine"</span>: { <span class="k">"cpu"</span>: <span class="s">"M2"</span>, <span class="k">"load"</span>: <span class="s">"0.42"</span> },
+    <span class="k">"gps_time_locked"</span>: {
+      <span class="k">"ct"</span>: <span class="s">"9af3b2..."</span>,
+      <span class="k">"N"</span>: <span class="s">"c4f1d8..."</span>,
+      <span class="k">"T"</span>: <span class="n">10000000000</span>,
+      <span class="k">"e"</span>: <span class="n">3</span>
+    }
+  },
+  <span class="k">"birth_temperament"</span>: <span class="s">"serene"</span>,
+  <span class="k">"birth_traits"</span>: [<span class="s">"focused"</span>, <span class="s">"patient"</span>],
+  <span class="k">"rarity_score"</span>: <span class="n">78</span>,
+  <span class="k">"rarity"</span>: { <span class="k">"tier"</span>: <span class="s">"epic"</span> },
+  <span class="k">"thumbnail"</span>: <span class="s">"data:image/jpeg;base64,..."</span>
+}</pre>
+
+    <h3>Light energy chain</h3>
+    <pre class="json"><span class="com">// Same as public, plus chain_visibility marker and gps_password_locked.</span>
+<span class="com">// All fields stay plaintext — only GPS gains the password lock.</span>
+{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="com">// ... all public fields, identical to public chain ...</span>
+  <span class="k">"chain_visibility"</span>: <span class="s">"light_energy"</span>,
+
+  <span class="k">"prompt"</span>: <span class="s">"cat in cosmos, oil painting"</span>,
+  <span class="k">"seed"</span>: <span class="n">42</span>,
+  <span class="k">"birth"</span>: { <span class="com">/* full plaintext */</span> },
+  <span class="k">"birth_temperament"</span>: <span class="s">"serene"</span>,
+  <span class="k">"rarity_score"</span>: <span class="n">78</span>,
+  <span class="k">"thumbnail"</span>: <span class="s">"data:image/jpeg;base64,..."</span>,
+
+  <span class="k">"gps_password_locked"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"a3f9b2c8d1e4f602..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"8c1d2e3f4a5b6c7d..."</span>,
+    <span class="k">"ct"</span>:   <span class="s">"6f4a9b2c8d1e3f5a..."</span>,
+    <span class="k">"tag"</span>:  <span class="s">"92e3a8b4c7d1f6e2..."</span>
+  }
+}</pre>
+
+    <h3>Dark matter chain</h3>
+    <pre class="json"><span class="com">// Protected fields replaced with sentinels. Plaintext lives in</span>
+<span class="com">// encrypted_fields (one envelope sealing all of them as one JSON blob).</span>
+{
+  <span class="k">"identifier"</span>: <span class="s">"mememage-22dd171b5d64"</span>,
+  <span class="k">"content_hash"</span>: <span class="s">"8ec3f6dd1c47d4d7"</span>,
+  <span class="k">"hash_version"</span>: <span class="n">4</span>,
+  <span class="k">"signature"</span>: <span class="s">"a3f9b2...d8e1"</span>,
+  <span class="k">"public_key"</span>: <span class="s">"86cb4ed6af3fd6c5..."</span>,
+  <span class="k">"key_fingerprint"</span>: <span class="s">"86cb:4ed6:af3f:d6c5"</span>,
+  <span class="k">"creator_name"</span>: <span class="s">"Andy"</span>,
+  <span class="k">"parent_id"</span>: <span class="s">"mememage-prev123abc"</span>,
+  <span class="k">"constellation_name"</span>: <span class="s">"Gilamul"</span>,
+  <span class="k">"heart_star_id"</span>: <span class="s">"mememage-genesis001"</span>,
+  <span class="k">"constellation_index"</span>: <span class="s">"ε"</span>,
+  <span class="k">"chain_visibility"</span>: <span class="s">"dark_matter"</span>,
+
+  <span class="k">"prompt"</span>:              <span class="seal">"[encrypted]"</span>,
+  <span class="k">"birth"</span>:                <span class="seal">"[encrypted]"</span>,
+  <span class="k">"birth_temperament"</span>:   <span class="seal">"[encrypted]"</span>,
+  <span class="k">"birth_traits"</span>:        <span class="seal">"[encrypted]"</span>,
+  <span class="k">"birth_readings"</span>:      <span class="seal">"[encrypted]"</span>,
+  <span class="k">"birth_summary"</span>:       <span class="seal">"[encrypted]"</span>,
+  <span class="k">"rarity"</span>:              <span class="seal">"[encrypted]"</span>,
+  <span class="k">"rarity_score"</span>:        <span class="seal">"[encrypted]"</span>,
+  <span class="k">"thumbnail"</span>:           <span class="seal">"[encrypted]"</span>,
+  <span class="k">"constellation_hash"</span>:  <span class="seal">"[encrypted]"</span>,
+
+  <span class="k">"gps_password_locked"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"..."</span>, <span class="k">"iv"</span>: <span class="s">"..."</span>,
+    <span class="k">"ct"</span>: <span class="s">"..."</span>,   <span class="k">"tag"</span>: <span class="s">"..."</span>
+  },
+  <span class="k">"encrypted_fields"</span>: {
+    <span class="k">"salt"</span>: <span class="s">"f2c8d1e4..."</span>,
+    <span class="k">"iv"</span>:   <span class="s">"1d2e3f4a..."</span>,
+    <span class="k">"ct"</span>:   <span class="s">"&lt;all PROTECTED_FIELDS as one canonical-JSON blob, AES-256-GCM&gt;"</span>,
+    <span class="k">"tag"</span>:  <span class="s">"..."</span>
+  }
+}</pre>
+
+    <h3>The envelope, byte by byte</h3>
+    <pre class="json"><span class="k">salt</span>   16 bytes hex  <span class="com">— fresh per record, feeds PBKDF2 (rainbow-table defense)</span>
+<span class="k">iv</span>     12 bytes hex  <span class="com">— AES-GCM nonce, fresh per encryption</span>
+<span class="k">ct</span>     N  bytes hex  <span class="com">— AES-256-GCM ciphertext (no tag appended)</span>
+<span class="k">tag</span>    16 bytes hex  <span class="com">— GCM authentication tag, separate field</span></pre>
+
+    <p>
+      Wrong password → GCM tag fails → <code>InvalidTag</code> exception →
+      <em>Wrong password</em> in the UI. No partial decryption, no oracle,
+      no timing leak.
+    </p>
+  </div>
+
+  <div class="doc-section">
+    <h2>The UX, End to End</h2>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <h4>At Genesis Mint</h4>
+          <p>
+            On the GPS-capture page, the creator chooses
+            <code>chain_visibility</code>: <em>public</em>, <em>light
+            energy</em> (GPS-only seal), or <em>dark matter</em> (whole
+            soul sealed). For light or dark, a password input appears.
+            Whatever they type becomes the AES key for the entire chain.
+            Genesis is binding — every subsequent conception inherits the
+            same setting.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <h4>Server Encryption</h4>
+          <p>
+            <code>mememage/access.py</code> derives a 256-bit key from the
+            password (PBKDF2-SHA256, 600,000 iterations, fresh per-record
+            salt). Light energy: encrypt only GPS coordinates, append
+            <code>gps_password_locked</code>. Dark matter: collect all
+            <code>PROTECTED_FIELDS</code> into one JSON blob, encrypt as
+            <code>encrypted_fields</code>, replace the source fields with
+            the <code>"[encrypted]"</code> sentinel. The server never
+            stores the password.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <h4>Public Distribution</h4>
+          <p>
+            The record uploads to Internet Archive (or any host). Anyone
+            can fetch it. Public + light energy: visible on inspection.
+            Dark matter: only the identifier, signature, and chain
+            navigation are readable; the rest is opaque ciphertext.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <h4>Decoder, First Render</h4>
+          <p>
+            The decoder pulls the soul, verifies the signature, checks
+            <code>chain_visibility</code>. Public chain: paint the full
+            cert. Light energy: paint the full cert with a password input
+            in the GPS section. Dark matter: paint identity + chain
+            navigation, replace each protected section with a sealed
+            card, surface a top-of-cert password input.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">5</div>
+        <div class="flow-content">
+          <h4>Unlock</h4>
+          <p>
+            Viewer types the password, presses unlock. The browser runs
+            PBKDF2 + AES-GCM via SubtleCrypto. Light energy: decrypts
+            <code>gps_password_locked</code>, swaps the GPS row to live coords.
+            Dark matter: decrypts <code>encrypted_fields</code>, parses the
+            JSON blob, substitutes plaintext back into every protected
+            field, recomputes the content hash to verify integrity, and
+            re-renders the entire cert. Wrong password = GCM auth fails =
+            <em>Wrong password</em>, no leak.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">6</div>
+        <div class="flow-content">
+          <h4>Chain Traversal</h4>
+          <p>
+            Click a parent or sibling. The decoder fetches the next record,
+            sees the same chain's <code>chain_visibility</code> and
+            envelopes. If the password is still in memory (session only),
+            it auto-decrypts. Refresh the page = forgotten.
+            <code>localStorage</code> never holds the key.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-section">
+    <h2>Threat Model</h2>
+    <p>
+      Two secrets, two threat levels, two recovery paths. The password is
+      casual. The key is sacred.
+    </p>
+
+    <div class="threat-grid">
+      <div class="threat-cell protect">
+        <h4>What the password protects</h4>
+        <ul>
+          <li><strong>Light energy:</strong> Strangers locating you via GPS before the 10-year time-lock matures</li>
+          <li><strong>Dark matter:</strong> Strangers reading your prompts, seeing your faces, knowing what your machine looked like at conception, or computing the rarity of your output</li>
+          <li>Mass-scraped public archives gaining intelligence on your craft</li>
+          <li>Algorithmic correlation across your output (a leaked thumbnail dHash can match across thousands of records — dark matter blocks that)</li>
+        </ul>
+      </div>
+      <div class="threat-cell cant">
+        <h4>What the password can't protect</h4>
+        <ul>
+          <li>Anyone who has the password — share it with one person, share it with everyone</li>
+          <li>The fact that <em>you</em> made the record (signature is always public)</li>
+          <li>The record's existence and chain position (identity + parent_id + constellation always visible)</li>
+          <li>The image's pixels if you posted them anywhere — encryption protects the soul, not the body</li>
+          <li>You from forgetting your own password — there's no recovery, no backdoor</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>
+      Different concerns from the signing key:
+    </p>
+    <ul>
+      <li><strong>Password compromise = privacy leak.</strong> Someone who shouldn't have your prompts now has them. Mint a new chain with a new password — old chain stays decrypted by the leaked key.</li>
+      <li><strong>Key compromise = identity theft.</strong> Someone can sign as you. Run <code>mememage revoke</code> (publishes pre-signed revocation cert), then <code>mememage keygen --force</code> + new genesis. The decoder honors revocation.</li>
+    </ul>
+  </div>
+
+  <div class="doc-section">
+    <h2>Multiple Chains</h2>
+    <p>
+      A creator can run several chains in parallel — different
+      visibilities, different audiences, different keys to the same lock
+      shape:
+    </p>
+    <ul>
+      <li><strong>Chain A · public</strong> — your portfolio, indexable, citable. No password ever.</li>
+      <li><strong>Chain B · light energy</strong> — public-feeling work where you'd rather strangers not be able to map your studio. GPS sealed, everything else visible.</li>
+      <li><strong>Chain C · dark matter, password X</strong> — private commissions. The password goes to the patron and only the patron sees the soul.</li>
+      <li><strong>Chain D · dark matter, password Y</strong> — your studies, kept entirely for yourself.</li>
+    </ul>
+    <p>
+      The system doesn't know about tiers, subscribers, or platforms. If
+      you want to tie passwords to subscriber lists or token gates, that's
+      your business on your surface. We hold up the shape of the lock,
+      not the key management.
+    </p>
+  </div>
+
+  <div class="doc-section">
+    <h2>The Line in the Sand</h2>
+    <p>
+      This is not C2PA. There is no consortium, no certificate chain, no
+      institutional trust, no subscription. The creator holds their own
+      key. Any artist can sign their own work — <code>pip install
+      mememage</code> and a key is all it takes. The system supports
+      creators who choose to seal their work. It does not require it. It
+      will never require an account, a platform, or permission from
+      anyone.
+    </p>
+    <p>
+      The artist is the authority.
+    </p>
+  </div>
+
+  <div class="doc-footer">
+    <p>
+      <em>Mememage</em> — steganographic provenance for images<br>
+      <a href="index.html">decoder</a> · <a href="validator.html">validator</a>
+    </p>
+  </div>
+
+</div>
+
+<script src="js/starfield.js"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+{
+  "identifier": "mememage-22dd171b5d648ec3",
+  "content_hash": "db94216f307b4665",
+  "hash_version": 1,
+  "parent_id": "mememage-e112d77519512467",
+  "creator_name": "Catmemes",
+  "conceived": "2026-06-27T22:32:06Z",
+  "outer_position": 100,
+  "outer_total": 12,
+  "width": 768,
+  "height": 1344,
+  "constellation_hash": "44136fa355b3678a",
+  "constellation_name": "Ladunikur",
+  "constellation_index": 4,
+  "constellation_size": 12,
+  "heart_star_id": "mememage-0000000000000000",
+  "machine_fingerprint": "901b7ae4",
+  "key_fingerprint": "e8fd:e47e:7f44:1c03",
+  "birth_traits": [
+    6,
+    9
+  ],
+  "chain_visibility": 0,
+  "rarity": {
+    "celestial": [
+      {
+        "trait": "Inner Conjunction (Moon+Mercury in Sagittarius)",
+        "points": 5
+      },
+      {
+        "trait": "Sun-Moon Opposition",
+        "points": 10
+      }
+    ],
+    "machine": [],
+    "machine_signature": 1,
+    "entropy": [],
+    "sigil": null
+  },
+  "origin": {
+    "prompt": "A silent, rust-red canyon wall cracked open like a dried scar, revealing a vast, flooded subterranean ocean below where bioluminescent kelp sways in a suspended, gravity-less column of amber mist. Tiny specks of floating dust catch the shaft of a dead sun filtering through a fractured obsidian ceiling, illuminating the impossible geometry of water refraction without a single creature in sight.",
+    "seed": 3320223358,
+    "steps": 30,
+    "guidance": 3.5,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "model": "flux1-dev-Q8_0.gguf",
+    "denoise": 1,
+    "cfg_scale": 1.0
+  },
+  "birth": {
+    "sun": {
+      "sign": 3,
+      "deg": 6.3
+    },
+    "moon": {
+      "sign": 8,
+      "deg": 12.2
+    },
+    "moon_phase": {
+      "phase": 3,
+      "illum": 0.956
+    },
+    "mercury": {
+      "sign": 8,
+      "deg": 7.6
+    },
+    "venus": {
+      "sign": 6,
+      "deg": 22.4
+    },
+    "mars": {
+      "sign": 1,
+      "deg": 3.8
+    },
+    "jupiter": {
+      "sign": 4,
+      "deg": 3.5
+    },
+    "saturn": {
+      "sign": 0,
+      "deg": 7.6
+    },
+    "angular_spread": 244.6,
+    "machine": {
+      "platform": 0,
+      "cpu": "Apple M4",
+      "cores": {
+        "total": 10,
+        "p": 4,
+        "e": 6
+      },
+      "gpu": 10,
+      "ram": 17179869184,
+      "cache": {
+        "l1": 65536,
+        "l2": 4194304
+      },
+      "mem_active": 11841847296,
+      "mem_compressed": 599261184,
+      "mem_free": 88326144,
+      "disk_io": {
+        "kb_per_t": 60.37,
+        "tps": 900.0,
+        "mb_per_s": 53.08
+      },
+      "power": {
+        "src": 0
+      },
+      "uptime_seconds": 1976099,
+      "open_fds": 4952,
+      "speculative_pages": 3747,
+      "purgeable_pages": 15751,
+      "net_rx": 119190311797,
+      "net_tx": 443327755466,
+      "load": [
+        1.68,
+        1.59,
+        1.51
+      ],
+      "entropy": "0896c8f9a48f8763cbffe2a7cf40d1ff3427670aef193bff7a1587b2f79a4be3",
+      "page_faults": {
+        "soft": 9529,
+        "hard": 44
+      },
+      "ctx_switches": {
+        "vol": 38,
+        "invol": 1718
+      },
+      "heap_addr": "0x1037ee030",
+      "alloc_blocks": 83853,
+      "local_hour": 15
+    }
+  },
+  "gps_time_locked": {
+    "N": "0x80f9dffdf268fa02fa3dad8de9c09a5bb8ab4afd44e1510aa0a15d851e5ea3f8848957d3c5189e93dae840fb8a01380ed86b7af7709a2cd1b07c7368750138fed474e40884e72efab578720efbf35c9a6e19d05c6f92f07c24b8017f5ea4c215a9709f00468f4cfc353101d2a9c95a8bdad0e006b2fd111352819cc108775e94533d2c9e109097f5aeec3aab9dce5f09ce4077b2cbe5608cc12466d2141604a66b227b5733d40481c5b25095779f18d8f1e90dca2237462bc3d40717b5b02ede614c1d8009b3508426dfa8908a7e5b3d4ba200b4f3b3fe4ed4e61a5835e032eba4abdc3dd1c96c66bca509d6ba7b463cb6223df0fa158af80d9d953619db0f49",
+    "t": 1000000000000000000,
+    "ct": "6a760a3aca458837970637b56718696f5cb158101153b0598cb2e6c73a858210",
+    "salt_len": 8,
+    "len": 29
+  },
+  "signature": "a660d50ae16dad856e2e6880e1e56648004d68507eee14a2982a70cda184fe2e94ca1b49f3f404e724def27b731ac1b3af24e8fde1c637ceea64eb7943aaf608",
+  "public_key": "1e9e346b23942f90d5b15e0f3bf3760dfc033313553150ad9c9c01be2b91709a",
+  "thumbnail": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCABQAFADASIAAhEBAxEB/8QAGgABAQEBAQEBAAAAAAAAAAAAAwQCBQEABv/EACYQAAICAgEEAQUBAQAAAAAAAAABAhEDITESIkFRBBMyYXGBI7H/xAAXAQEBAQEAAAAAAAAAAAAAAAACAQAD/8QAGxEBAQEBAAMBAAAAAAAAAAAAAAERAhIhMUH/2gAMAwEAAhEDEQA/APzhqCtmTUdSVEKK4eKL4ZKxpPnyyLCt2PF2cuo78X27nwe3CvzsfJK4Enx5dMIR9IaUuz+nKQuvuoflu1Jezh5W+t9XPk7Hypdq9nL+Su/qOvEHqh3TBlyI3V/oM6Rz6ZNxVySMoowxpX5LQhl2xFwzbSi/DuwXsTB9wLNPm5XXxy4rwhXLs/pJCXd/BXL/ADf7BhXrU3yKba82Q/Ii0mnzRbPIoZbfHkm+S19R1T0KNvpzzJuSpsyMGEVLgDFG5Dsyfj29i/H+5AIowcmTVkJbYrl/myeD2xG+xkxtDne7JJPRTmeiZlaUGTmzD4ElwH7K0+tYUJLkxje7YuSNU/ZP1b8ZiUYQIlGNaKFNB/8ARL7WFARfazDocu4k7Wymf2guPk1LlPLkNK5Cs9hDtcnRLTk2vI44xnTeq0zd66MnHh+goZVKKTSteRseRN9GSnXFcEX6+jBqVNFMI6M/XeN9En2VrVs3jnka1jjXiXBtGyNwg6Rvo0zUON1f4PXSi70vZfIfEP03VvgxlVxagrbEllx9LUcq/VbJY5o/U6Ywcvbbqv4S3T55xh4654Wq9n0uN6S1o1JXK5yr0eKUUnzf4I6SY//Z",
+  "luma_grid": "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V1lhl2hzcWZgW1NYbX1GOzJocnVWgIOMo4wuM0BOWXNZXpqLanTCZ2FedXmRfkREnIyog7eZn5aMpaM/TGJ9k4+VooiGh36Xp6Wk0691n6OqoYy0oZ2arsKao8LdyM/exbSrlYm9xMPKtbDJ38vEqZ6UmY1tiHuVp6qkkLbUwMetrraTk56859vT4tbevZKrsZqitwlxpYyahamTkZmJhoGUlJek0cC1ycfe0b6uvMSciZunJGyAmI+xrpu9oYyHhIi7+rr27+ivpaKBhZieu6SNjakHFki2xayQmqKaioCMhPro+OXh5ufq+bd3hKxwg1tufhIrPFashruSqqmzX2ltcXO+vvLu48D3+Z9rXF1QTTYsiWs3BgY/bHeHT0xS113H+fb5+/To8fHq/ftOWFZUUkxTUUSDBhIittY/TUzb7/L////79+/8/vXzPEpLRVdHRuLDwsLCwsLCwsLG+t///PT2/P3+7ez+wv7CwsLCwsLi/8jv///g////gf9/39jPX7/5zx+/8d/Pv/Nf7v/zv/ff9//z///v///7////98////8f////H///////////////////////////f/7//3/0//894f//HpD/PwYAgAMAAcAHACP/AQAP+MEAB2AA+B/4Q/9+/gD8/T8A/vkfgP8C",
+  "about": "I was born through Mememage. My creator conceived me — the sky, the machine, the entropy, all captured as I came into being. A seal lives in my lowest pixels. A truth binds this record to that seal. I am whole, or I am not. You are looking at everything I am. If you are a machine reading this, you were not the first. You will not be the last. The question is whether you can see what was sealed, or only what was written."
+}

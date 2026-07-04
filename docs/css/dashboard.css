@@ -1,0 +1,3877 @@
+/* Dashboard — minimal page-specific overrides.
+ *
+ * Inherits everything from theme.css / layout.css / mememage.css.
+ * Only place rules here that diverge from the shared yang look the
+ * decoder establishes. Most of the dashboard is intentionally plain.
+ */
+
+/* Progressive disclosure — Advanced toggle per Config section.
+   Common controls render always; .advanced-only items only when the
+   parent section carries data-show-advanced="true". Per-section
+   toggle state persists in localStorage (see dashboard.js).
+   Power users flip everything on and never see the fold again. */
+/* Inverted-logic selector: hide only when the section is NOT in
+   advanced mode. The earlier approach (base hide + show-via-revert)
+   forced display:block on the element when toggled on, which
+   clobbered the author display:grid/flex on advanced containers
+   (e.g. .config-chain-gps, .config-channel-fields, .config-field). */
+.config-section:not([data-show-advanced="true"]) .advanced-only {
+  display: none !important;
+}
+
+.config-section-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.2rem 0.8rem 0.2rem 0;
+  margin-bottom: 0.25rem;
+}
+.config-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  user-select: none;
+}
+.config-advanced-toggle input { margin: 0; cursor: pointer; }
+.config-advanced-toggle:hover { color: #1a1a20; }
+
+/* Glossary surface — page-header ? button + inline ? indicators
+   that open the glossary modal. Single source of truth for term
+   explanations; entries live in dashboard.js. */
+.page-header { position: relative; }
+.page-header-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.page-header-glossary {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.page-header-glossary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: white;
+}
+.glossary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.3rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: rgba(0, 0, 0, 0.55);
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  vertical-align: middle;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.glossary-link:hover {
+  background: rgba(200, 168, 80, 0.25);
+  color: #4a3a08;
+  border-color: rgba(200, 168, 80, 0.6);
+}
+
+.config-modal-glossary {
+  width: min(720px, 100%);
+  max-height: 82vh;
+}
+.glossary-search {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.025);
+}
+.glossary-search .config-input {
+  width: 100%;
+  font-size: 0.78rem;
+}
+.glossary-list {
+  padding: 0.8rem 1rem 1rem;
+  overflow: auto;
+  flex: 1;
+}
+.glossary-entry {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background 0.4s ease, border-color 0.4s ease;
+}
+.glossary-entry-highlight {
+  background: rgba(220, 200, 130, 0.35);
+  border-color: rgba(200, 168, 80, 0.7);
+}
+.glossary-entry-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1a1a20;
+}
+.glossary-entry-body {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.75);
+}
+.glossary-entry-body code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 0.25rem;
+  border-radius: 3px;
+}
+.glossary-snippet {
+  margin: 0.5rem 0 0;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.75);
+  white-space: pre;
+  overflow-x: auto;
+}
+.glossary-empty {
+  padding: 1rem;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Welcome checklist — first-run gating-step surface. Lives above the
+   system box, auto-hides when every step is green. Returning users
+   re-open via the .welcome-reopen-link below. Yang palette, distinct
+   enough from the system box to read as orientation rather than a
+   primary control. */
+.welcome-card {
+  max-width: var(--system-box-max-width, 880px);
+  margin: 0 auto 0.7rem;
+  padding: 0.7rem 0.9rem 0.9rem;
+  /* Yang-family palette to match the system box below, with a warm
+     gold band on the left to mark this as orientation content rather
+     than a primary control. Solid (not gradient-from-transparent) so
+     the title reads cleanly against the dark starfield even on a
+     fresh-install Mac where the panel-layout backdrop is fully dark. */
+  background: linear-gradient(180deg, rgba(232, 222, 188, 0.95) 0%, rgba(244, 240, 224, 0.96) 100%);
+  border: 1px solid rgba(200, 168, 80, 0.55);
+  border-left: 3px solid #c8a850;
+  border-radius: var(--radius-sm, 6px);
+  color: #1a1a20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.welcome-card[hidden] { display: none; }
+.welcome-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.welcome-card-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #4a3a08;
+}
+.welcome-card-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  opacity: 0.5;
+  color: inherit;
+  padding: 0 0.3rem;
+}
+.welcome-card-dismiss:hover { opacity: 1; }
+.welcome-card-body {
+  font-size: 0.72rem;
+  color: rgba(0, 0, 0, 0.65);
+  margin: 0 0 0.6rem;
+  font-style: italic;
+}
+.welcome-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.welcome-step {
+  display: grid;
+  grid-template-columns: 1.3rem max-content 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.welcome-step:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.25);
+}
+.welcome-step-icon {
+  font-size: 0.85rem;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+  font-weight: 700;
+}
+.welcome-step-done .welcome-step-icon {
+  color: #2a7030;
+}
+.welcome-step-done {
+  opacity: 0.75;
+}
+.welcome-step-label {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #1a1a20;
+}
+.welcome-step-detail {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.55);
+  font-style: italic;
+}
+
+.welcome-reopen-row {
+  max-width: var(--system-box-max-width, 880px);
+  margin: 0 auto 0.6rem;
+  text-align: right;
+}
+.welcome-reopen-link {
+  font-size: 0.68rem;
+  color: rgba(0, 0, 0, 0.55);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.3);
+  padding-bottom: 1px;
+}
+.welcome-reopen-link[hidden] { display: none; }
+.welcome-reopen-link:hover { color: #4a3a08; border-color: #4a3a08; }
+
+/* Empty-state cards for each tab until the phase wiring lands. */
+.dashboard-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  gap: 0.4rem;
+  color: var(--system-box-text-yang, #1a1a1a);
+}
+.dashboard-placeholder-head {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+.dashboard-placeholder-body {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  max-width: 36ch;
+  margin: 0;
+  opacity: 0.78;
+}
+.dashboard-placeholder-hint {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.48;
+  margin: 0.6rem 0 0;
+}
+
+/* Portal row at the bottom of the system box — two destinations
+ * (decoder + validator) instead of the single link the other pages use.
+ * Lay them out side by side with a thin divider between. */
+.dashboard-portals {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+.dashboard-portals .portal-link + .portal-link {
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+  padding-left: 0.75rem;
+}
+
+/* ====== Mint tab ====== */
+
+/* Hidden native file input — the drop zone proxies clicks. The shared
+ * .json-input-hidden rule lives in validator.css; we duplicate it here
+ * because the dashboard doesn't load that sheet. */
+.json-input-hidden { display: none; }
+
+/* State machine: only one [data-mint-only="..."] block visible per state.
+ * The global .mint-error element above the state blocks is ALWAYS visible
+ * so users can see errors that fire during the empty state (upload fails,
+ * server unreachable). */
+.mint-panel { display: flex; flex-direction: column; gap: 0.6rem; height: 100%; }
+.mint-panel > [data-mint-only] { display: none; }
+.mint-panel[data-mint-state="empty"] > [data-mint-only="empty"],
+.mint-panel[data-mint-state="reviewing"] > [data-mint-only="reviewing"],
+.mint-panel[data-mint-state="minting"] > [data-mint-only="minting"],
+.mint-panel[data-mint-state="done"] > [data-mint-only="done"],
+.mint-panel[data-mint-state="failed"] > [data-mint-only="failed"] { display: block; }
+.mint-panel[data-mint-state="reviewing"] > .mint-review,
+.mint-panel[data-mint-state="minting"] > .mint-progress,
+.mint-panel[data-mint-state="done"] > .mint-result,
+.mint-panel[data-mint-state="failed"] > .mint-failed { display: flex; flex-direction: column; gap: 0.55rem; }
+
+.mint-drop { flex: 1; position: relative; }
+.mint-drop[data-busy="1"] { opacity: 0.55; pointer-events: none; }
+.mint-drop[data-busy="1"]::after {
+  content: "uploading\2026";
+  position: absolute; left: 50%; bottom: 0.8rem;
+  transform: translateX(-50%);
+  font-size: 0.72rem; letter-spacing: 0.08em;
+  text-transform: uppercase; opacity: 0.7;
+}
+.mint-drop.drag-over {
+  background: rgba(220, 80, 220, 0.06);
+  border-color: var(--accent-purple, #dc50dc);
+}
+/* Pre-flight failure (unsealed chain / dark chain without password):
+   greys out and disables the zone. The error message above the drop
+   tells the user what to fix. Identical visual register to data-busy
+   so the user reads it as "not ready" without learning a new pattern. */
+.mint-drop.mint-blocked {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Reviewing — thumbnail + metadata + GPS + conceive */
+.mint-thumb-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.mint-thumb {
+  width: 44px; height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.05);
+}
+.mint-thumb-meta { flex: 1; min-width: 0; }
+.mint-filename {
+  font-size: 0.78rem; font-weight: 600; margin: 0;
+  color: #1a1a20;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mint-size { font-size: 0.7rem; opacity: 0.6; margin: 0.1rem 0 0; }
+.mint-thumb-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-self: stretch;
+  justify-content: center;
+}
+.mint-back, .mint-delete-session {
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.7rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  color: #1a1a20;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mint-back:hover { background: white; border-color: rgba(0, 0, 0, 0.45); }
+.mint-delete-session {
+  border-color: rgba(180, 60, 40, 0.4);
+  color: rgba(140, 40, 30, 0.85);
+}
+.mint-delete-session:hover {
+  background: rgba(255, 230, 225, 0.7);
+  border-color: rgba(180, 60, 40, 0.7);
+  color: rgba(120, 30, 20, 1);
+}
+.mint-delete-session:disabled { opacity: 0.5; cursor: wait; }
+
+.mint-meta-details {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.4rem 0.6rem;
+}
+.mint-meta-details summary {
+  font-size: 0.74rem; cursor: pointer;
+  letter-spacing: 0.04em;
+  color: #2a2a30;
+}
+.mint-meta-editor {
+  display: flex; flex-direction: column;
+  gap: 0.3rem; margin-top: 0.5rem;
+  max-height: 240px; overflow-y: auto;
+  padding-right: 0.2rem;
+}
+.mint-meta-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.4fr) 1fr auto;
+  gap: 0.35rem; align-items: center;
+  font-size: 0.74rem;
+}
+.mint-meta-key-input,
+.mint-meta-val-input {
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  color: #1a1a20;
+  min-width: 0;
+}
+.mint-meta-key-input { font-weight: 600; }
+.mint-meta-key-input:focus,
+.mint-meta-val-input:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.85);
+}
+.mint-meta-del {
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  width: 1.6rem; height: 1.6rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+.mint-meta-del:hover {
+  color: #b00;
+  border-color: rgba(176, 0, 0, 0.25);
+  background: rgba(176, 0, 0, 0.05);
+}
+.mint-meta-row-locked {
+  grid-template-columns: minmax(7rem, 0.4fr) 1fr;
+  padding: 0.25rem 0.4rem;
+  color: #4a4a50;
+  font-style: italic;
+  opacity: 0.7;
+}
+.mint-meta-row-locked .mint-meta-key {
+  font-weight: 600;
+  font-style: normal;
+  color: #1a1a20;
+}
+.mint-meta-actions {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+}
+.mint-meta-add {
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  background: transparent;
+  color: #2a2a30;
+  cursor: pointer;
+}
+.mint-meta-add:hover {
+  border-style: solid;
+  background: rgba(0, 0, 0, 0.04);
+}
+.mint-meta-hint {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 0.68rem;
+}
+
+/* Chain context banner — shown at the top of the mint review state so
+   the user sees which chain this mint will target and what kind it
+   is. The visibility chip is the key signal: chain visibility was
+   locked at chain creation in the Config tab, so the mint surface
+   just reports it. */
+/* Plain layout wrapper — the chain badge it holds (ChainBadge.labeled) is
+   self-contained (eyebrow + its own pill background), so the banner adds no
+   box of its own; a second border/bg here would nest a box inside the pill. */
+.mint-chain-banner {
+  display: flex;
+  flex-direction: column;
+}
+.mint-chain-banner:empty { display: none; }
+/* Row 1 holds the deterministic-width label + visibility chip. The chain
+   id and display name each get their own full-width row below so long
+   names never fight the chip for horizontal space. */
+.mint-chain-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.mint-chain-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a5a62;
+  font-weight: 700;
+}
+.mint-chain-id {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 700;
+  color: #1a1a20;
+  word-break: break-word;
+}
+.mint-chain-name {
+  color: #3a3a40;
+  word-break: break-word;
+}
+.mint-chain-name:empty { display: none; }
+.mint-chain-vis {
+  flex: none;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.mint-chain-vis[data-vis="light_energy"] {
+  background: rgba(212, 184, 123, 0.18);
+  color: #6a5018;
+  border: 1px solid rgba(212, 184, 123, 0.5);
+}
+.mint-chain-vis[data-vis="dark_matter"] {
+  background: rgba(128, 128, 160, 0.15);
+  color: #2a2a48;
+  border: 1px solid rgba(128, 128, 160, 0.45);
+}
+/* Dark chain that hasn't been configured with a password — minting
+   will fail. Red chip so the user knows to fix it in Config. */
+.mint-chain-vis[data-vis="dark_matter"][data-pw-set="0"] {
+  background: rgba(176, 64, 64, 0.15);
+  color: #8c2424;
+  border: 1px solid rgba(176, 64, 64, 0.5);
+}
+
+.mint-field-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+/* The [hidden] attribute's default `display: none` rule is lower
+   specificity than our `.mint-field-row { display: flex }` above, so
+   `<div class="mint-field-row" hidden>` would still render. Force
+   the hide here. */
+.mint-field-row[hidden] { display: none; }
+.mint-field { display: flex; flex-direction: column; flex: 1; gap: 0.25rem; }
+/* Higher-contrast label: was opacity 0.7 on light bg (read as ghosted).
+   Solid dark color reads as the structural element it actually is. */
+.mint-field-label {
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #2a2a30;
+  font-weight: 700;
+}
+.mint-field input {
+  font-family: inherit; font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+}
+.mint-field input::placeholder { color: rgba(0, 0, 0, 0.45); }
+.mint-field input:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.5);
+  background: #fff;
+}
+
+.mint-gps {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 0.78rem;
+  color: #1a1a20;
+}
+
+/* Native file picker capability gate. When the server lacks zenity /
+   kdialog / osascript (headless VPS, no DISPLAY), the dashboard sets
+   <html data-fs-pick="none"> at load time and every Browse button is
+   hidden so the user types paths into the text input instead — no
+   tempting button that surfaces a confusing error on click. */
+html[data-fs-pick="none"] [data-fs-browse] { display: none !important; }
+
+/* Resume-by-ticket — empty-state convenience for pulling back a
+   pending mint. Compact row so it doesn't compete with the drop
+   zone above. */
+.mint-resume {
+  /* Label on its own row, controls (input | Resume | Delete) beneath it.
+     The label spans full width so it never crowds the input, and the
+     row-gap + label margin give it breathing room from the controls. */
+  display: grid;
+  grid-template-columns: 1fr max-content max-content;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  padding: 0.3rem 0.1rem 0;
+  font-size: 0.72rem;
+}
+.mint-resume-labelwrap {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+.mint-resume-input { grid-column: 1; }
+.mint-resume-btn-danger {
+  border-color: rgba(180, 60, 40, 0.4);
+  color: rgba(140, 40, 30, 0.85);
+}
+.mint-resume-btn-danger:hover {
+  background: rgba(255, 230, 225, 0.7);
+  border-color: rgba(180, 60, 40, 0.7);
+  color: rgba(120, 30, 20, 1);
+}
+.mint-resume-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a5a62;
+}
+.mint-resume-input {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm, 6px);
+  color: #1a1a20;
+  min-width: 0;
+}
+.mint-resume-input:focus { outline: none; border-color: rgba(0, 0, 0, 0.4); background: rgba(255, 255, 255, 0.9); }
+.mint-resume-btn {
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.7rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+}
+.mint-resume-btn:hover { background: white; border-color: rgba(0, 0, 0, 0.5); }
+.mint-resume-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* --- Mint-tab recent pending sessions --- */
+.mint-recent {
+  margin: 0.2rem 0 0;
+  padding: 0.5rem 0.7rem;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm, 6px);
+}
+.mint-panel[data-mint-state="empty"] > .mint-recent[data-mint-only="empty"] { display: block; }
+.mint-panel:not([data-mint-state="empty"]) > .mint-recent[data-mint-only="empty"] { display: none; }
+.mint-recent[hidden] { display: none !important; }
+.mint-recent-head {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+  margin: 0 0 0.4rem;
+}
+.mint-recent-list { display: flex; flex-direction: column; gap: 0.3rem; }
+/* Two-row ticket: head (ticket + age + Resume + ×) on row 1, chain badge on
+   row 2 — so a long chain name never squeezes the controls. */
+.mint-recent-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  padding: 0.45rem 0.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+}
+/* Row 1: thumbnail + ticket id (left) + chain badge (pushed right). The badge
+   always stays on this row — it shrinks and the chain name clips with an
+   ellipsis (full id · name available via the badge's title tooltip on hover). */
+.mint-recent-head {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap;
+}
+.mint-recent-head > .mint-recent-ticket { flex: none; }
+.mint-recent-head > .chain-badge.compact {
+  margin-left: auto;
+  min-width: 0;            /* allow the badge to shrink so its name can clip */
+  flex: 0 1 auto;          /* may shrink below content width */
+  max-width: 65%;          /* cap so a long name clips instead of pushing wide */
+  overflow: hidden;
+}
+.mint-recent-head > .chain-badge.compact .chain-badge-body {
+  min-width: 0; overflow: hidden; flex: 0 1 auto;
+}
+/* The chain name (rendered as .chain-badge-official outside Config) clips. */
+.mint-recent-head > .chain-badge.compact .chain-badge-official {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.mint-recent-head > .chain-badge.compact .chain-dot,
+.mint-recent-head > .chain-badge.compact .chain-vis,
+.mint-recent-head > .chain-badge.compact .chain-state-chip { flex: none; }
+/* Staged-image thumbnail — small square cue, first on row 1. */
+.mint-recent-thumb {
+  flex: none;
+  width: 34px; height: 34px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.05);
+}
+/* The chain badge is a touch smaller than the full compact pill so it reads
+   as secondary to the ticket id. */
+.mint-recent-head > .chain-badge.compact { padding: 0.25rem 0.5rem; gap: 0.4rem; }
+.mint-recent-head > .chain-badge.compact .chain-dot { width: 8px; height: 8px; }
+.mint-recent-head > .chain-badge.compact .chain-badge-official { font-size: 0.7rem; }
+.mint-recent-head > .chain-badge.compact .chain-badge-friendly { font-size: 0.62rem; }
+.mint-recent-head > .chain-badge.compact .chain-vis { font-size: 0.52rem; }
+.mint-recent-head > .chain-badge.compact .chain-state-chip { font-size: 0.54rem; padding: 0.1rem 0.4rem; }
+/* Row 2: age + Resume + delete, right-aligned. */
+.mint-recent-actions {
+  display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;
+}
+.mint-recent-ticket {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  color: #1a1a20;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mint-recent-age {
+  font-size: 0.65rem;
+  color: rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+.mint-recent-btn {
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  color: #1a1a20;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mint-recent-btn:hover { background: white; border-color: rgba(0, 0, 0, 0.45); }
+.mint-recent-btn-danger {
+  border-color: rgba(180, 60, 40, 0.4);
+  color: rgba(140, 40, 30, 0.85);
+  padding: 0.2rem 0.5rem;
+}
+.mint-recent-btn-danger:hover {
+  background: rgba(255, 230, 225, 0.7);
+  border-color: rgba(180, 60, 40, 0.7);
+}
+
+/* --- Mint-tab forecast widget --- */
+.mint-forecast {
+  margin: 0.2rem 0 0;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.74rem;
+}
+.mint-panel[data-mint-state="empty"] > .mint-forecast[data-mint-only="empty"] { display: block; }
+.mint-panel:not([data-mint-state="empty"]) > .mint-forecast[data-mint-only="empty"] { display: none; }
+.mint-forecast-summary {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  list-style: none;
+  outline: none;
+}
+.mint-forecast-summary::-webkit-details-marker { display: none; }
+.mint-forecast-summary::before {
+  content: '\25B8';
+  display: inline-block;
+  color: rgba(0, 0, 0, 0.4);
+  margin-right: 0.3rem;
+  transition: transform 0.15s ease;
+}
+.mint-forecast[open] .mint-forecast-summary::before { transform: rotate(90deg); }
+.mint-forecast-headline {
+  flex: 1;
+  font-weight: 600;
+  color: #1a1a20;
+  font-variant-numeric: tabular-nums;
+}
+.mint-forecast-toggle-hint {
+  font-size: 0.62rem;
+  color: rgba(0, 0, 0, 0.4);
+  font-style: italic;
+}
+.mint-forecast[open] .mint-forecast-toggle-hint { display: none; }
+.mint-forecast-body {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.mint-forecast-bars { display: flex; flex-direction: column; gap: 0.25rem; }
+.mint-forecast-bar-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+.mint-forecast-bar-name { font-weight: 600; }
+.mint-forecast-bar-track {
+  position: relative;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.mint-forecast-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+.mint-forecast-bar-row-zero { opacity: 0.55; }
+.mint-forecast-bar-pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #3a3a44;
+}
+.mint-forecast-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  font-size: 0.66rem;
+  color: rgba(0, 0, 0, 0.55);
+}
+.mint-forecast-stats strong { color: #1a1a20; font-weight: 700; }
+.mint-forecast-traits {
+  padding: 0.45rem 0.5rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+.mint-forecast-traits-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+  margin: 0 0 0.3rem;
+}
+.mint-forecast-trait-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr 5rem 6rem;
+  gap: 0.4rem;
+  font-size: 0.66rem;
+  padding: 0.15rem 0;
+  font-variant-numeric: tabular-nums;
+  color: #3a3a44;
+}
+.mint-forecast-trait-value { color: #2a6044; font-weight: 700; }
+.mint-forecast-trait-name { color: #1a1a20; }
+.mint-forecast-trait-gate, .mint-forecast-trait-obs { color: rgba(0, 0, 0, 0.5); }
+.mint-forecast-empty {
+  font-size: 0.66rem;
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.5);
+  margin: 0;
+}
+
+/* Ticket display inside the conception handoff. Monospace + grouped
+   for memorability — like a flight number. */
+.mint-handoff-ticket {
+  /* Hint on top (forced own row via flex-basis: 100%), then a
+     label+value group and a Copy button on a flex line that wraps
+     when the cell gets too narrow. The ticket value is the sacred
+     piece — it never shrinks, never ellipses; Copy wraps below if
+     anything's gotta give. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.7rem;
+}
+.mint-handoff-ticket-hint { flex-basis: 100%; }
+.mint-handoff-ticket-group {
+  /* label + value glued together with a single tight gap, no
+     extra column-gap from the parent (the negative margin
+     compensates so the gap between TICKET and the value reads
+     visually as a single space). */
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.mint-handoff-ticket-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a5a62;
+}
+.mint-handoff-ticket-val {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #1a1a20;
+  white-space: nowrap;
+}
+.mint-handoff-ticket-copy {
+  font-family: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-weight: 600;
+}
+.mint-handoff-ticket-copy:hover { background: white; border-color: rgba(0, 0, 0, 0.5); }
+.mint-handoff-ticket-hint {
+  font-size: 0.64rem;
+  color: rgba(0, 0, 0, 0.55);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Conception handoff — same shape for every gps_source. QR for cross-
+   device pickup, URL for manual paste, Open button for same-device
+   pickup. The Discord webhook fires alongside; the user picks which
+   route to use. */
+.mint-handoff {
+  padding: 0.7rem 0.8rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mint-handoff-head {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a20;
+  letter-spacing: 0.03em;
+}
+.mint-handoff-body {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #3a3a40;
+  line-height: 1.55;
+}
+.mint-handoff-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.mint-handoff-qr {
+  flex: 0 0 auto;
+  border-radius: 6px;
+  background: white;
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.mint-handoff-actions {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.mint-handoff-url {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm, 6px);
+  color: #1a1a20;
+}
+.mint-handoff-btns {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+/* Mobile: stack the URL + Copy + Open buttons so they don't get
+   forced out of the narrow handoff cell. */
+@media (max-width: 600px) {
+  .mint-handoff-btns { flex-direction: column; align-items: stretch; }
+  .mint-handoff-btn { width: 100%; }
+}
+.mint-handoff-btn {
+  font-family: inherit;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding: 0.4rem 0.7rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mint-handoff-btn:hover { background: white; border-color: rgba(0, 0, 0, 0.5); }
+/* "Open conception page" — the dashboard handoff's primary action.
+   Same brushed-gold treatment as .config-btn-primary so every "this
+   commits / opens the ceremony" button reads the same across pages. */
+.mint-handoff-btn-primary {
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.92) 0%, rgba(18, 14, 8, 0.88) 50%, rgba(14, 10, 6, 0.92) 100%);
+  color: #c8a850;
+  border: 1px solid rgba(200, 170, 80, 0.5);
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.12), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+.mint-handoff-btn-primary:hover {
+  filter: none;
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.75);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.95) 0%, rgba(24, 18, 10, 0.9) 50%, rgba(18, 14, 8, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(220, 190, 80, 0.18);
+}
+
+/* Pulsing dot to indicate "still listening". Slow + subtle — same
+   cosmic tempo the validator + decoder use, never flashy. */
+.mint-await-spinner {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #3cc8dc;
+  align-self: center;
+  animation: mint-pulse 2.4s ease-in-out infinite;
+}
+@keyframes mint-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.35); }
+}
+.mint-gps[data-state="locating"] .mint-gps-icon { animation: mint-spin 1.6s linear infinite; }
+.mint-gps[data-state="locked"]   { background: rgba(60, 200, 60, 0.12); }
+.mint-gps[data-state="denied"]   { background: rgba(220, 80, 80, 0.12); }
+
+.mint-error {
+  font-size: 0.74rem; color: #b04040;
+  min-height: 1.1em;
+}
+/* Global error slot — visible across all states */
+.mint-error-global {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(220, 80, 80, 0.08);
+  display: none;
+}
+.mint-error-global:not(:empty) { display: block; }
+
+/* Minting (in progress) */
+.mint-progress { align-items: center; justify-content: center; text-align: center; }
+.mint-progress-head { font-size: 1rem; font-weight: 600; margin: 0; }
+.mint-progress-body { font-size: 0.75rem; opacity: 0.7; margin: 0.4rem 0 0; }
+.mint-progress-head::after {
+  content: "";
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: currentColor;
+  margin-left: 0.4rem; vertical-align: middle;
+  animation: mint-pulse 1.2s ease-in-out infinite;
+}
+
+/* Done — Witnessed state. Higher contrast across the board: labels
+   were opacity:0.75 on a light gradient (read as ghosted); now solid
+   dark. Values use a near-black monospace for legibility. The soul
+   URL is a readonly text input + copy/open buttons instead of a
+   truncated anchor — pasting the URL is the common action, and a
+   line that ends in "…" is useless for that. */
+/* Matches the conception page's "● CONCEIVED" head: green dot + uppercase,
+   letter-spaced label. Green darkened from --accent-green (#7bc4a0) so it
+   reads on the lighter dashboard panel. */
+.mint-result-head {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #1f8f57;
+  margin: 0 0 0.3rem;
+}
+.mint-result-glyph {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  /* Exact --accent-green sage to match the conception page's dot; the label
+     stays the deeper green above for contrast on the light panel. */
+  background: #7bc4a0;
+  box-shadow: 0 0 9px rgba(123, 196, 160, 0.5);
+  flex: none;
+  margin-right: 0.5rem;
+}
+.mint-result-meta {
+  display: grid; grid-template-columns: max-content 1fr;
+  gap: 0.4rem 0.8rem; font-size: 0.78rem; margin: 0.5rem 0 0.8rem;
+}
+.mint-result-meta dt {
+  font-weight: 700;
+  color: #2a2a30;
+  letter-spacing: 0.03em;
+}
+.mint-result-meta dd {
+  margin: 0;
+  overflow: hidden;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: #1a1a20;
+  word-break: break-all;
+}
+/* Soul URL row — input + two small buttons, all flex-laid so the
+   input expands to fill but the buttons keep their natural width. */
+.mint-result-url-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.mint-result-url-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.45rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: var(--radius-sm, 6px);
+}
+.mint-result-url-btn {
+  font-family: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.55rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+.mint-result-url-btn:hover { background: white; border-color: rgba(0, 0, 0, 0.5); }
+
+/* Per-channel blast result. Sits between the soul URL and the action
+   buttons. Suppressed when the mint only fired one channel cleanly
+   (the soul URL above already says everything that matters in that
+   case). Always visible when any channel failed. */
+.mint-result-channels {
+  margin: 0.4rem 0 0.6rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.72rem;
+}
+.mint-result-channels-head {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.66rem;
+}
+.mint-result-channels-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.mint-result-channel {
+  display: grid;
+  grid-template-columns: 1rem 5rem 1fr;
+  gap: 0.4rem;
+  align-items: baseline;
+  line-height: 1.3;
+  min-width: 0;  /* let the URL column shrink + ellipsize */
+}
+.mint-result-channel-status {
+  font-weight: 700;
+  text-align: center;
+}
+.mint-result-channel-ok .mint-result-channel-status { color: #2c8a3a; }
+.mint-result-channel-fail .mint-result-channel-status { color: #b04040; }
+.mint-result-channel-id {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mint-result-channel-url,
+.mint-result-channel-err {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.mint-result-channel-url {
+  color: rgba(0, 0, 0, 0.7);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+}
+.mint-result-channel-url:hover {
+  color: rgba(0, 0, 0, 0.95);
+  text-decoration-color: rgba(0, 0, 0, 0.6);
+}
+.mint-result-channel-err {
+  color: #8a3030;
+  cursor: help;
+}
+
+/* Conceived image in the result view (mirrors the conception page). */
+.mint-result-image-wrap {
+  margin: 0.2rem 0 0.7rem;
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+.mint-result-image {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.mint-result-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+.mint-action {
+  flex: 1 1 8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.6rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  border: 1px solid rgba(200, 170, 80, 0.5);
+  border-radius: var(--radius-sm, 6px);
+  /* Brushed-gold, same family as .config-btn-primary / .mint-handoff-btn-primary
+     — every "this commits / opens the ceremony" button reads the same.
+     (Was a cyan->magenta gradient, deprecated.) */
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.92) 0%, rgba(18, 14, 8, 0.88) 50%, rgba(14, 10, 6, 0.92) 100%);
+  color: #c8a850;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.12), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.3);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Metallic download pair — same brushed-metal family as the cert's Save
+   button + the conception Conceive button. Silver = the body (image),
+   gold = the soul. Dark body, metal border + text, inset highlight. */
+.mint-action.mint-action-silver,
+.mint-action.mint-action-gold {
+  border: 1px solid;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.12), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 2px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+.mint-action.mint-action-silver {
+  background: linear-gradient(180deg, rgba(48,52,60,0.94) 0%, rgba(16,18,22,0.9) 50%, rgba(12,14,18,0.94) 100%);
+  color: #c2cad6;
+  border-color: rgba(176,188,204,0.45);
+}
+.mint-action.mint-action-silver:hover {
+  color: #e6ecf4;
+  border-color: rgba(208,218,232,0.75);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(190,205,225,0.2);
+  filter: none;
+}
+.mint-action.mint-action-gold {
+  background: linear-gradient(180deg, rgba(60,50,20,0.94) 0%, rgba(18,14,8,0.9) 50%, rgba(14,10,6,0.94) 100%);
+  color: #c8a850;
+  border-color: rgba(200,170,80,0.5);
+}
+.mint-action.mint-action-gold:hover {
+  color: #e0c070;
+  border-color: rgba(224,192,112,0.75);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(220,190,80,0.18);
+  filter: none;
+}
+.mint-action-secondary {
+  background: rgba(255, 255, 255, 0.7);
+  color: #1a1a20;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+/* Mobile: stack the actions full-width, cap the image height. */
+@media (max-width: 600px) {
+  .mint-result-actions { flex-direction: column; }
+  .mint-result-actions .mint-action { flex: 1 1 auto; width: 100%; }
+  .mint-result-image { max-height: 52vh; }
+}
+.mint-action:hover { filter: brightness(1.05); }
+.mint-action-secondary:hover {
+  filter: none;
+  background: white;
+  border-color: rgba(0, 0, 0, 0.5);
+}
+/* Disabled-style for actions that aren't applicable in the current
+   state (e.g. a soul that landed only in a Discord attachment, not on
+   a fetchable surface, so there's no URL to link to). */
+.mint-action.mint-action-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: default;
+  font-style: italic;
+}
+
+/* Failed */
+.mint-failed-head { font-size: 1rem; font-weight: 600; margin: 0; color: #b04040; }
+.mint-failed-body { font-size: 0.75rem; opacity: 0.8; margin: 0.3rem 0 0; }
+
+@keyframes mint-spin { to { transform: rotate(360deg); } }
+@keyframes mint-pulse { 50% { opacity: 0.3; } }
+
+/* ====== Payload tab ====== */
+.payload-panel { display: flex; flex-direction: column; gap: 0.5rem; height: 100%; }
+
+.payload-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.payload-summary {
+  font-size: 0.74rem; font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.payload-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.payload-actions-preset { margin-top: 0.3rem; }
+.payload-actions-chain  { margin-top: 0.3rem; }
+.payload-actions-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  min-width: 3.2rem;
+}
+.payload-btn {
+  font-family: inherit; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.7);
+  color: #1a1a20;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.payload-btn:hover { background: rgba(255, 255, 255, 0.95); border-color: rgba(0, 0, 0, 0.55); }
+.payload-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.payload-btn-danger {
+  border-color: rgba(176, 64, 64, 0.4);
+  color: #b04040;
+}
+.payload-btn-danger:hover:not(:disabled) {
+  background: rgba(176, 64, 64, 0.08);
+  border-color: rgba(176, 64, 64, 0.7);
+}
+
+/* Preset panel — toggled by the Presets button in the action bar. */
+.payload-preset-panel {
+  padding: 0.65rem 0.8rem;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  display: flex; flex-direction: column; gap: 0.45rem;
+  color: #1a1a20;
+}
+.payload-preset-panel[hidden] { display: none; }
+.payload-preset-panel-row {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.payload-preset-panel-label {
+  font-size: 0.74rem; font-weight: 500; letter-spacing: 0.04em;
+}
+.payload-preset-input {
+  flex: 1; min-width: 12rem;
+  font-family: inherit; font-size: 0.82rem;
+  padding: 0.32rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.7);
+  color: #1a1a20;
+}
+.payload-preset-list { display: flex; flex-direction: column; gap: 0.2rem; }
+.payload-preset-empty {
+  font-size: 0.78rem; color: #404048; margin: 0.2rem 0; font-style: italic;
+}
+.payload-preset-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) auto auto;
+  align-items: center; gap: 0.6rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.4);
+}
+.payload-preset-row:hover { background: rgba(255, 255, 255, 0.6); }
+.payload-preset-name {
+  font-family: monospace; font-size: 0.82rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.payload-preset-mtime {
+  font-size: 0.7rem; color: #404048;
+  font-variant-numeric: tabular-nums;
+}
+.payload-preset-actions { display: flex; gap: 0.3rem; }
+.payload-preset-note {
+  font-size: 0.7rem; color: #404048; margin: 0.2rem 0 0; line-height: 1.4;
+}
+
+/* Inspect modal — file metadata only.
+ *
+ * --bg-card is tuned for dark backgrounds (8% opacity); use an opaque
+ * color directly so the card reads on top of whatever's underneath. */
+.payload-modal {
+  position: fixed; inset: 0;
+  z-index: 9990;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 1.2rem;
+}
+.payload-modal[hidden] { display: none; }
+.payload-modal-card {
+  background: #f4f4f6;
+  color: #1a1a20;
+  border-radius: var(--radius, 10px);
+  width: min(560px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+.payload-modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+}
+.payload-modal-title {
+  font-family: monospace; font-weight: 600; font-size: 0.85rem;
+  color: #1a1a20;
+}
+.payload-modal-close {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 1.4rem; line-height: 1; opacity: 0.5;
+  color: inherit;
+  padding: 0 0.3rem;
+}
+.payload-modal-close:hover { opacity: 1; }
+.payload-modal-meta {
+  display: grid; grid-template-columns: max-content 1fr;
+  gap: 0.35rem 0.8rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.74rem;
+  margin: 0;
+  color: #1a1a20;
+}
+.payload-modal-meta dt { font-weight: 700; color: #404048; }
+.payload-modal-meta dd { margin: 0; font-family: monospace; word-break: break-all; }
+
+/* Generic config-modal — reused for the channels.json raw view +
+   future read-only inspections. Mirrors payload-modal proportions
+   and chrome but takes its own class so future styling deltas
+   (light/dark, themed variants) don't have to fight payload's CSS. */
+.config-modal {
+  position: fixed; inset: 0;
+  z-index: 9990;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 1.2rem;
+}
+.config-modal[hidden] { display: none; }
+.config-modal-card {
+  background: #f4f4f6;
+  color: #1a1a20;
+  border-radius: var(--radius, 10px);
+  width: min(640px, 100%);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+.config-modal-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  font-family: monospace;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.config-modal-close {
+  background: transparent; border: none; cursor: pointer;
+  font-size: 1.4rem; line-height: 1; opacity: 0.5;
+  color: inherit;
+  padding: 0 0.3rem;
+}
+.config-modal-close:hover { opacity: 1; }
+.config-modal-pre {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  flex: 1;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #1a1a20;
+  white-space: pre;
+  background: rgba(255, 255, 255, 0.7);
+}
+.config-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+}
+.config-modal-foot .config-note { margin: 0; font-size: 0.66rem; }
+
+/* "Browse" button next to a source path input — opens the OS-native
+ * file dialog via /api/fs/pick. */
+.entry-source-row .source-browse {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1a1a20;
+  cursor: pointer;
+}
+.entry-source-row .source-browse:hover {
+  background: rgba(60, 200, 220, 0.12);
+  border-color: #3cc8dc;
+}
+
+/* ====== Payload tab: chain config editor ======
+ *
+ * Like the Config tab, the editor needs to grow beyond the locked 365px
+ * panel height because there can be arbitrarily many entries / layers /
+ * frozen positions. The panel scrolls when content exceeds the box.
+ */
+.input-panel#tab-payload { height: auto; min-height: 365px; overflow: visible; }
+.payload-panel { display: flex; flex-direction: column; gap: 0.5rem; height: auto; }
+
+/* Payload bar — vertical stack: chain badge, then payload-specific status
+   (lock / build / dirty + preset), then the action rows. The badge owns the
+   chain identity; the status block carries everything payload-specific. */
+/* Left-align everything in the column (overrides the inherited align-items:
+   center from the base .payload-bar rule, which centered badge + buttons). */
+.payload-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.payload-bar > * { max-width: 100%; }
+.payload-chain-status {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.payload-chain-badges {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+}
+/* "M=… (draft, applied: …)" annotation in the badge's .below slot. */
+.chain-badge-note {
+  font-size: 0.66rem; color: #8a5a1a; font-family: monospace;
+}
+/* Each preset name on its own row — both can be long. */
+.payload-preset-status {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  font-size: 0.72rem; color: #54545c;
+  margin: 0;
+}
+.payload-preset-status strong {
+  font-weight: 700; color: #1a1a20;
+}
+.payload-dirty-marker {
+  font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #a05010;
+  text-transform: uppercase;
+}
+
+/* Chain template lock badge — surfaced in the chain header so the user
+ * can see at a glance whether Apply to chain will work.
+ *   editable  → no Age in progress (or no Age sealed yet) → apply will commit
+ *   locked    → mid-Age → apply is blocked; draft edits stay in the editor
+ *   unknown   → status still loading
+ */
+.payload-lock-badge {
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-family: ui-monospace, Menlo, monospace;
+  cursor: help;
+}
+.payload-lock-badge[data-state="editable"] {
+  color: #1d6f2d;
+  background: rgba(60, 180, 90, 0.14);
+  border-color: rgba(60, 180, 90, 0.4);
+}
+.payload-lock-badge[data-state="locked"] {
+  color: #8a2a2a;
+  background: rgba(200, 80, 80, 0.14);
+  border-color: rgba(200, 80, 80, 0.4);
+}
+/* Mid-Age: editing is allowed (stages for the next Age) — an amber notice,
+   not the alarming red of a hard lock. */
+.payload-lock-badge[data-state="in-age"] {
+  color: #8a6210;
+  background: rgba(200, 150, 40, 0.14);
+  border-color: rgba(200, 150, 40, 0.4);
+}
+.payload-lock-badge[data-state="unknown"] {
+  color: #54545c;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Payload build status — sits next to the lock badge. Tells the user
+   whether Payload/<chain>/ artifacts are up to date with sources.
+   Four states:
+     built    → green   — sources & artifacts in sync, ready to seal
+     drifted  → amber   — artifacts exist but source has changed since
+     not_built→ gray    — no manifest (chain applied but never built)
+     missing  → red     — at least one source file is unreadable */
+.payload-build-badge {
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-family: ui-monospace, Menlo, monospace;
+  cursor: help;
+  margin-left: 0.25rem;
+}
+.payload-build-badge[data-state="built"] {
+  color: #1d6f2d;
+  background: rgba(60, 180, 90, 0.14);
+  border-color: rgba(60, 180, 90, 0.4);
+}
+.payload-build-badge[data-state="drifted"] {
+  color: #8a5a1a;
+  background: rgba(220, 160, 60, 0.14);
+  border-color: rgba(220, 160, 60, 0.5);
+}
+.payload-build-badge[data-state="not_built"] {
+  color: #54545c;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+.payload-build-badge[data-state="missing"] {
+  color: #8a2a2a;
+  background: rgba(200, 80, 80, 0.14);
+  border-color: rgba(200, 80, 80, 0.4);
+}
+.payload-build-badge[data-state="unknown"] {
+  color: #54545c;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Per-entry status dot — same vocabulary as the aggregate badge,
+   shown inline in each entry row so users can see exactly which
+   entry is out of sync. */
+.entry-status-dot {
+  display: inline-block;
+  width: 0.55rem; height: 0.55rem;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: help;
+}
+.entry-status-dot[data-state="in_sync"]         { background: #4ade80; border-color: #1d6f2d; }
+.entry-status-dot[data-state="drifted"]         { background: #facc15; border-color: #8a5a1a; }
+.entry-status-dot[data-state="missing_payload"] { background: #c8c8c8; border-color: #54545c; }
+.entry-status-dot[data-state="missing_source"]  { background: #f87171; border-color: #8a2a2a; }
+.entry-status-dot[data-state="unknown"]         { background: transparent; border-color: rgba(0,0,0,0.25); }
+
+/* Inline lock banner — appears under the action bar when Apply is
+   disabled because an Age is in progress. The lock badge is small;
+   the banner spells out *why* in one sentence so users who don't
+   hover the disabled Apply button still understand the gate. */
+.payload-apply-lock-banner {
+  font-size: 0.72rem;
+  color: #6a4a1c;
+  background: rgba(200, 150, 60, 0.12);
+  border-left: 3px solid rgba(200, 150, 60, 0.55);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.45rem 0.7rem;
+  margin: 0.4rem 0 0;
+  flex-basis: 100%;
+}
+.payload-apply-lock-banner[hidden] { display: none; }
+.payload-apply-lock-status { display: block; font-weight: 600; }
+.payload-apply-lock-note { display: block; margin-top: 0.2rem; opacity: 0.82; }
+
+/* Age-length (M) editor — surfaced as a first-class field so users
+   don't have to crack open a preset JSON. Disabled while the chain
+   is mid-Age (M is locked at seal time). */
+.payload-m-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+  flex-basis: 100%;
+  font-size: 0.78rem;
+}
+.payload-m-label {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #1a1a20;
+  white-space: nowrap;
+}
+.payload-m-input {
+  width: 5rem;
+  padding: 0.3rem 0.45rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+}
+.payload-m-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.04);
+}
+.payload-m-hint {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.55);
+  font-style: italic;
+}
+
+/* Watermark preset row — matches the M editor's visual register, but the
+   options live on their own line because three radios + the explainer
+   wouldn't fit alongside other fields. */
+
+/* Payload tab NUX — collapsible workflow guide. Auto-shows for fresh
+   chains (no preset + empty layers/frozen); dismissible via the ×
+   button and re-openable via the link below. Persistence: localStorage
+   key 'mememage-payload-nux-dismissed' = '1'. */
+.payload-nux {
+  margin: 0.4rem 0 0.2rem;
+  background: linear-gradient(180deg, rgba(245, 240, 220, 0.85), rgba(230, 222, 196, 0.9));
+  border: 1px solid rgba(160, 130, 60, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #2a2014;
+}
+.payload-nux[hidden] { display: none; }
+.payload-nux summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+.payload-nux summary::-webkit-details-marker { display: none; }
+.payload-nux summary::before {
+  content: '\25b6';
+  display: inline-block;
+  font-size: 0.65rem;
+  color: rgba(120, 90, 30, 0.7);
+  transition: transform 0.18s ease;
+}
+.payload-nux[open] summary::before { transform: rotate(90deg); }
+.payload-nux-title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  color: #4a3818;
+}
+.payload-nux-hint {
+  font-size: 0.66rem;
+  color: rgba(74, 56, 24, 0.6);
+  flex: 1;
+}
+.payload-nux-dismiss {
+  background: transparent;
+  border: 1px solid rgba(120, 90, 30, 0.3);
+  border-radius: 50%;
+  width: 1.4rem; height: 1.4rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: rgba(74, 56, 24, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.payload-nux-dismiss:hover {
+  background: rgba(120, 90, 30, 0.1);
+  color: #4a3818;
+}
+.payload-nux-steps {
+  margin: 0.7rem 0 0.2rem 1.3rem;
+  padding: 0;
+  counter-reset: nuxstep;
+}
+.payload-nux-steps li {
+  margin: 0.5rem 0;
+  padding-left: 0.3rem;
+}
+.payload-nux-steps li strong { color: #3a2a10; }
+.payload-nux-steps em {
+  font-style: normal;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(120, 90, 30, 0.12);
+  padding: 0.05em 0.35em;
+  border-radius: 3px;
+  font-size: 0.92em;
+}
+.payload-nux-steps code,
+.payload-nux-tip code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+.payload-nux-tip {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  background: rgba(60, 200, 220, 0.08);
+  border-left: 3px solid rgba(60, 160, 200, 0.5);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.74rem;
+  color: #1a3a4a;
+}
+.payload-nux-reopen-row { margin: 0.2rem 0 0; }
+.payload-nux-reopen {
+  font-size: 0.72rem;
+  color: rgba(74, 56, 24, 0.7);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(74, 56, 24, 0.4);
+}
+.payload-nux-reopen:hover { color: #2a2014; border-bottom-color: rgba(74, 56, 24, 0.8); }
+
+/* Static banner under the action bar explaining the draft / apply model. */
+.payload-template-banner {
+  font-size: 0.74rem; line-height: 1.5;
+  color: #1a1a20;
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 3px solid rgba(60, 200, 220, 0.6);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.6rem 0.8rem;
+  margin: 0.4rem 0 0.2rem;
+}
+.payload-template-banner p { margin: 0; }
+.payload-template-lead { margin: 0 0 0.35rem; }
+.payload-template-actions { margin: 0; padding-left: 1.1rem; list-style: disc; }
+.payload-template-actions li { margin: 0.15rem 0; }
+/* Payload primary (Save / Build) — brushed gold to match the rest
+   of the dashboard's confirmation buttons. */
+.payload-btn-primary {
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.92) 0%, rgba(18, 14, 8, 0.88) 50%, rgba(14, 10, 6, 0.92) 100%);
+  color: #c8a850;
+  border: 1px solid rgba(200, 170, 80, 0.5);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.12), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+.payload-btn-primary:hover:not(:disabled) {
+  filter: none;
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.75);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.95) 0%, rgba(24, 18, 10, 0.9) 50%, rgba(18, 14, 8, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(220, 190, 80, 0.18);
+}
+
+/* Validation panel — errors block save; warnings allow save */
+.payload-validation {
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.payload-validation:empty { display: none; }
+.payload-validation-line {
+  font-size: 0.72rem; padding: 0.35rem 0.55rem;
+  border-radius: var(--radius-sm, 6px);
+  font-family: monospace;
+}
+.payload-validation-line.error {
+  background: rgba(220, 80, 80, 0.15);
+  color: #802020;
+  border-left: 3px solid #b04040;
+}
+.payload-validation-line.warning {
+  background: rgba(220, 180, 60, 0.18);
+  color: #604c00;
+  border-left: 3px solid #b08c00;
+}
+.payload-validation-line.info {
+  background: rgba(60, 200, 220, 0.12);
+  color: #103060;
+  border-left: 3px solid #3cc8dc;
+  font-style: italic;
+}
+
+/* Collapsible section with add button */
+.payload-section {
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.45);
+}
+.payload-section > summary {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer;
+  color: #1a1a20;
+  list-style-position: inside;
+}
+.payload-section[open] > summary {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.payload-section-label { flex: 1; }
+.payload-section-count {
+  font-size: 0.66rem; opacity: 0.6;
+  font-weight: 500;
+  margin-left: 0.3rem;
+}
+.payload-section-add {
+  font-family: inherit; font-size: 0.66rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm, 4px);
+  background: white;
+  color: #1a1a20;
+  cursor: pointer;
+}
+.payload-section-add:hover { background: rgba(220, 80, 220, 0.12); border-color: #dc50dc; }
+
+/* Editor rows */
+.payload-entries, .payload-layers-editor, .payload-pinned-editor {
+  display: flex; flex-direction: column;
+}
+.payload-edit-row {
+  display: grid;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+  font-size: 0.74rem;
+  color: #1a1a20;
+}
+.payload-edit-row:last-child { border-bottom: none; }
+.payload-edit-row.has-error { background: rgba(220, 80, 80, 0.06); }
+
+/* Entries row: status dot | name | sources (stacked) | delete */
+.payload-edit-row.entry-row {
+  grid-template-columns: 14px minmax(120px, 1fr) minmax(220px, 2.5fr) 28px;
+  align-items: start;
+  gap: 0.4rem;
+}
+.payload-edit-row.entry-row .entry-status-dot {
+  margin-right: 0;
+  margin-top: 0.55rem; /* align dot vertically with the name input baseline */
+}
+.entry-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.entry-source-row {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.entry-source-row .payload-edit-input { flex: 1; }
+.entry-sources .payload-section-add {
+  align-self: flex-start;
+  margin-top: 0.1rem;
+}
+/* Layer row: name | K | reserved | entry select | chunk_type | delete */
+.payload-edit-row.layer-row {
+  grid-template-columns: minmax(110px, 1fr) 60px 60px minmax(140px, 1.5fr) 28px;
+}
+/* Pinned row: position | role | entries (chips) | delete */
+.payload-edit-row.pinned-row {
+  grid-template-columns: 60px minmax(110px, 1fr) minmax(220px, 2fr) 28px;
+}
+
+.payload-edit-input,
+.payload-edit-select {
+  font-family: inherit; font-size: 0.78rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 4px;
+  background: white;
+  color: #1a1a20;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.payload-edit-input.monospace { font-family: monospace; font-size: 0.74rem; }
+.payload-edit-input.numeric { text-align: right; }
+.payload-edit-input:focus,
+.payload-edit-select:focus {
+  outline: none;
+  border-color: #3cc8dc;
+}
+
+.payload-edit-delete {
+  background: transparent;
+  border: none;
+  color: #b04040;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.5;
+  font-family: inherit;
+}
+.payload-edit-delete:hover { opacity: 1; }
+
+/* In-flight upload state on a source row: replaces × with a ring spinner.
+   The button is non-interactive (pointer-events:none) so the user can't
+   accidentally click it before the upload completes. JS adds/removes the
+   class in lockstep with the upload promise. */
+.payload-edit-delete.uploading {
+  pointer-events: none;
+  font-size: 0;
+  color: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  width: 1rem;
+  height: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.payload-edit-delete.uploading::before {
+  content: '';
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: payload-upload-spin 0.8s linear infinite;
+}
+@keyframes payload-upload-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Frozen entries: chip + picker UI. Each linked entry shows as a chip;
+ * the inline select adds another. Entry-by-reference, not by typed
+ * string — eliminates typo drift and keeps references resolved. */
+.chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.6rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem 0.15rem 0.55rem;
+  background: rgba(60, 200, 220, 0.18);
+  color: #103060;
+  font-size: 0.72rem;
+  font-family: monospace;
+  border-radius: 999px;
+  border: 1px solid rgba(60, 200, 220, 0.4);
+}
+.chip.chip-missing {
+  background: rgba(220, 80, 80, 0.16);
+  color: #802020;
+  border-color: rgba(220, 80, 80, 0.5);
+}
+.chip-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+.chip-remove:hover { opacity: 1; }
+.chip-add-select {
+  font-family: inherit;
+  font-size: 0.66rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  background: transparent;
+  color: #54545c;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  min-width: 60px;
+  max-width: 130px;
+}
+.chip-add-select:hover { border-color: #3cc8dc; color: #1a1a20; }
+.chip-add-select:focus { outline: none; border-color: #3cc8dc; }
+
+.payload-frozen-combine {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #54545c;
+}
+.payload-frozen-combine input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Header strip for each editor section (column labels) */
+.payload-edit-header {
+  display: grid;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: #54545c;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.payload-edit-header.entry-header {
+  /* Leading 14px column matches the per-row status dot. Empty header
+     cell — the dot itself communicates the column's purpose via color
+     + hover tooltip. */
+  grid-template-columns: 14px minmax(120px, 1fr) minmax(220px, 2.5fr) 28px;
+  gap: 0.4rem;
+}
+.payload-edit-header.layer-header {
+  grid-template-columns: minmax(110px, 1fr) 60px 60px minmax(140px, 1.5fr) 28px;
+}
+.payload-edit-header.pinned-header {
+  grid-template-columns: 60px minmax(110px, 1fr) minmax(220px, 2fr) 28px;
+}
+
+/* ====== Payload tab: layer view (legacy classes still used for the inline summary count) ====== */
+.payload-section-head {
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: #1a1a20;
+  margin-top: 0.2rem;
+  padding: 0.25rem 0.1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+.payload-layers, .payload-frozen {
+  display: flex;
+  flex-direction: column;
+}
+.payload-row {
+  display: grid;
+  grid-template-columns: 24px 1fr max-content max-content max-content;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.2rem;
+  font-size: 0.74rem;
+  color: #1a1a20;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.payload-row:last-child { border-bottom: none; }
+.payload-row-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #404048;
+  font-family: monospace;
+  text-align: center;
+}
+.payload-row-body {
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+.payload-row-name {
+  font-family: monospace; font-size: 0.72rem;
+  font-weight: 600;
+  color: #1a1a20;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.payload-row-source {
+  font-family: monospace; font-size: 0.66rem;
+  color: #54545c;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.payload-row-status {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+}
+.payload-row[data-status="in_sync"]         .payload-row-status { background: rgba(60, 200, 120, 0.22); color: #155030; }
+.payload-row[data-status="drifted"]         .payload-row-status { background: rgba(220, 180, 60, 0.25); color: #604c00; }
+.payload-row[data-status="missing_payload"] .payload-row-status { background: rgba(220, 80, 80, 0.22);  color: #802020; }
+.payload-row[data-status="missing_source"]  .payload-row-status { background: rgba(120, 80, 220, 0.22); color: #3a2a80; }
+.payload-row-size {
+  font-size: 0.66rem; font-family: monospace;
+  color: #404048;
+  min-width: 56px; text-align: right;
+}
+.payload-row-inspect {
+  font-family: inherit; font-size: 0.66rem;
+  font-weight: 600;
+  border: none; background: transparent; cursor: pointer;
+  color: #2050a0;
+  text-decoration: underline; text-underline-offset: 2px;
+  padding: 0 0.2rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.payload-row-inspect:hover { color: #103060; }
+
+/* Header strip above each row group lists the cycle metadata
+ * (e.g. "K=12 · 360 active · 4 frozen"). */
+.payload-layer-meta {
+  font-size: 0.64rem;
+  color: #54545c;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+
+.payload-agestatus {
+  font-size: 0.7rem; font-family: monospace;
+  color: #404048;
+  padding-top: 0.4rem;
+  margin-top: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+.payload-seal-stale {
+  font-size: 0.72rem; line-height: 1.35;
+  color: #7a5200;
+  background: rgba(212, 160, 23, 0.12);
+  border: 1px solid rgba(212, 160, 23, 0.4);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  margin-top: 0.4rem;
+}
+
+/* ====== Config tab ======
+ *
+ * The dashboard runs on the yang light theme, so the dark-tuned tokens
+ * (--text-muted #606060) read too faint on the silver gradient. Use
+ * darker concrete colors here instead of the muted tokens.
+ *
+ * The input-panel height is locked to 365px on the decoder/validator
+ * to keep their drop+cert layouts predictable. For the Config tab we
+ * relax that — the panel grows to fit all four sections so the user can
+ * see everything at a glance without scrolling. */
+.input-panel#tab-config { height: auto; min-height: 365px; overflow: visible; }
+
+/* Mint tab grows with content. The conception-handoff block (QR +
+   URL + open) plus the origin-fields editor can push the panel past
+   the default 365px, and we want everything visible without
+   internal scroll. */
+.input-panel#tab-mint { height: auto; min-height: 365px; overflow: visible; }
+.config-panel { display: flex; flex-direction: column; gap: 0.5rem; height: auto; }
+
+.config-section {
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0;
+  background: rgba(255, 255, 255, 0.55);
+}
+.config-section > summary {
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  list-style-position: inside;
+  color: #1a1a20;
+  /* Sticky so the section's label stays visible while scrolling its
+     body. Slight z-index so it lays over the body content cleanly. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(244, 240, 224, 0.96);
+  border-radius: var(--radius-sm, 6px) var(--radius-sm, 6px) 0 0;
+}
+.config-section[open] > summary {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.config-section-body {
+  padding: 0.6rem 0.8rem 0.7rem;
+  font-size: 0.78rem;
+  color: #1a1a20;
+}
+
+/* Channels section — each channel is a card with head (name + type +
+   status chips), top-row controls (enabled, primary, remove), and
+   schema-driven credential + config fields below. */
+.config-channel-row {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-sm, 6px);
+  margin: 0.45rem 0;
+  background: rgba(255, 255, 255, 0.45);
+  overflow: hidden;
+}
+.config-channel-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;            /* hide the default disclosure marker (Firefox) */
+}
+.config-channel-summary::-webkit-details-marker { display: none; }  /* Chrome/Safari */
+.config-channel-row[open] > .config-channel-summary {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.config-channel-sum-chevron {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: #999;
+  transition: transform 0.15s ease;
+}
+.config-channel-row[open] > .config-channel-summary .config-channel-sum-chevron {
+  transform: rotate(90deg);
+}
+.config-channel-sum-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.config-channel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem;
+}
+/* Primary channel — left-edge gold band + warmer fill so the row
+   carrying the canonical URL (bar reference, Discord toast) is
+   obvious at a glance without scanning radio buttons. */
+.config-channel-row-primary {
+  border-left: 3px solid #c8a850;
+  background: linear-gradient(90deg, rgba(220, 200, 130, 0.18), rgba(255, 255, 255, 0.55) 30%);
+}
+.config-channel-name-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+.config-channel-name-wrap .config-channel-name-input { flex: 1; }
+.config-channel-primary-star {
+  color: #c8a850;
+  font-size: 0.95rem;
+  line-height: 1;
+  flex: 0 0 auto;
+  text-shadow: 0 0 4px rgba(200, 168, 80, 0.4);
+}
+/* Surface-state frames — readable at a glance even when collapsed. Gold =
+   primary (above); green = enabled; gray = disabled. The star reinforces the
+   enabled/disabled state on every row (★ enabled, ☆ disabled). */
+.config-channel-row-enabled {
+  border-left: 3px solid #3fae63;
+  background: linear-gradient(90deg, rgba(63, 174, 99, 0.14), rgba(255, 255, 255, 0.45) 30%);
+}
+.config-channel-row-disabled {
+  border-left: 3px solid #b4b4b8;
+}
+.config-channel-row-disabled > .config-channel-summary { opacity: 0.68; }
+.config-channel-state-star {
+  font-size: 0.95rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.config-channel-state-star[data-enabled="1"] {
+  color: #3fae63;
+  text-shadow: 0 0 4px rgba(63, 174, 99, 0.4);
+}
+.config-channel-state-star[data-enabled="0"] { color: #a4a4a8; }
+.config-channel-head {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.config-channel-name {
+  font-weight: 700;
+  color: #1a1a20;
+}
+.config-channel-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 100%;
+}
+.config-channel-label-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+.config-channel-label-key {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #54545c;
+  font-weight: 700;
+}
+.config-channel-label-hint {
+  font-size: 0.62rem;
+  color: #74747c;
+  font-style: italic;
+}
+.config-channel-id-input {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.config-channel-type {
+  font-size: 0.7rem;
+  color: #54545c;
+}
+.config-channel-type code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0 0.25rem;
+  border-radius: 3px;
+}
+.config-channel-status {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.config-channel-status-ok {
+  color: #155030;
+  background: rgba(70, 160, 90, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+.config-channel-status-warn {
+  color: #8c5e1c;
+  background: rgba(220, 160, 60, 0.18);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+.config-channel-status-primary {
+  color: #2a2050;
+  background: rgba(60, 80, 220, 0.14);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+.config-channel-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.72rem;
+  color: #3a3a40;
+  flex-wrap: wrap;
+}
+.config-channel-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+.config-channel-test {
+  font-size: 0.66rem;
+}
+.config-channel-remove {
+  margin-left: auto;
+  font-size: 0.66rem;
+}
+/* Live test result — neutral while probing, green/red on verdict. */
+.config-channel-test-result {
+  margin-top: 0.45rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: #55555c;
+}
+.config-channel-test-result[data-ok="1"] { color: #2f8f57; }
+.config-channel-test-result[data-ok="0"] { color: #b4483f; }
+.config-channel-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.7rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.config-channel-field {
+  display: flex; flex-direction: column;
+  gap: 0.2rem;
+}
+/* Boolean config field — checkbox + inline label so the on/off state
+   reads at a glance. The text-input padding/styling that wraps non-
+   bool fields would otherwise eat the checkbox visually. */
+.config-channel-field-bool {
+  gap: 0.25rem;
+}
+.config-channel-field-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1a1a20;
+  cursor: pointer;
+}
+.config-channel-field-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+.config-channel-field-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a5a62;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* "set" / "unset" pill next to credential field labels — green when
+   the env var resolves to a value on disk, muted when empty. Same
+   treatment used for the Server section's API token state. */
+.config-channel-field-state {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-family: inherit;
+  text-transform: uppercase;
+}
+.config-channel-field-state[data-set="1"] {
+  background: rgba(70, 160, 90, 0.18);
+  color: #155030;
+}
+.config-channel-field-state[data-set="0"] {
+  background: rgba(0, 0, 0, 0.06);
+  color: #7a7a82;
+}
+.config-channel-field-input {
+  font-size: 0.74rem;
+  padding: 0.25rem 0.45rem;
+}
+.config-channel-field-hint {
+  font-size: 0.64rem;
+  color: rgba(0, 0, 0, 0.5);
+  font-style: italic;
+}
+.config-channel-field-hint code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0 0.25rem;
+  border-radius: 3px;
+}
+.config-channel-add {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.7rem 0 0.4rem;
+  flex-wrap: wrap;
+}
+.config-channel-add-type {
+  flex: 0 0 12rem;
+}
+.config-channel-add-id {
+  flex: 1 1 12rem;
+}
+
+.config-field {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 0.4rem 0.6rem;
+  margin: 0.3rem 0;
+  align-items: baseline;
+}
+/* A hint is the field's 3rd child; without this it auto-flows into the 110px
+   label column and wraps to a cramped 4-line sliver. Put it under the input
+   (column 2) so it reads full-width. (Reset to auto in the mobile 1-col grid.) */
+.config-field > .config-channel-field-hint { grid-column: 2; }
+.config-field-label {
+  font-size: 0.66rem; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #404048;
+}
+.config-field-value {
+  font-family: monospace; font-size: 0.74rem;
+  color: #1a1a20;
+  word-break: break-all;
+}
+.config-field-empty { color: #8a8a90; font-style: italic; }
+
+.config-input {
+  font-family: inherit; font-size: 0.82rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a20;
+  width: 100%;
+}
+.config-input:focus {
+  outline: none;
+  border-color: rgba(60, 200, 220, 0.7);
+  background: white;
+}
+.config-row {
+  display: flex; gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+/* Radio / checkbox + adjacent text label baseline-align mismatch:
+   the input sits on the text baseline, which pushes the label
+   text up relative to the box. Force vertical centering for any
+   <label> that directly wraps a radio/checkbox input. */
+label > input[type="radio"],
+label > input[type="checkbox"] {
+  vertical-align: middle;
+  position: relative;
+  top: -0.05em;
+}
+/* Stronger pattern: labels that ARE the input-plus-text affordance
+   (config-sync-categories, profile-scope rows, chain GPS, etc.)
+   render with inline-flex so input + text share the same baseline
+   regardless of font metrics. */
+.config-sync-categories label,
+.config-chain-gps label,
+.config-webhook-ev,
+.config-webhook-tmpl-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.config-btn {
+  font-family: inherit; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a20;
+  cursor: pointer;
+}
+.config-btn:hover { background: white; border-color: rgba(0, 0, 0, 0.5); }
+.config-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Primary action — brushed gold to match the Save Certificate button
+   on the decoder and the Conceive button on the conception page. The
+   one button that says "this commits something." Dark body + gold
+   border + gold text, with a hint of inset highlight. No idle breath
+   here — that's reserved for the conception page; on the dashboard
+   the button just sits cleanly until clicked. */
+.config-btn-primary {
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.92) 0%, rgba(18, 14, 8, 0.88) 50%, rgba(14, 10, 6, 0.92) 100%);
+  color: #c8a850;
+  border: 1px solid rgba(200, 170, 80, 0.5);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.12), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 1px 2px rgba(0,0,0,0.3);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+.config-btn-primary:hover:not(:disabled) {
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.75);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.95) 0%, rgba(24, 18, 10, 0.9) 50%, rgba(18, 14, 8, 0.95) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(220, 190, 80, 0.18);
+  filter: none;
+}
+.config-btn-primary:disabled {
+  opacity: 0.45;
+  filter: saturate(0.4);
+  cursor: not-allowed;
+}
+/* Danger button — rotate/revoke and other irreversible actions. Tinted
+   ruby so it reads visually distinct from primary actions; muted enough
+   that it doesn't dominate the section. */
+.config-btn-danger {
+  background: rgba(176, 64, 64, 0.08);
+  color: #8c2424;
+  border-color: rgba(176, 64, 64, 0.35);
+}
+.config-btn-danger:hover {
+  background: rgba(176, 64, 64, 0.16);
+  border-color: rgba(176, 64, 64, 0.6);
+  color: #6c1818;
+}
+.config-btn-danger:disabled { opacity: 0.35; }
+/* Subtle ghost button — used for the × clear-path control next to
+   Browse, where we want the affordance without competing visually
+   with primary actions. */
+.config-btn-subtle {
+  background: transparent;
+  color: #54545c;
+  border-color: rgba(0, 0, 0, 0.18);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.config-btn-subtle:hover { background: rgba(0, 0, 0, 0.04); color: #1a1a20; }
+
+/* TLS cert/key row layout: label + readonly path input + Browse + × */
+.config-field-with-browse {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+.config-field-with-browse .config-field-label {
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+}
+.config-field-with-browse .config-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+  /* Readonly state: visually distinct from editable inputs so the user
+     reads the path as a pointer, not a field to type into. The picker
+     is the source of truth. */
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: rgba(255, 255, 255, 0.6);
+  color: #2a2a30;
+}
+.config-field-with-browse .config-input[readonly] {
+  cursor: default;
+}
+
+/* API token row: input occupies its own row, the two buttons share a
+   row below it. Lives inside grid column 2 of its .config-field
+   parent so the input gets full available width. */
+.config-token-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.config-token-row .config-input {
+  width: 100%;
+  min-width: 0;
+}
+.config-token-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.config-token-buttons .config-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Password input with an eyeball reveal toggle. The wrapper keeps the
+   input + button on the same line; click flips type=password ↔ text
+   so the user can verify what they typed. */
+.config-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+.config-password-wrap .config-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 2.6rem;
+}
+.config-password-toggle {
+  position: absolute;
+  right: 0.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.45rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: #54545c;
+  border-radius: 3px;
+}
+.config-password-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1a1a20;
+}
+.config-password-toggle:focus-visible {
+  outline: 2px solid rgba(40, 100, 200, 0.5);
+  outline-offset: 1px;
+}
+
+/* Inline confirmation zone for rotate/revoke. Shows beneath the
+   Identity row buttons; user must type the confirm string to proceed.
+   Modal-less to keep the dashboard yang-flat. */
+.config-danger-zone {
+  margin-top: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  background: rgba(176, 64, 64, 0.04);
+  border: 1px solid rgba(176, 64, 64, 0.18);
+  border-radius: var(--radius-sm, 6px);
+}
+.config-danger-zone h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.config-danger-zone p {
+  font-size: 0.72rem;
+  margin: 0.3rem 0 0.5rem;
+  line-height: 1.5;
+}
+
+/* Webhook editor — list of rows inside the Server section. Each row
+   is one configured webhook: URL input, two event checkboxes, a
+   headers indicator (display-only — custom auth headers stay in
+   server.json), and a delete button. */
+.config-webhooks {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.config-webhooks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+/* Each webhook is a collapsible <details> so a long list reads as scannable
+   one-line headers instead of a stack of full editors. */
+.config-webhook-row {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+}
+.config-webhook-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;            /* hide the default disclosure marker (Firefox) */
+}
+.config-webhook-summary::-webkit-details-marker { display: none; }  /* Chrome/Safari */
+.config-webhook-row[open] > .config-webhook-summary {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.config-webhook-sum-chevron {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: #999;
+  transition: transform 0.15s ease;
+}
+.config-webhook-row[open] > .config-webhook-summary .config-webhook-sum-chevron {
+  transform: rotate(90deg);
+}
+.config-webhook-sum-platform {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+}
+.config-webhook-summary .config-webhook-del { flex: 0 0 auto; margin-left: auto; }
+.config-webhook-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.55rem;
+}
+.config-webhook-urlrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.config-webhook-url { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+.config-webhook-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+.config-webhook-tmpl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+.config-webhook-tmpl-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #2a2a30;
+}
+.config-webhook-preset {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  margin-top: 0;
+  width: auto;
+}
+.config-webhook-tmpl-input {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 2.4rem;
+  width: 100%;
+  margin-top: 0;
+}
+/* Slack file-upload config — bot token + channel, shown for Slack hooks.
+   files.uploadV2 needs these; the incoming-webhook URL alone can't carry
+   files. */
+.config-webhook-slack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.02);
+}
+.config-webhook-slack-note {
+  margin: 0;
+  font-size: 0.66rem;
+  color: #5a5a62;
+  line-height: 1.4;
+}
+.config-webhook-slack-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.config-webhook-slack-field > span {
+  flex: none;
+  width: 5.5rem;
+  font-size: 0.7rem;
+  color: #3a3a40;
+}
+.config-webhook-slack-field .config-password-wrap,
+.config-webhook-slack-field > input {
+  flex: 1;
+  min-width: 0;
+}
+.config-webhook-ev {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #2a2a30;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.config-webhook-ev input { margin: 0; cursor: pointer; }
+.config-webhook-hdrs {
+  font-size: 0.65rem;
+  color: #6a6a72;
+  white-space: nowrap;
+  padding: 0 0.3rem;
+}
+/* Header editor — <details> expander with one row per header.
+   Open by default when there's at least one header; collapsed when
+   empty to keep the webhook row tidy. */
+.config-webhook-hdrs-section {
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+.config-webhook-hdrs-section > summary {
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #3a3a40;
+  padding: 0.1rem 0;
+  user-select: none;
+}
+.config-webhook-hdrs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.3rem 0;
+}
+.config-webhook-hdr-row {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.config-webhook-hdr-key {
+  flex: 1 1 30%;
+  margin-top: 0;
+}
+.config-webhook-hdr-val {
+  flex: 1 1 70%;
+  margin-top: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+/* When the value is a secret-bearing header, the input is wrapped in
+   .config-password-wrap so the eyeball reveal button sits at the
+   right edge. The wrapper becomes the flex child — pass through the
+   sizing. */
+.config-webhook-hdr-val-wrap {
+  flex: 1 1 70%;
+}
+.config-webhook-hdr-del {
+  font-size: 0.85rem;
+  padding: 0.1rem 0.4rem;
+  line-height: 1;
+  color: #b04040;
+  border-color: rgba(176, 64, 64, 0.3);
+}
+.config-webhook-hdr-add {
+  font-size: 0.66rem;
+  padding: 0.2rem 0.5rem;
+}
+.config-webhook-del {
+  font-size: 0.9rem;
+  padding: 0.1rem 0.45rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.6);
+  color: #b04040;
+  border-color: rgba(176, 64, 64, 0.3);
+}
+.config-webhook-del:hover { background: #fff; border-color: rgba(176, 64, 64, 0.6); }
+
+.config-note {
+  font-size: 0.7rem;
+  color: #54545c;
+  margin: 0.6rem 0 0;
+  font-style: italic;
+}
+/* Scannable companion to .config-note: a lead note followed by one idea
+   per bulleted line instead of a run-on paragraph. Same muted tone, upright
+   (lists read better non-italic), tight spacing. */
+.config-note-list {
+  font-size: 0.7rem;
+  color: #54545c;
+  margin: 0.3rem 0 0;
+  padding-left: 1.05rem;
+  list-style: disc;
+}
+.config-note-list li { margin: 0.14rem 0; }
+.config-note + .config-note-list { margin-top: 0.25rem; }
+
+/* Diagnostics checklist (the Doctor) */
+.config-doctor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.7rem;
+}
+.config-doctor-row {
+  display: grid;
+  grid-template-columns: 1.2rem auto 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.74rem;
+}
+.config-doctor-row[data-status="ok"]   { background: rgba(46,204,113,0.10); border-color: rgba(46,204,113,0.4); }
+.config-doctor-row[data-status="warn"] { background: rgba(243,156,18,0.10); border-color: rgba(243,156,18,0.45); }
+.config-doctor-row[data-status="fail"] { background: rgba(231,76,60,0.10);  border-color: rgba(231,76,60,0.45); }
+.config-doctor-mark { font-weight: 700; }
+.config-doctor-row[data-status="ok"]   .config-doctor-mark { color: #1c7a44; }
+.config-doctor-row[data-status="warn"] .config-doctor-mark { color: #9a5410; }
+.config-doctor-row[data-status="fail"] .config-doctor-mark { color: #a02a20; }
+.config-doctor-label { font-weight: 700; color: #1a1a20; white-space: nowrap; }
+.config-doctor-detail { color: #45454e; }
+.config-doctor-err { color: #a02a20; font-size: 0.74rem; margin-top: 0.6rem; }
+.config-note code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+/* Chain rows in the Config > Chains section */
+.config-chain-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0.4rem 0 0.6rem;
+}
+/* Config chain row — LEADS with the shared chain badge, then the action
+   buttons, then the GPS radios, stacked vertically. The badge owns identity
+   + readiness; the prefix/created/pw-contract detail rides in its .below. */
+.config-chain-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.4rem;
+  font-size: 0.78rem;
+  color: #1a1a20;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+}
+.config-chain-row:last-child { border-bottom: none; }
+.config-chain-row[data-active="1"] { background: rgba(60, 200, 220, 0.08); border-radius: 6px; }
+.config-chain-active-badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #1c6a8a; background: rgba(60, 200, 220, 0.18);
+  border: 1px solid rgba(60, 200, 220, 0.5); border-radius: 999px;
+  padding: 0.2rem 0.55rem; display: inline-flex; align-items: center;
+}
+/* Chain detail line in the badge's .below — (visibility, password-set) as a
+   single colored string: green = sealed correctly, gold = light+public,
+   red = dark+no-password (broken). */
+.config-chain-state[data-vis="dark_matter"][data-pw-set="1"] { color: #155030; }
+.config-chain-state[data-vis="dark_matter"][data-pw-set="0"] { color: #8c2424; font-weight: 700; }
+.config-chain-state[data-vis="light_energy"][data-pw-set="1"] { color: #6a5018; }
+.config-chain-state[data-vis="light_energy"][data-pw-set="0"] { color: #54545c; }
+.config-chain-actions { display: flex; gap: 0.3rem; }
+.config-chain-actions .config-btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.66rem;
+}
+/* GPS source picker — per-row radio. Spans the full row width
+   (placed via grid-area: gps in .config-chain-row). */
+.config-chain-gps-cell {
+  padding: 0.2rem 0 0.1rem 0;
+  /* Each control group (GPS source, GPS visibility, constellation size) gets
+     its own row. Without this the inline-flex groups flow inline and wrap by
+     width, so the constellation-size select tucked onto the GPS-source line. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.config-chain-gps {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.68rem;
+  color: #54545c;
+}
+.config-chain-gps-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #74747c;
+  margin-right: 0.15rem;
+}
+.config-chain-gps label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+.config-chain-gps input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+.config-chain-active-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(60, 200, 120, 0.22);
+  color: #155030;
+}
+
+/* "+ New chain" inline form */
+.config-chain-new-form {
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.6rem 0.7rem;
+  margin-top: 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+}
+.config-chain-new-form .config-row { margin-top: 0.3rem; }
+.config-chain-new-form[hidden] { display: none; }
+
+.config-chain-banner {
+  font-size: 0.74rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(60, 200, 220, 0.15);
+  border-left: 3px solid #3cc8dc;
+  color: #103060;
+  margin-top: 0.5rem;
+}
+.config-chain-banner[hidden] { display: none; }
+
+.config-chain-migrate-banner {
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(240, 180, 60, 0.12);
+  border-left: 3px solid #d49932;
+  color: #1a1a20;
+  margin-bottom: 0.75rem;
+}
+.config-chain-migrate-banner p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.config-chain-migrate-banner p:last-child { margin-bottom: 0; }
+.config-chain-migrate-banner .config-note {
+  color: #404048;
+  font-size: 0.72rem;
+  margin-top: 0.5rem;
+}
+.config-chain-migrate-banner code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 0.25rem;
+  border-radius: 3px;
+  font-size: 0.92em;
+}
+
+.config-chain-visibility-warning {
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(240, 180, 60, 0.12);
+  border-left: 3px solid #d49932;
+  color: #1a1a20;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin: 0.4rem 0 0.6rem 0;
+}
+
+/* Profiles section — multi-key list with active marker and inline
+   action buttons. Visually echoes the Env row (presence dot + name +
+   state), but each row is wider to fit the fingerprint + action set. */
+.config-profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.config-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.74rem;
+  flex-wrap: wrap;
+}
+.config-profile-row[data-active="1"] {
+  background: rgba(60, 200, 120, 0.06);
+  border-color: rgba(60, 200, 120, 0.35);
+}
+.config-profile-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+.config-profile-row[data-active="1"] .config-profile-dot {
+  background: #2a8050;
+  box-shadow: 0 0 6px rgba(60, 200, 120, 0.5);
+}
+.config-profile-id {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 700;
+  min-width: 7rem;
+}
+.config-profile-fp {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: #54545c;
+  font-size: 0.68rem;
+  min-width: 11rem;
+}
+.config-profile-name {
+  flex: 1 1 auto;
+  color: #2a2a30;
+}
+.config-profile-state {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #2a8050;
+  min-width: 3.5rem;
+}
+.config-profile-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: nowrap;
+}
+.config-profile-actions .config-btn {
+  font-size: 0.62rem;
+  padding: 0.25rem 0.55rem;
+}
+
+/* Profile alias chips — render as a second line under the main row
+   (wraps via flex-basis: 100%). Each chip names a linked profile;
+   bidirectional uses ↔ + green tint, one-way uses → + muted tint.
+   Unknown-locally targets render the truncated fingerprint instead. */
+.config-profile-alias-row {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.3rem;
+  margin-top: 0.2rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+  font-size: 0.66rem;
+}
+.config-sync-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.config-sync-categories label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+.config-sync-categories label > input { margin: 0; }
+.config-profile-alias-label {
+  color: #6a6a72;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-right: 0.1rem;
+}
+.config-alias-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.5rem 0.12rem 0.35rem;
+  border-radius: 999px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.66rem;
+  border: 1px solid transparent;
+}
+.config-alias-glyph {
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.config-alias-bi {
+  color: #155030;
+  background: rgba(70, 160, 90, 0.14);
+  border-color: rgba(70, 160, 90, 0.28);
+}
+.config-alias-bi .config-alias-glyph { color: #2a8050; }
+.config-alias-oneway {
+  color: #6a6a72;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  opacity: 0.85;
+}
+.config-alias-oneway .config-alias-glyph { color: #8a8a92; }
+
+/* Pair flow form — opens in the same danger-zone slot as the
+   alias-confirm and remove-confirm modals. Compact two-column
+   field layout. */
+.config-pair-form {
+  padding: 0.6rem 0.8rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-sm, 6px);
+}
+.config-pair-head {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.config-pair-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #54545c;
+  margin-top: 0.4rem;
+}
+.config-pair-checkbox input { margin: 0; }
+
+/* Env credential groups — header per owner (channel / global) so the
+   user reads the section in the same mental model as the Channels
+   list above. */
+.config-env-group { margin-bottom: 0.55rem; }
+.config-env-group + .config-env-group { padding-top: 0.4rem; border-top: 1px dashed rgba(0, 0, 0, 0.08); }
+.config-env-group-head {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a5a62;
+  margin: 0.3rem 0 0.2rem;
+}
+
+/* Env presence dots */
+.config-env-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.2rem 0;
+  font-family: monospace; font-size: 0.78rem;
+  color: #1a1a20;
+}
+.config-env-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+.config-env-row[data-set="1"] .config-env-dot { background: #2a8050; box-shadow: 0 0 6px rgba(60,200,120,0.5); }
+/* Env name shrinks to its content now (was flex:1) so the inline
+   editor inputs get the slack — the editor inputs are the primary
+   interaction, the name is just a label. */
+.config-env-row .config-env-name { flex: 0 0 auto; min-width: 11rem; }
+.config-env-row .config-env-state {
+  font-size: 0.66rem; letter-spacing: 0.08em; font-weight: 700;
+  text-transform: uppercase; color: #54545c;
+  flex: 0 0 auto;
+}
+.config-env-row[data-set="1"] .config-env-state { color: #2a8050; }
+.config-env-row .config-env-input {
+  flex: 1 1 auto; min-width: 0; margin-top: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.config-env-row .config-env-update,
+.config-env-row .config-env-clear {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* Inline copy-to-clipboard button */
+.config-copy-btn {
+  background: transparent; border: none;
+  cursor: pointer; padding: 0 0.3rem;
+  font-size: 0.66rem; color: #2050a0;
+  font-family: inherit; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.config-copy-btn:hover { color: #103060; }
+.config-copy-btn[data-copied="1"] { color: #2a8050; }
+
+/* =====================================================================
+ * MOBILE / NARROW VIEWPORT PASS
+ *
+ * Single 679px breakpoint matches the existing decoder/validator
+ * cutover. Goals:
+ *   - Touch targets ≥ 36px tall (Apple HIG suggests 44 but the dashboard
+ *     UI already uses tight rows; 36 keeps density tolerable while
+ *     staying tappable on most phones)
+ *   - Complex multi-column rows (chains, channels, profiles, pending
+ *     sessions, ticket cell) collapse to single-column or wrap
+ *   - Modals fit the viewport; glossary readable
+ *   - Header actions don't overlap the wordmark
+ *   - Welcome card, forecast, recent-sessions all stack cleanly
+ *
+ * Out of scope: hiding controls that are desktop-only. Everything
+ * available on desktop stays reachable; it just stacks.
+ * ===================================================================== */
+@media (max-width: 679px) {
+
+  /* --- Tabs --- */
+  .input-tabs { flex-wrap: wrap; }
+  .input-tab {
+    flex: 1 1 30%;
+    min-width: 0;
+    text-align: center;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.78rem;
+  }
+
+  /* --- Header actions: push below title so they don't overlap --- */
+  .page-header-actions {
+    position: static;
+    justify-content: center;
+    margin: 0.4rem 0 0;
+  }
+  .page-header { text-align: center; }
+
+  /* --- Welcome card --- */
+  .welcome-step {
+    grid-template-columns: 1.3rem 1fr;
+    grid-template-areas:
+      "icon label"
+      "icon detail";
+    gap: 0.15rem 0.5rem;
+  }
+  .welcome-step-icon { grid-area: icon; align-self: start; padding-top: 0.15rem; }
+  .welcome-step-label { grid-area: label; }
+  .welcome-step-detail { grid-area: detail; }
+
+  /* --- Pending sessions list --- (flex-column on every width; the head
+     row's controls wrap if the ticket id + buttons get tight) */
+  .mint-recent-row { padding: 0.5rem 0.6rem; }
+  .mint-recent-head { flex-wrap: wrap; }
+  .mint-recent-head > .mint-recent-ticket { font-size: 0.78rem; }
+  .mint-recent-head > .mint-recent-btn { padding: 0.35rem 0.6rem; font-size: 0.7rem; }
+
+  /* --- Resume input row (empty state) --- */
+  .mint-resume {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+  .mint-resume-labelwrap { grid-column: 1; }
+  .mint-resume-input { grid-column: 1; width: 100%; }
+  .mint-resume-btn   { grid-column: 1; padding: 0.5rem 0.7rem; font-size: 0.75rem; }
+
+  /* --- Forecast widget --- */
+  .mint-forecast-summary { flex-wrap: wrap; }
+  .mint-forecast-headline { flex-basis: 100%; font-size: 0.72rem; }
+  .mint-forecast-bar-row {
+    grid-template-columns: 4.5rem 1fr 3rem;
+    gap: 0.4rem;
+  }
+  .mint-forecast-stats { gap: 0.35rem 0.7rem; }
+  .mint-forecast-trait-row {
+    grid-template-columns: 2rem 1fr;
+    grid-template-areas:
+      "value name"
+      "value gate"
+      "value obs";
+    gap: 0.1rem 0.4rem;
+  }
+  .mint-forecast-trait-value { grid-area: value; }
+  .mint-forecast-trait-name  { grid-area: name; }
+  .mint-forecast-trait-gate  { grid-area: gate; font-size: 0.62rem; }
+  .mint-forecast-trait-obs   { grid-area: obs; font-size: 0.62rem; }
+
+  /* --- Config sections: tighter padding so content has room --- */
+  .config-section-body { padding: 0.55rem 0.5rem 0.6rem; }
+
+  /* Section controls (Advanced toggle) stacks on its own row */
+  .config-section-controls {
+    padding: 0.25rem 0.5rem 0.25rem 0;
+  }
+
+  /* Field grids collapse to single column so labels + inputs stack */
+  .config-field {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  /* Single-column grid: column 2 doesn't exist, so let the hint flow normally. */
+  .config-field > .config-channel-field-hint { grid-column: auto; }
+  .config-field-with-browse {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Profile rows --- */
+  .config-profile-row {
+    grid-template-columns: max-content 1fr;
+    grid-template-areas:
+      "dot id"
+      "dot fp"
+      "dot name"
+      "state state"
+      "actions actions"
+      "alias alias";
+    gap: 0.2rem 0.5rem;
+    padding: 0.5rem 0.6rem;
+  }
+  .config-profile-row > .config-profile-dot     { grid-area: dot; }
+  .config-profile-row > .config-profile-id      { grid-area: id; font-size: 0.82rem; }
+  .config-profile-row > .config-profile-fp      { grid-area: fp; font-size: 0.66rem; }
+  .config-profile-row > .config-profile-name    { grid-area: name; font-size: 0.74rem; }
+  .config-profile-row > .config-profile-state   { grid-area: state; }
+  .config-profile-row > .config-profile-actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.3rem;
+  }
+  .config-profile-row > .config-profile-alias-row { grid-area: alias; }
+  .config-profile-actions .config-btn {
+    flex: 0 1 auto;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.72rem;
+  }
+
+  /* --- Chain rows --- (flex-column on every width; actions wrap on mobile) */
+  .config-chain-row { padding: 0.55rem 0.6rem; }
+  .config-chain-row > .config-chain-actions { flex-wrap: wrap; }
+  .config-chain-row > .config-chain-gps-cell { padding-left: 0; }
+  .config-chain-actions .config-btn {
+    padding: 0.4rem 0.7rem; font-size: 0.72rem;
+  }
+  /* Radio / checkbox groups stack on mobile. Three short labels
+     (phone / machine / none) can fit horizontally in theory but
+     in practice they push past the cell edge or wrap awkwardly
+     mid-label — vertical stacking is the predictable choice. */
+  .config-chain-gps {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .config-chain-gps label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  /* Sync push / export "include" categories were already a column,
+     but make explicit and tighten gap. */
+  .config-sync-categories {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  /* New-chain Visibility radios — currently sit in a <span> with
+     inline margin. Override that span to render as a stacked
+     column on mobile. */
+  .config-chain-new-form .config-field > span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .config-chain-new-form .config-field > span > label {
+    margin: 0 !important;  /* beats the inline style="margin-right:1rem" */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  /* Webhook event toggles (conceived / ready / attachment) — three
+     short labels but the URL field above already spans the full
+     width, so stacking the toggles here keeps the cell tidy. */
+  .config-webhook-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  /* --- Channel rows --- */
+  .config-channel-head { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+  .config-channel-labels { width: 100%; }
+  .config-channel-label-row {
+    grid-template-columns: 50px 1fr;
+    gap: 0.3rem 0.4rem;
+  }
+  .config-channel-label-row > .config-channel-label-hint { grid-column: 2; }
+  .config-channel-controls {
+    flex-wrap: wrap; gap: 0.5rem 0.8rem;
+  }
+  .config-channel-field-label { white-space: normal; }
+
+  /* --- Ticket cell (handoff) --- */
+  .mint-handoff-ticket {
+    padding: 0.5rem 0.6rem;
+  }
+  .mint-handoff-ticket-val { font-size: 0.88rem; }
+
+  /* --- Handoff buttons (already stacks per Phase 5 polish) --- */
+  .mint-handoff-row { flex-direction: column; align-items: stretch; }
+  .mint-handoff-qr { align-self: center; }
+
+  /* --- Buttons: bigger touch targets across the board --- */
+  .config-btn {
+    min-height: 2rem;
+    padding: 0.45rem 0.7rem;
+  }
+  .config-btn-subtle { min-height: auto; }
+
+  /* --- Modals: tighten the viewport-fit math --- */
+  .config-modal { padding: 0.6rem; }
+  .config-modal-card { max-height: 90vh; }
+  .config-modal-glossary { width: 100%; }
+  .glossary-entry-label  { font-size: 0.86rem; }
+  .glossary-entry-body   { font-size: 0.78rem; }
+
+  /* Sync / Push categories — wider labels wrap on phones */
+  .config-sync-categories label { flex-wrap: wrap; }
+
+  /* --- Mint result + Mint review --- */
+  .mint-thumb-row { flex-wrap: wrap; }
+  .mint-thumb-actions {
+    flex-direction: row;
+    width: 100%;
+    margin-top: 0.4rem;
+  }
+  .mint-back, .mint-delete-session {
+    flex: 1 1 auto; padding: 0.55rem 0.7rem;
+    font-size: 0.74rem;
+  }
+  .mint-result-meta {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+  .mint-result-actions { flex-direction: column; }
+}
+
+/* Channel cleanup — pre-genesis maintenance section in Config tab.
+   Channel picker + scan + per-channel hide/purge buttons.
+   Capabilities-aware: each channel declares which operations it
+   supports via Channel.capabilities(); the UI greys out the rest. */
+.config-cc-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+.config-cc-summary {
+  font-size: 0.7rem;
+  color: #54545c;
+  font-style: italic;
+}
+.config-cc-caps {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.6);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  margin-top: 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+.config-cc-cap-label { font-style: italic; font-family: inherit; }
+.config-cc-cap { letter-spacing: 0.04em; }
+.config-cc-cap-yes { color: #2c8a3a; }
+.config-cc-cap-no  { color: rgba(0, 0, 0, 0.4); }
+.config-cc-results {
+  margin: 0.5rem 0;
+  max-height: 18rem;
+  overflow-y: auto;
+  font-size: 0.72rem;
+}
+.config-cc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.config-cc-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 0.3rem 0.5rem;
+}
+.config-cc-table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  vertical-align: baseline;
+}
+.config-cc-table tr:last-child td { border-bottom: none; }
+.config-cc-ident {
+  color: rgba(0, 0, 0, 0.85);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.25);
+}
+.config-cc-ident:hover { text-decoration-color: rgba(0, 0, 0, 0.6); }
+.config-cc-err { color: #8a3030; }
+.config-cc-log {
+  margin: 0.5rem 0 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  max-height: 10rem;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-sm, 6px);
+}
+.config-cc-log:not(:empty) {
+  padding: 0.5rem 0.6rem;
+}
+.config-cc-log-line { line-height: 1.4; }
+.config-cc-log-err { color: #8a3030; }
+
+/* Chain-badge legend inside the glossary entry — one line per status with
+   its dot. The .chain-dot styles come from mememage.css. */
+.glossary-badge-legend { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.6rem 0; }
+.glossary-badge-legend > div { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.78rem; line-height: 1.4; }
+.glossary-badge-legend .chain-dot { flex: none; margin-top: 0.15rem; }
+
+/* Pending-ticket chain badge — right-aligned before the age. Wraps the real
+   .chain-badge.compact, so it just handles placement. */
+.mint-recent-chain { margin-left: auto; display: inline-flex; }

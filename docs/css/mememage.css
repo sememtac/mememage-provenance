@@ -1,0 +1,2791 @@
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    /* Prevent iOS Safari's auto text-size adjust on orientation
+       change — keeps rem-based sizing predictable. */
+    -webkit-text-size-adjust: 100%;
+    /* scroll-behavior at the root so window.scrollTo(x, y) animates on
+       capable browsers without needing the iOS-16+ options-object form
+       of scrollTo. */
+    scroll-behavior: smooth;
+  }
+
+  /* Mobile typography bump: +6% root size so rem-based sizing reads
+     comfortably on high-DPI phone screens. Inputs pinned at ≥16px
+     to kill iOS Safari's "zoom into focused input" snap behavior. */
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .lookup-input, .audit-input { font-size: 16px; }
+  }
+
+
+  /* L1 theme tokens (palette, plate material, motion tempo) live in
+     docs/css/theme.css — load that first so these var(...) refs
+     resolve. Only L0 / structural rules stay in this file. */
+
+  /* =================================================================
+     Button loading spinner — shared by Fetch (decoder) + Audit
+     (validator). ButtonLoading.run() (portal.js) swaps the label for
+     one of these and re-enables the button on settle. currentColor on
+     the border-top means the spinner inherits whatever the button's
+     text color is, so yin/yang themes don't need per-page overrides.
+     ================================================================= */
+  .btn-loading { cursor: wait; opacity: 0.85; }
+  .btn-spinner {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    vertical-align: middle;
+    border: 1.5px solid currentColor;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    animation: btnSpinnerRotate 0.75s linear infinite;
+  }
+  @keyframes btnSpinnerRotate {
+    to { transform: rotate(360deg); }
+  }
+
+  body {
+    font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.2rem 3rem;
+    position: relative;
+    /* overflow-x: clip instead of hidden — both prevent horizontal
+       overflow, but `hidden` makes the body a scroll container (even
+       in the X axis alone), which breaks position: sticky on any
+       descendant. `clip` just clips without creating a scroll root,
+       so sticky on the cosmic player still engages against the
+       document scroll. */
+    overflow-x: clip;
+  }
+
+  /* --- Star field background --- */
+  #starfield {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body > *:not(#starfield):not(.touch-tooltip):not(.planetarium):not(.cosmic-player):not(.config-modal):not(.payload-modal) { position: relative; z-index: 1; }
+
+  /* --- Header (theme overrides; structure in layout.css) --- */
+  .page-header h1 {
+    color: #fff;
+    text-shadow: 0 0 40px rgba(120, 140, 220, 0.2);
+  }
+  .page-header .subtitle {
+    color: var(--text-muted);
+  }
+
+  /* --- Desktop layout: see css/layout.css for the shared two-panel
+         .panel-layout / .panel-left / .panel-right system. Only
+         decoder-specific overrides live here now. --- */
+
+  /* Panel-left scrollbar stays hidden. A visible bar would flash during
+     the compact-mode transition — when .layout-active is added, the
+     left panel snaps to fixed 420px while content still has its non-
+     compact height, so it briefly overflows before the compact rules
+     settle it. Hiding the bar avoids the flash; wheel / keyboard /
+     trackpad scroll still work for any edge case. */
+  .panel-layout.layout-active .panel-left {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .panel-layout.layout-active .panel-left::-webkit-scrollbar { display: none; }
+
+  /* --- Input area --- */
+  .input-section {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--system-box-bg-yang);
+    /* Fallback solid color rendered behind the bg-image stack. Catches
+       any alpha holes in a texture so transparent pixels render in-theme
+       instead of exposing the page bg. Must come AFTER the background
+       shorthand, which would otherwise reset bg-color to transparent. */
+    background-color: var(--system-box-bg-color-yang);
+    background-blend-mode: var(--system-box-blend-mode, normal);
+    backdrop-filter: var(--system-box-blur);
+    -webkit-backdrop-filter: var(--system-box-blur);
+    box-shadow: var(--system-box-shadow);
+    border-radius: var(--radius);
+    border: 1px solid rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+
+  .input-tabs {
+    display: flex;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.1);
+  }
+
+  .input-tab {
+    flex: 1;
+    padding: 0.85rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--system-box-text-yang);
+    background: transparent;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    position: relative;
+    text-shadow: var(--system-box-text-shadow-yang);
+  }
+  .input-tab:not(:last-child) { border-right: 1px solid rgba(0,0,0,0.08); }
+  .input-tab.active {
+    color: #2a2a32;
+    background: rgba(255,255,255,0.15);
+  }
+  .input-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 15%; right: 15%;
+    height: 2px;
+    border-radius: 2px;
+  }
+  /* M/Y/C — the bar's structural colors mark the verification paths */
+  .input-tab:nth-child(1).active::after { background: linear-gradient(90deg, transparent, rgb(220,80,220), transparent); } /* Magenta — By Sight */
+  .input-tab:nth-child(2).active::after { background: linear-gradient(90deg, transparent, rgb(220,200,60), transparent); } /* Yellow — By Word */
+  .input-tab:nth-child(3).active::after { background: linear-gradient(90deg, transparent, rgb(60,200,220), transparent); } /* Cyan — By Soul */
+  .input-tab:nth-child(1).active { color: #6a2a6a; }
+  .input-tab:nth-child(2).active { color: #6a5a1a; }
+  .input-tab:nth-child(3).active { color: #1a5a6a; }
+  .input-tab:hover { color: #3a3a44; }
+
+  .input-panel {
+    display: none;
+    /* Locked to 365px — one day per day of the year. The system box
+       stays visually stable across tab switches, Source-mode toggles,
+       and long error messages: the box itself never grows. Overflow
+       is hidden (not auto) — partial drag-scroll surfaces a confusing
+       half-visible row instead of a clean cutoff, and the panels
+       must fit naturally inside 365px (compact rules trim the drop
+       zone, Source disclosure, hints, etc as states change). */
+    height: 365px;
+    overflow: hidden;
+    transition: height var(--compact-duration) var(--compact-ease);
+  }
+  /* When a decoded result is on screen (the preview is visible), the active
+     input panel hugs its content so the preview/cert sit right beneath the
+     form — no 365px box held open with a floated empty error slot below it.
+     This is the robust signal: narrow viewports render single-column and
+     never set layout-active, so we key off the result itself, not the layout
+     mode. An error still shows (the :has(error) rules grow the box). */
+  .input-section:has(.console-preview.visible) .input-panel.active {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  /* …and the empty By-Sight drop-error stops reserving its floated slot once
+     a result is up (it's display:block + min-height by default for a stable
+     y-position before decode). */
+  .input-section:has(.console-preview.visible) #imagePanel .drop-error:empty {
+    display: none;
+  }
+  /* Mobile: the system box fits on one screen. No scrolling inside
+     the box, no height expansion when Source opens. Every tab reserves
+     the same height (360px) — big enough to accommodate the tallest
+     state any tab can reach (Source expanded + drop-zone + errors) so
+     switching tabs or toggling Source never changes box height. Content
+     that's shorter than 360px just leaves empty space, which is fine:
+     the consistency buys predictable layout. The compact element rules
+     below (drop-zone, Source, inputs, hints) keep every max state under
+     360px so overflow never happens. */
+  @media (max-width: 679px) {
+    .input-panel {
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+  }
+  /* Flex column lets the panel's error slot (drop-error, lookup-error,
+     verify-status, .how, img-console.error-only, .tab-error) sit at the
+     bottom of the 323px tab via margin-top: auto — errors never push
+     the tab to grow, they just settle into the reserved empty space. */
+  .input-panel.active {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Long-error escape hatch: when a non-empty error is showing AND we
+     aren't already in layout-active (cert-rendered) mode, release the
+     365px panel cap so multi-line error bodies (probe link + recovery
+     instructions + CORS hint) don't get clipped. Visual stability is
+     nice, but a half-visible error you can't read is worse than the
+     box growing a few rems. layout-active already releases the cap,
+     so this targets the verification-failed-without-cert path. */
+  .panel-layout:not(.layout-active) .input-panel.active:has(.drop-error:not(:empty)),
+  .panel-layout:not(.layout-active) .input-panel.active:has(.panel-error-body:not(:empty)) {
+    height: auto;
+    min-height: 365px;
+    overflow: visible;
+  }
+
+  /* Example-active state mirrors the validator's attack-active: the
+     tabs + their panels collapse, the example description panel takes
+     the tab slot, and the example cert is the one live render on the
+     right. The trigger link text flips to "dismiss example". */
+  .input-section.example-active .input-tabs,
+  .input-section.example-active .input-panel.active:not(#examplePanel) { display: none; }
+  .input-section.example-active #examplePanel { display: block; }
+  .input-section.example-active .console-preview,
+  .input-section.example-active .console-status,
+  .input-section.example-active .console-ia { display: none !important; }
+  .example-blurb {
+    padding: 1.8rem 1.6rem;
+    text-align: center;
+  }
+  .example-heading {
+    color: var(--text, #2a2a32);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin: 0 0 1rem;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .example-body {
+    color: var(--text-muted, #5a5a64);
+    font-size: 0.72rem;
+    line-height: 1.7;
+    margin: 0;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .example-body em { color: var(--text, #2a2a32); font-style: italic; }
+
+  .input-panel-wrap {
+    padding: 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drop-zone {
+    width: 100%;
+    border: 2px dashed rgba(0,0,0,0.15);
+    border-radius: var(--radius-sm);
+    /* 2rem padding (down from 3.5rem) — keeps the drop zone targetable
+       while leaving room for Source + error slots inside the 365px
+       locked input-panel. Prior height pushed .drop-error below the
+       scrollable viewport, making error messages invisible. */
+    padding: 2rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    background: rgba(255,255,255,0.08);
+  }
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: var(--radius-sm);
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%);
+    animation: dropPulse var(--pulse-duration) ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes dropPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: rgba(0,0,0,0.25);
+    background: rgba(255,255,255,0.15);
+    box-shadow: 0 0 20px rgba(255,255,255,0.05) inset;
+  }
+  .drop-zone:hover::before, .drop-zone.drag-over::before {
+    animation: none;
+    opacity: 1;
+  }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+  .drop-zone .drop-icon {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    opacity: 0.35;
+    display: block;
+    color: #3a3a44;
+  }
+  .drop-zone p { color: var(--system-box-text-yang); font-size: 0.82rem; font-weight: 300; text-shadow: var(--system-box-text-shadow-yang); }
+  .drop-zone p strong { color: var(--system-box-text-yang-strong); font-weight: 500; }
+  .drop-zone .drop-hint {
+    margin-top: 0.6rem;
+    font-size: 0.68rem;
+    color: #6a6a74;
+    max-height: 40px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height var(--compact-duration) var(--compact-ease),
+                opacity calc(var(--compact-duration) * 0.8) var(--compact-ease),
+                margin var(--compact-duration) var(--compact-ease);
+  }
+  .drop-zone {
+    transition: padding var(--compact-duration) var(--compact-ease),
+                min-height var(--compact-duration) var(--compact-ease),
+                border-color 0.4s ease, background 0.4s ease,
+                box-shadow 0.4s ease;
+  }
+  .drop-zone .drop-icon,
+  .drop-zone .icon {
+    transition: font-size var(--compact-duration) var(--compact-ease),
+                margin var(--compact-duration) var(--compact-ease);
+  }
+
+  /* Compact state — triggered uniformly by .panel-layout.layout-active
+     (set whenever a cert is rendered on the right). All three tabs
+     collapse their 323px reserve to 0 so the system box shrinks once
+     evidence takes over. Each panel also trims its own affordances
+     (drop-zone padding, hint text) so the left side stays lean. */
+  .panel-layout.layout-active .input-panel {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .panel-layout.layout-active #imagePanel .drop-zone {
+    padding: 1.2rem 2rem;
+  }
+  .panel-layout.layout-active #imagePanel .drop-zone .drop-icon {
+    font-size: 1.1rem; margin-bottom: 0.3rem;
+  }
+  .panel-layout.layout-active #imagePanel .drop-zone .drop-hint {
+    max-height: 0; opacity: 0; margin-top: 0;
+  }
+  /* .lookup-source stays available in compact mode — mirrors validator's
+     audit Source disclosure. Users need to be able to change the source
+     after a cert is on screen (e.g., try a different host for a record
+     that didn't resolve against IA). Only the prose hint and error
+     body collapse. */
+  /* Cert-rendered compact mode: collapse the prose hint + EMPTY error
+     body for both pages. The :empty gate is critical — without it, an
+     actual error message (probe links, CORS hint) gets clipped to zero
+     height while the cert renders alongside a useless red headline.
+     When the body is empty (verification success), the collapse trims
+     the reserved 3rem to keep the cert compact. Decoder's #lookupPanel
+     and validator's #tab-cert share the exact same shape. */
+  .panel-layout.layout-active #lookupPanel .lookup-hint,
+  .panel-layout.layout-active #lookupPanel .panel-error-body:empty,
+  .panel-layout.layout-active #tab-cert .how,
+  .panel-layout.layout-active #tab-cert .panel-error-body:empty {
+    max-height: 0;
+    min-height: 0;  /* override the non-compact reserved 3rem */
+    opacity: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+  }
+  .panel-layout.layout-active #lookupPanel .panel-error-head,
+  .panel-layout.layout-active #tab-cert .panel-error-head { margin: 0.4rem 0 0; min-height: 0; }
+
+  /* Tab scoping — each query stamps its origin tab on the evidence
+     elements (preview, bar-card, status, iaLinkBanner, certWrap) via
+     data-owner. On tab switch we add .tab-scope-hidden to elements
+     whose owner differs from the active tab. State is preserved; only
+     display is suppressed, so returning to the owning tab brings it
+     all back. Mirrors validator's syncResultsVisibility. */
+  .tab-scope-hidden { display: none !important; }
+
+  .verify-pair { display: flex; gap: 0.8rem; align-items: stretch; }
+  .verify-slot { flex: 1; }
+  .verify-slot .drop-zone { padding: 2rem 1rem; min-height: 120px; }
+  @media (max-width: 540px) {
+    .verify-pair { flex-direction: column; }
+    .verify-slot .drop-zone { min-height: 100px; }
+    .verify-link { justify-content: center; padding: 0.2rem 0; }
+  }
+  .verify-link { display: flex; align-items: center; color: var(--text-dim); font-size: 0.7rem; letter-spacing: 0.1em; }
+  /* By Soul body preview — the uploaded image, shown beneath the Body/Soul
+     slots (mirrors By Sight's preview). Hidden until a body is dropped. */
+  .verify-preview { text-align: center; padding: 0.7rem 0 0; }
+  .verify-preview[hidden] { display: none; }
+  .verify-preview img { width: 100%; max-height: 180px; object-fit: contain; border-radius: var(--radius-sm); display: block; margin: 0 auto; }
+  .verify-status { margin-top: auto; padding-top: 0.8rem; text-align: center; font-size: 0.75rem; color: var(--text-muted); min-height: 1.2em; }
+  .verify-slot.ready .drop-zone { border-color: rgba(46, 196, 160, 0.4); }
+  .verify-slot.ready .drop-zone::before { background: radial-gradient(ellipse at center, rgba(46, 196, 160, 0.08) 0%, transparent 70%); }
+  /* Compact verify drop zones when cert is rendered. drop-hint uses
+     max-height collapse so the transition eases smoothly instead of
+     popping out. */
+  .panel-layout.layout-active #verifyPanel .verify-slot .drop-zone {
+    padding: 0.8rem 0.6rem; min-height: 0;
+  }
+  .panel-layout.layout-active #verifyPanel .drop-zone .drop-icon {
+    font-size: 1rem; margin-bottom: 0.2rem;
+  }
+  .panel-layout.layout-active #verifyPanel .drop-zone .drop-hint {
+    max-height: 0; opacity: 0; margin-top: 0;
+  }
+
+  /* Console elements — preview, status, IA link flow inside the silver plate */
+  .console-preview {
+    display: none;
+    padding: 0.8rem 1.2rem;
+    text-align: center;
+  }
+  .console-preview.visible { display: block; }
+  .console-preview .preview-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    display: block;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  .console-status {
+    display: none;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+    /* No top border — it drew a stray line directly beneath the image
+       preview (By Soul / By Sight). The status reads as its own line, and
+       the separator above "see an example" below it is enough. */
+  }
+  .console-status.visible { display: block; }
+  .console-status.success { color: #1a5a3a; }
+  .console-status.error { color: var(--accent-red); }
+  .console-status.info { color: #3a3a50; }
+  /* Error state stays inline — same footprint as the validator's
+     error-only img-console: slim padding, lighter weight, no border
+     separator. Keeps the input section from shifting when the user
+     drops a non-Mememage image. */
+  .console-status.error {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    border-top: none;
+  }
+  /* Inline error line under the drop zone (Image / By Sight). Lives
+     inside #imagePanel so it sits right below the drop zone and shares
+     the panel's 323px slot — no layout shift when it appears, mirrors
+     the validator's error-only img-console. */
+  .drop-error {
+    margin-top: auto;
+    padding: 0.6rem 0.8rem 0;
+    font-size: 0.72rem;
+    color: var(--accent-red);
+    text-align: center;
+    line-height: 1.55;
+  }
+  /* By Sight pins the drop zone to its natural size (no flex-fill),
+     so Source open/closed, example flow, and error states never
+     resize it. Variance elsewhere (Source collapse, long errors)
+     is absorbed by the panel's overflow or by the margin-top:auto
+     on .panel-error-head. */
+  #imagePanel .drop-zone {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #imagePanel .drop-error {
+    margin-top: auto;  /* pushed to panel bottom, stable y-position */
+    min-height: 1.6rem;
+  }
+  #imagePanel .drop-error:empty { display: block; color: transparent; }
+  .drop-error:empty { display: none; }
+  .drop-error strong { font-weight: 600; }
+  .drop-error em { font-style: italic; color: inherit; }
+
+  /* Two-slot error layout used by By Word: headline floats to the
+     vertical middle between the top form group and the bottom body.
+     With two auto-top margins in a flex column, available space splits
+     equally — so head lands in the middle, body at the bottom. Each
+     slot is :empty-hidden so a panel without an error looks untouched. */
+  .panel-error-head {
+    flex-shrink: 0;
+    margin-top: auto;  /* pushes error block to panel bottom */
+    padding: 0.4rem 0.8rem;
+    text-align: center;
+    color: var(--accent-red);
+    font-weight: 600;
+    font-size: 0.78rem;
+    min-height: 1.6rem;  /* reserved space locks error y-position */
+  }
+  .panel-error-body {
+    flex-shrink: 0;
+    margin-top: 0;  /* sits directly under head, no second auto */
+    padding: 0.4rem 0.8rem 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    line-height: 1.55;
+    min-height: 3rem;  /* reserved space locks error y-position */
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height var(--compact-duration) var(--compact-ease),
+                opacity calc(var(--compact-duration) * 0.8) var(--compact-ease),
+                min-height var(--compact-duration) var(--compact-ease),
+                padding var(--compact-duration) var(--compact-ease);
+  }
+  .panel-error-body strong { color: #2a2a32; font-weight: 500; }
+  .panel-error-body em { font-style: italic; color: inherit; }
+  /* Empty error slots collapse completely — no reserved height, no
+     margin-top:auto push — so a panel without an error is compact and the
+     content below (preview, cert) sits right under the form. When an error
+     IS present the slot shows normally and the box grows to fit it (the
+     :has(error) and layout-active rules handle the expand). */
+  .panel-error-head:empty, .panel-error-body:empty {
+    color: transparent;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* By Word source configuration — mirrors validator's audit source.
+     Left-aligned summary + inline row, matches the yin layout. */
+  .lookup-source {
+    margin-top: 0.5rem;
+    font-size: 0.62rem;
+    color: #5a5a64;
+    max-height: 200px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height var(--compact-duration) var(--compact-ease),
+                opacity calc(var(--compact-duration) * 0.8) var(--compact-ease),
+                margin var(--compact-duration) var(--compact-ease),
+                padding var(--compact-duration) var(--compact-ease);
+  }
+  .lookup-source summary { cursor: pointer; color: #4a4a52; letter-spacing: 0.05em; list-style: none; }
+  .lookup-source summary::-webkit-details-marker { display: none; }
+  .lookup-source summary::before { content: '\25B8  '; color: #7a7a80; }
+  .lookup-source[open] summary::before { content: '\25BE  '; }
+  .lookup-source-row {
+    margin-top: 0.4rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .lookup-source-row label { color: #4a4a52; white-space: nowrap; }
+  .lookup-source-row input[type="text"] {
+    flex: 1;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    color: #2a2a32;
+    font-family: inherit;
+    font-size: 0.62rem;
+  }
+  .lookup-source-row select {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    padding: 0.2rem 0.3rem;
+    color: #2a2a32;
+    font-family: inherit;
+    font-size: 0.62rem;
+  }
+  .lookup-source-hint {
+    margin-top: 0.25rem;
+    color: #6a6a74;
+    font-size: 0.55rem;
+    text-align: center;
+  }
+
+  /* The Source disclosure hugs its content. (It used to reserve a 140px
+     floor so Online↔Offline mode swaps didn't shift the hint/error below,
+     but Online only needs ~90px — that floor left ~50px of dead space
+     between the hint and the result preview. The tiny mode-swap delta is
+     not worth a permanent gap; the details' max-height transition keeps
+     the swap smooth.) */
+
+  /* Source mode toggle — Online (URL) vs Offline (folder picker).
+     Rows inside .lookup-source are tagged with data-mode-scope;
+     the parent's data-source-mode drives which are visible. */
+  .lookup-source-mode-row {
+    margin-top: 0.4rem;
+    display: flex;
+    justify-content: flex-start;  /* F-shaped reading flow — left first */
+  }
+  .lookup-source-mode {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    padding: 0.2rem 0.3rem;
+    color: #2a2a32;
+    font-family: inherit;
+    font-size: 0.6rem;
+    cursor: pointer;
+  }
+  .lookup-source[data-source-mode="online"] [data-mode-scope="offline"],
+  .lookup-source[data-source-mode="offline"] [data-mode-scope="online"] {
+    display: none;
+  }
+
+  /* Offline folder-picker row — sits below the hint inside the
+     Source disclosure. Lets users load a directory of .soul files
+     into the OfflineRecords cache so Audit / By Word resolve
+     identifiers without hitting the network. */
+  .offline-row {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6rem;
+  }
+  .offline-pick-btn {
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    color: #3a3a44;
+    font-family: inherit;
+    font-size: 0.6rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .offline-pick-btn:hover {
+    background: rgba(0,0,0,0.1);
+    border-color: rgba(0,0,0,0.2);
+  }
+  .offline-count {
+    color: #6a6a74;
+    font-size: 0.55rem;
+  }
+
+  /* Boxed descriptor — mirrors validator's .how. Follows the base
+     group (input + source) with a 2-line gap. Uses max-height + opacity
+     collapse (not display:none) so compact-mode transitions ease out
+     smoothly instead of popping. */
+  /* Shared prose hint box — decoder's .lookup-hint and validator's
+     .how have identical structure; only palette differs. Yang colors
+     (dark text on cream-ish bg) live here; validator's inline CSS
+     overrides color/background/border to yin. flex-shrink: 0 keeps
+     the hint at its natural size — without it the locked 365px panel
+     would squeeze multi-line prose and overflow:hidden would clip
+     characters mid-line. */
+  .lookup-hint, .how {
+    flex-shrink: 0;
+    margin-top: 2rem;
+    padding: 0.8rem 1rem;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    font-size: 0.72rem;
+    line-height: 1.55;
+    color: #4a4a52;
+    text-align: center;
+    max-height: 300px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height var(--compact-duration) var(--compact-ease),
+                opacity calc(var(--compact-duration) * 0.8) var(--compact-ease),
+                margin var(--compact-duration) var(--compact-ease),
+                padding var(--compact-duration) var(--compact-ease),
+                border-width var(--compact-duration) var(--compact-ease);
+  }
+  /* Error-present collapse — smooth max-height transition on both
+     pages (decoder By Word + validator Audit). */
+  #lookupPanel:has(.panel-error-head:not(:empty)) .lookup-hint,
+  #tab-cert:has(.panel-error-head:not(:empty)) .how {
+    max-height: 0; opacity: 0; margin-top: 0;
+    padding-top: 0; padding-bottom: 0; border-width: 0;
+  }
+  /* Verify status — By Soul's pair-feedback line. Default muted, goes
+     red on error (e.g., "soul rejects the body"). Unified with the
+     other error surfaces via --accent-red so every failure on the page
+     reads the same color. */
+  .verify-status.error { color: var(--accent-red); font-weight: 500; }
+  .console-ia {
+    display: none;
+    padding: 0.5rem 1.2rem 0.7rem;
+    text-align: center;
+    font-size: 0.72rem;
+    border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .console-ia.visible { display: block; }
+  .console-ia a { color: #2a4a6a; text-decoration: none; text-shadow: 0 1px 0 rgba(255,255,255,0.2); }
+  .console-ia a:hover { text-decoration: underline; }
+  .console-ia .ia-label { font-size: 0.55rem; color: #5a5a64; text-transform: uppercase; letter-spacing: 0.15em; }
+
+  /* Shared input + button structure. Both pages use the same geometry
+     and transitions; only palette differs. Multi-selector keeps the
+     structural values in one place. Decoder uses .lookup-form /
+     .lookup-input / .lookup-btn; validator uses .audit-lookup /
+     .audit-input / .audit-btn with the same semantics. */
+  .lookup-form, .audit-lookup { display: flex; gap: 0.6rem; }
+  .lookup-input, .audit-input {
+    flex: 1;
+    min-width: 0;  /* let flex-shrink claim below the input's intrinsic size (default 20ch) so the row fits narrow viewports */
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 300;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  .lookup-btn, .audit-btn {
+    padding: 0.85rem 1.4rem;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 7rem;  /* reserves "Fetching…" width so no jiggle on label swap */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Yang palette — decoder (dark plate on cream page). */
+  .lookup-input {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(0,0,0,0.12);
+    color: #2a2a32;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .lookup-input:focus { border-color: rgba(0,0,0,0.25); box-shadow: 0 0 10px rgba(0,0,0,0.06) inset; }
+  .lookup-input::placeholder { color: #7a7a84; }
+  .lookup-btn {
+    background: rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #3a3a44;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .lookup-btn:hover {
+    background: rgba(0,0,0,0.12);
+    border-color: rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* --- Try Example --- */
+  .console-example {
+    text-align: center;
+    padding: 0.6rem 1.2rem 0.8rem;
+    border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  /* When the Download Soul button is slotted in just above
+     #tryExample, hide the border-top — it would otherwise render as a
+     dark line directly beneath the button, looking like an unrelated
+     divider. The example link still reads fine without the rule. */
+  .download-soul-btn + .console-example {
+    border-top: none;
+  }
+  .console-example a {
+    color: #5a5a64;
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    transition: color 0.3s ease;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .console-example a:hover {
+    color: #2a2a32;
+  }
+
+  /* --- Preview / Status --- */
+  .preview-container {
+    width: 100%; max-width: 640px; margin-top: 1.5rem;
+    display: none;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-card);
+  }
+  .preview-container.visible { display: block; }
+  .preview-img { width: 100%; display: block; }
+
+  .status {
+    width: 100%; max-width: 640px; margin-top: 1rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 300;
+    display: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .status.visible { display: block; }
+  .status.error {
+    background: rgba(180, 60, 60, 0.08);
+    border: 1px solid rgba(180, 60, 60, 0.2);
+    color: var(--accent-red);
+  }
+  .status.info {
+    background: rgba(80, 100, 180, 0.08);
+    border: 1px solid rgba(80, 100, 180, 0.2);
+    color: var(--accent-blue);
+  }
+  .status.success {
+    background: rgba(60, 160, 100, 0.08);
+    border: 1px solid rgba(60, 160, 100, 0.2);
+    color: var(--accent-green);
+  }
+
+  /* --- IA Link Banner --- */
+  .ia-link-banner {
+    width: 100%; max-width: 640px; margin-top: 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.2rem;
+    display: none;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .ia-link-banner.visible { display: block; }
+  .ia-link-banner .ia-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+  .ia-link-banner a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-size: 0.75rem;
+    word-break: break-all;
+    transition: color 0.2s;
+  }
+  .ia-link-banner a:hover { color: var(--accent-purple); text-decoration: underline; }
+
+  /* Offline mode picker — hidden file input clicked programmatically
+     by the .offline-pick-btn handler. (Used to be inline
+     style="display:none" on every instance.) */
+  .offline-input { display: none; }
+
+  /* --- Bar Signature Card --- */
+  .bar-card {
+    width: 100%; max-width: 640px; margin-top: 1.5rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: none;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .bar-card.visible { display: block; }
+  .bar-card h2 {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.9rem 1.4rem;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .bar-field {
+    display: flex;
+    border-bottom: 1px solid rgba(60, 70, 120, 0.08);
+    font-size: 0.78rem;
+    transition: background 0.2s;
+  }
+  .bar-field:last-child { border-bottom: none; }
+  .bar-field:hover { background: rgba(100, 120, 200, 0.03); }
+  .bar-field-key {
+    width: 140px; min-width: 140px;
+    padding: 0.6rem 1.2rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+  }
+  .bar-field-value {
+    flex: 1;
+    padding: 0.6rem 1.2rem;
+    color: var(--text-secondary);
+    word-break: break-word;
+  }
+
+  /* ================================================================
+     TOUCH TOOLTIP — the JS counterpart lives in js/portal.js. Native
+     title attributes don't surface on mobile, so on (hover: none)
+     devices we render a floating tooltip on tap. Kept universally
+     styled (not in a media query) so desktop-simulating viewports
+     show it cleanly if needed.
+     ================================================================ */
+  .touch-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    max-width: 280px;
+    padding: 8px 12px;
+    background: rgba(12, 12, 16, 0.92);
+    color: #e4e4e8;
+    font-size: 11px;
+    line-height: 1.45;
+    font-family: inherit;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    z-index: 10000;
+    white-space: normal;
+    text-align: center;
+    letter-spacing: 0.01em;
+  }
+  .touch-tooltip.visible { opacity: 1; }
+
+  /* ================================================================
+     MOBILE COMPACT — system box fits on one screen, every tab reserves
+     the same height (360px) so switching tabs or toggling Source never
+     changes the outer box. Every element above is shrunk enough that
+     the tallest state any tab reaches (Source expanded + form + errors)
+     still fits in 360px. Positioned near the end of the file so the
+     cascade wins over the top-level defaults above — moving any of
+     these rules earlier causes later rules to silently override them.
+     ================================================================ */
+  @media (max-width: 679px) {
+    .input-panel.active { height: 300px; }
+    /* #imagePanel .drop-error has margin-top:auto + 1.6rem min-height on
+       desktop to pin the error slot to the panel bottom — on mobile that
+       reserve becomes 47px of dead space above "see an example" when the
+       error is empty. Collapse it and let drop-zone's flex-grow claim
+       the space instead. */
+    #imagePanel .drop-error { margin-top: 0; min-height: 0; }
+    #imagePanel .drop-error:empty { display: none; }
+    /* Drop-zone tightening — smaller padding, icon, and hint so the
+       upload boxes don't eat the entire panel. flex: 1 lets drop-only
+       tabs (By Sight solo, Observatory, Image) stretch the box to fill
+       empty space instead of leaving dead gaps below. The id-scoped
+       rules below (By Sight + By Soul) match the desktop spec's
+       specificity so they actually apply on mobile. */
+    .drop-zone { padding: 0.7rem 1rem; flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #imagePanel .drop-zone { flex: 1 1 auto; }
+    .drop-zone .drop-icon { font-size: 1.1rem; margin-bottom: 0.2rem; }
+    .drop-zone p { font-size: 0.72rem; }
+    .drop-zone .drop-hint { font-size: 0.58rem; max-height: 24px; margin-top: 0.2rem; }
+    /* By Soul pair of drop-zones stacked on mobile — shrink the 100px
+       min-height and let the pair flex-grow so it fills the 300px panel. */
+    .verify-pair { gap: 0.4rem; flex: 1 1 auto; }
+    .verify-slot { display: flex; }
+    .verify-slot .drop-zone { min-height: 0 !important; padding: 0.5rem 0.8rem; }
+    .verify-link { padding: 0.1rem 0 !important; font-size: 0.6rem; }
+    /* Source disclosure rows — tighter so the open state fits under the
+       drop-zone/input without overflowing the 360px panel. */
+    .lookup-source summary { font-size: 0.6rem; padding: 0.25rem 0; }
+    .lookup-source-row,
+    .lookup-source-mode-row,
+    .offline-row { margin-top: 0.35rem; }
+    .lookup-source-hint { font-size: 0.55rem; margin: 0.3rem 0 0; line-height: 1.45; }
+    /* Inputs/buttons — vertical padding down from 0.85rem to 0.55rem.
+       Font-size pinned at 16px (see top of file) to kill iOS auto-zoom. */
+    .lookup-input, .audit-input,
+    .lookup-btn, .audit-btn { padding: 0.55rem 0.8rem; }
+    .lookup-btn, .audit-btn { min-width: 5.5rem; font-size: 0.76rem; }
+    /* Hints — drop the 2rem top margin + generous padding that desktop
+       layout relies on. On mobile every pixel counts. Keep display: block
+       so inline text (e.g., <em>By Sight</em>) flows naturally. */
+    .lookup-hint, .how {
+      font-size: 0.62rem;
+      margin-top: 0.5rem;
+      padding: 0.4rem 0.7rem;
+      line-height: 1.4;
+    }
+    /* On By Word / Audit the content naturally stacks form → Source →
+       hint. Push the hint to the panel bottom with margin-top: auto
+       so dead space collects between Source and hint instead of below
+       the hint — reads better when the link ("see an example" / "test
+       an attack") sits right under the hint box. */
+    #lookupPanel .lookup-hint,
+    #tab-cert .how { margin-top: auto; }
+    /* Error slots — empty reserves collapse AND drop the margin-top:
+       auto y-lock the desktop uses. On mobile the error can appear
+       where it naturally sits; forcing it to the panel bottom leaves
+       dead space above it when empty. */
+    .panel-error-head {
+      font-size: 0.68rem;
+      min-height: 0;
+      margin-top: 0;
+      padding: 0.2rem 0.8rem;
+    }
+    .panel-error-head:empty { padding: 0; display: none; }
+    .panel-error-body {
+      font-size: 0.6rem;
+      min-height: 0;
+      padding: 0;
+    }
+    .panel-error-body:not(:empty) { padding: 0.3rem 0.8rem 0; }
+    /* Panel wrap padding trimmed so content sits closer to the edges. */
+    .input-panel-wrap { padding: 0.6rem 0.8rem; }
+    /* Tabs row shorter — saves ~12px per row. */
+    .input-tab { padding: 0.55rem 0.4rem; font-size: 0.7rem; }
+    /* Try Example and portal link — tighter vertical reserve so the
+       system box's last line sits above iOS Chrome's bottom toolbar. */
+    .console-example { padding: 0.25rem 1rem 0.35rem; }
+    .console-example a { font-size: 0.66rem; }
+    .evidence-wrap { padding: 0.25rem 0 0.35rem; }
+    .portal-link { font-size: 0.58rem; padding: 0.15rem 0.8rem; }
+  }
+
+  /* ================================================================
+     BIRTH CERTIFICATE (HTML/CSS hybrid)
+     Layout shell (fixed two-panel, body scroll lock, fade animations)
+     lives in css/layout.css under .panel-layout / .panel-right. The
+     decoder-specific behavior below is limited to the plate's internal
+     scroll and the cosmic-player's glass overlap at the bottom.
+     ================================================================ */
+  @media (min-width: 1200px) {
+    /* Belt over suspenders: paint the right panel with the same silver
+       gradient as the plate, so if the plate-bg ever fails to cover the
+       full scroll height (rare stacking-context bug), the user sees
+       silver continuing rather than the dark page background. */
+    .panel-layout.layout-active .panel-right-has-player {
+      background: linear-gradient(180deg, #b8b8bc 0%, #969698 20%, #808084 50%, #6e6e72 100%);
+    }
+    .panel-layout.layout-active .panel-right-has-player:has(.plate-rarity-uncommon) {
+      background: linear-gradient(180deg, #1a2a1c 0%, #0c1a10 100%);
+    }
+    .panel-layout.layout-active .panel-right-has-player:has(.plate-rarity-rare),
+    .panel-layout.layout-active .panel-right-has-player:has(.plate-rarity-veryrare),
+    .panel-layout.layout-active .panel-right-has-player:has(.plate-rarity-epic),
+    .panel-layout.layout-active .panel-right-has-player:has(.plate-rarity-legendary) {
+      background: linear-gradient(180deg, #14141a 0%, #08080c 100%);
+    }
+
+    /* Plate auto-fits its content by default — soul-only fetches
+       (no audio, no body) and minimal-player states both want the
+       silver to wrap the cert exactly. Only an EXPANDED cosmic-
+       player promotes the plate back to full viewport, so the
+       240px overlay has a tall canvas to glass over. */
+    .panel-layout.layout-active .panel-right-has-player .plate {
+      height: auto;
+      min-height: 0;
+      max-height: calc(100vh - 3.5rem);
+      padding-bottom: 36px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* Disable browser scroll-anchoring — cosmic-player.js pins
+         scrollTop across the transition manually, and native
+         anchoring can fight the JS pin during the animation. */
+      overflow-anchor: none;
+      /* Match border-radius so the shine sweep (200%×200% absolute
+         overlay) stays inside the plate's rounded top corners. Without
+         this, the shine bleeds into the gap between plate edge and the
+         wrap boundary — visible as "capped off" stripes outside the
+         rounded rect. Bottom corners are 0 (player covers them). */
+      clip-path: inset(0 round 14px 14px 0 0);
+      border-radius: 14px 14px 0 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding-bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Expanded player → fill the viewport so the 240px overlay
+       has full height to glass over. Selector matches when a
+       .cosmic-player exists inside the host AND it isn't carrying
+       .minimal. Soul-only fetches (no player at all) and minimal
+       state both fall through to the auto-fit default above. */
+    .panel-layout.layout-active .panel-right-has-player:has(.cosmic-player:not(.minimal)) .plate {
+      min-height: calc(100vh - 3.5rem);
+      padding-bottom: 100px;
+    }
+    /* Panel-right tracks the plate so its bottom (and the
+       absolutely-positioned player at bottom: 0) follows. */
+    .panel-layout.layout-active .panel-right.panel-right-has-player {
+      height: auto;
+      min-height: 0;
+      max-height: var(--panel-height);
+      transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .panel-layout.layout-active .panel-right.panel-right-has-player:has(.cosmic-player:not(.minimal)) {
+      min-height: var(--panel-height);
+    }
+    .panel-layout.layout-active .panel-right-has-player .plate::-webkit-scrollbar {
+      display: none;
+    }
+    /* Sample cert — short, no player. Collapse the plate + parent so the
+       purple doesn't stretch to 100vh, but keep a uniform min-height so
+       the plate is tall enough on both pages to occlude the footer text
+       on the left column. Validator's attack lab and decoder's example
+       land at the same size. */
+    .panel-layout.layout-active .panel-right .plate.plate-sample,
+    .panel-layout.layout-active .panel-right-has-player .plate.plate-sample,
+    .panel-layout.layout-active .panel-right .plate.plate-traversal,
+    .panel-layout.layout-active .panel-right-has-player .plate.plate-traversal {
+      height: auto;
+      min-height: 720px;
+      padding-bottom: 28px;
+      overflow: visible;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      /* Clip children (notably the shine sweep at 200%×200%) to the
+         plate's rounded shape so the sheen reads as "flowing over the
+         plate" instead of bleeding into the surrounding panel space. */
+      clip-path: inset(0 round 14px);
+    }
+    /* The plate bg is position:absolute so it sits outside the flex flow;
+       the remaining children stack top-down with the footer margin-auto'd
+       to the bottom of the plate. */
+    .plate.plate-sample > .plate-footer,
+    .plate.plate-traversal > .plate-footer { margin-top: auto; }
+    .panel-layout.layout-active .panel-right:has(.plate-sample),
+    .panel-layout.layout-active .panel-right:has(.plate-traversal) {
+      height: auto;
+      max-height: calc(100vh - 3.5rem);
+      overflow: hidden;
+    }
+    /* Player overlaps plate bottom inside the right panel — glass blur shows through */
+    .panel-layout.layout-active .panel-right-has-player .cosmic-player {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: 0 !important;
+      border-radius: 0 0 14px 14px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    }
+
+    /* Rim carrier swap for has-player mode.
+       The plate is the scroll container here (overflow-y: auto above), so
+       an absolutely-positioned .plate::before rim would scroll with
+       content and drift out of view. Move the rim up to the non-scrolling
+       wrap and suppress the one on the plate. Rarity vars bubble up via
+       :has() so the ring picks up the right color. Only non-common
+       rarities need overrides; common plate inherits default vars. */
+    .panel-layout.layout-active .panel-right-has-player .plate:not(.plate-sample):not(.plate-traversal)::before {
+      display: none;
+    }
+    .panel-layout.layout-active .panel-right-has-player:not(:has(.plate-sample)):not(:has(.plate-traversal))::before {
+      content: '';
+      display: block;
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      padding: 2px;
+      background: linear-gradient(180deg,
+        var(--plate-rim-top, rgba(255,255,255,0.85)) 0%,
+        var(--plate-rim-mid, rgba(255,255,255,0.2)) 40%,
+        var(--plate-rim-bottom, rgba(40,40,48,0.4)) 100%);
+      -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+              mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+      z-index: 11;
+    }
+    .panel-right-has-player:has(.plate-rarity-uncommon)  { --plate-rim-top: rgba(220,255,220,0.85); --plate-rim-mid: rgba(74,158,74,0.35);  --plate-rim-bottom: rgba(42,90,46,0.5); }
+    .panel-right-has-player:has(.plate-rarity-rare)      { --plate-rim-top: rgba(215,230,255,0.85); --plate-rim-mid: rgba(88,132,200,0.35); --plate-rim-bottom: rgba(50,90,160,0.5); }
+    .panel-right-has-player:has(.plate-rarity-veryrare)  { --plate-rim-top: rgba(235,215,255,0.9);  --plate-rim-mid: rgba(150,96,200,0.35); --plate-rim-bottom: rgba(88,50,150,0.5); }
+    .panel-right-has-player:has(.plate-rarity-epic)      { --plate-rim-top: rgba(255,240,200,0.9);  --plate-rim-mid: rgba(200,150,40,0.4);  --plate-rim-bottom: rgba(130,90,20,0.55); }
+    .panel-right-has-player:has(.plate-rarity-legendary) { --plate-rim-top: rgba(255,220,220,0.9);  --plate-rim-mid: rgba(200,60,60,0.4);   --plate-rim-bottom: rgba(130,30,30,0.6); }
+  }
+
+  /* --- Silver Plate ---
+     The plate is also the scroll container on desktop (overflow-y: auto
+     applied below in the panel-right-has-player rules). Putting the
+     silver gradient directly on .plate's background means it covers the
+     full scroll height — an absolutely-positioned child like .plate-bg
+     is sized relative to the visible padding box, so it can't track the
+     scrolled-past area. The .plate-bg element below is now a no-op for
+     coverage but kept for the existing z-index/grain layering. */
+  .plate {
+    position: relative;
+    /* Default = Common rarity silver. Other rarities override this
+       background in their .plate-rarity-* rules below. NOT a theme
+       token — cert appearance is rarity-driven, not Age-driven. */
+    background: linear-gradient(180deg, #b8b8bc 0%, #969698 20%, #808084 50%, #6e6e72 100%);
+    border-radius: 16px;
+    padding: 36px 28px 28px;
+    border: none;
+    box-shadow: none;
+    clip-path: inset(0 round 16px);  /* clips like overflow:hidden but doesn't break position:sticky */
+  }
+  .plate-bg {
+    /* Legacy element — kept so JS that appends it doesn't error. The
+       gradient lives on .plate now (above) so it covers the full scroll
+       height regardless of content. */
+    display: none;
+  }
+  /* Glassy gradient rim — light rarity highlight at the top fading to a
+     darker rarity shadow at the bottom. Sits over the flat rarity border
+     so the pulse/box-shadow glow still breathes underneath. Color pair
+     per rarity via --plate-rim-top / --plate-rim-bottom (set below). */
+  .plate::before {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 2px;
+    background: linear-gradient(180deg,
+      var(--plate-rim-top, rgba(255,255,255,0.9)) 0%,
+      var(--plate-rim-mid, rgba(255,255,255,0.3)) 40%,
+      var(--plate-rim-bottom, rgba(0,0,0,0.35)) 100%);
+    -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+            mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .plate::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: -40px;
+    width: 300px; height: 300px;
+    background: none;
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* Inner highlight border */
+  .plate-inner-highlight {
+    display: none;
+  }
+
+  /* --- Time Decay (aging silver) --- */
+  .plate-age-fresh { /* pristine — no change */ }
+  .plate-age-young {
+    background: linear-gradient(180deg, #ccccd0 0%, #c4c4c8 30%, #b4b4b8 70%, #a4a4a8 100%);
+  }
+  .plate-age-aged {
+    background: linear-gradient(180deg, #c0c0c4 0%, #b8b8bc 30%, #a8a8ac 70%, #989898 100%);
+  }
+  .plate-age-aged .plate-brand, .plate-age-aged .plate-title,
+  .plate-age-aged .cell-val, .plate-age-aged .plate-section-label { opacity: 0.85; }
+  .plate-age-vintage {
+    background: linear-gradient(180deg, #c0b8b0 0%, #b8b0a4 30%, #a8a090 70%, #989080 100%);
+  }
+  .plate-age-vintage .plate-brand, .plate-age-vintage .plate-title,
+  .plate-age-vintage .cell-val, .plate-age-vintage .plate-section-label { opacity: 0.75; }
+  .plate-age-ancient {
+    background: linear-gradient(180deg, #a89888 0%, #988878 30%, #887868 70%, #786858 100%);
+  }
+  .plate-age-ancient .plate-brand, .plate-age-ancient .plate-title { opacity: 0.6; color: #504840; }
+  .plate-age-ancient .cell-val, .plate-age-ancient .plate-section-label { opacity: 0.6; }
+  .plate-age-ancient::before { border-color: rgba(0,0,0,0.15); }
+
+  /* --- Rarity visual effects --- */
+  .plate-rarity-common .plate-bg { /* default silver gradient shows through */ }
+  .plate-rarity-uncommon .plate-bg,
+  .plate-rarity-rare .plate-bg,
+  .plate-rarity-veryrare .plate-bg,
+  .plate-rarity-epic .plate-bg,
+  .plate-rarity-legendary .plate-bg { display: none; } /* rarity gradient on .plate takes over */
+
+  /* Glassy rim color triplets — top catches highlight, middle holds the
+     rarity tint, bottom sinks into a deeper rarity shade (not black).
+     Defaults cover the untinted silver plate; rarities override. */
+  .plate {
+    --plate-rim-top: rgba(255,255,255,0.85);
+    --plate-rim-mid: rgba(255,255,255,0.2);
+    --plate-rim-bottom: rgba(40,40,48,0.4);
+  }
+  .plate-rarity-uncommon {
+    --plate-rim-top: rgba(220,255,220,0.85);
+    --plate-rim-mid: rgba(74,158,74,0.35);
+    --plate-rim-bottom: rgba(42,90,46,0.5);
+  }
+  .plate-rarity-rare {
+    --plate-rim-top: rgba(215,230,255,0.85);
+    --plate-rim-mid: rgba(88,132,200,0.35);
+    --plate-rim-bottom: rgba(50,90,160,0.5);
+  }
+  .plate-rarity-veryrare {
+    --plate-rim-top: rgba(235,215,255,0.9);
+    --plate-rim-mid: rgba(150,96,200,0.35);
+    --plate-rim-bottom: rgba(88,50,150,0.5);
+  }
+  .plate-rarity-epic {
+    --plate-rim-top: rgba(255,240,200,0.9);
+    --plate-rim-mid: rgba(200,150,40,0.4);
+    --plate-rim-bottom: rgba(130,90,20,0.55);
+  }
+  .plate-rarity-legendary {
+    --plate-rim-top: rgba(255,220,220,0.9);
+    --plate-rim-mid: rgba(200,60,60,0.4);
+    --plate-rim-bottom: rgba(130,30,30,0.6);
+  }
+  .plate-rarity-uncommon {
+    background: linear-gradient(180deg, #b8c0b6 0%, #98a892 20%, #849880 50%, #748872 100%);
+    border-color: rgba(74,158,74,0.25);
+    animation: pulse-green 12s ease-in-out infinite;
+  }
+  .plate-rarity-uncommon::before { border-color: rgba(74,158,74,0.1); }
+  .plate-rarity-rare {
+    background: linear-gradient(180deg, #b8bcc8 0%, #98a0b4 20%, #838aa0 50%, #707894 100%);
+    border-color: rgba(74,122,190,0.3);
+    box-shadow: 0 0 14px rgba(74,122,190,0.08);
+    animation: pulse-blue 10s ease-in-out infinite;
+  }
+  .plate-rarity-rare::before { border-color: rgba(100,140,200,0.12); }
+  .plate-rarity-veryrare {
+    background: linear-gradient(180deg, #bcb8c6 0%, #a098b0 20%, #8a80a0 50%, #787094 100%);
+    border-color: rgba(138,74,190,0.3);
+    box-shadow: 0 0 18px rgba(138,74,190,0.08);
+    animation: pulse-purple 8s ease-in-out infinite;
+  }
+  .plate-rarity-veryrare::before { border-color: rgba(160,120,220,0.12); }
+  .plate-rarity-epic {
+    background: linear-gradient(180deg, #c2bca8 0%, #a69c86 20%, #908670 50%, #807460 100%);
+    border-color: rgba(190,138,26,0.35);
+    box-shadow: 0 0 22px rgba(190,138,26,0.1), inset 0 1px 0 rgba(255,220,150,0.15);
+    animation: pulse-gold 7s ease-in-out infinite;
+  }
+  .plate-rarity-epic::before { border-color: rgba(220,180,80,0.15); }
+  .plate-rarity-legendary {
+    background: linear-gradient(180deg, #2a2228 0%, #1e181e 30%, #181018 70%, #120a12 100%);
+    border-color: rgba(190,42,42,0.4);
+    box-shadow: 0 0 30px rgba(190,42,42,0.15), 0 0 60px rgba(190,42,42,0.06),
+                inset 0 1px 0 rgba(255,100,100,0.1);
+    animation: pulse-red 6s ease-in-out infinite;
+  }
+  .plate-rarity-legendary::before { border-color: rgba(190,60,60,0.15); }
+  .plate-rarity-legendary .plate-brand { color: #c0a0a0; }
+  .plate-rarity-legendary .plate-title { color: #e8d8d8; }
+  .plate-rarity-legendary .plate-timestamp { color: #b89898; }
+  .plate-rarity-legendary .plate-prompt { color: #d8c0c0; }
+  .plate-rarity-legendary .plate-section-label { color: #c0a0a0; }
+  .plate-rarity-legendary .gen-cell-label,
+  .plate-rarity-legendary .machine-cell-label { color: #b09090; }
+  .plate-rarity-legendary .gen-cell-value,
+  .plate-rarity-legendary .machine-cell-value { color: #e0d0d0; }
+  .plate-rarity-legendary .lineage-text { color: #c0a8a8; }
+  .plate-rarity-legendary .entropy-block { color: #d0b8b8; }
+
+  /* Border pulse animations */
+  @keyframes pulse-green {
+    0%, 100% { border-color: rgba(74,158,74,0.15); box-shadow: 0 0 6px rgba(74,158,74,0.03); }
+    50% { border-color: rgba(74,158,74,0.4); box-shadow: 0 0 14px rgba(74,158,74,0.08); }
+  }
+  @keyframes pulse-blue {
+    0%, 100% { border-color: rgba(74,122,190,0.15); box-shadow: 0 0 8px rgba(74,122,190,0.04); }
+    50% { border-color: rgba(74,122,190,0.45); box-shadow: 0 0 18px rgba(74,122,190,0.1); }
+  }
+  @keyframes pulse-purple {
+    0%, 100% { border-color: rgba(138,74,190,0.15); box-shadow: 0 0 10px rgba(138,74,190,0.04); }
+    50% { border-color: rgba(138,74,190,0.5); box-shadow: 0 0 24px rgba(138,74,190,0.12); }
+  }
+  @keyframes pulse-gold {
+    0%, 100% { border-color: rgba(190,138,26,0.2); box-shadow: 0 0 12px rgba(190,138,26,0.05); }
+    50% { border-color: rgba(190,138,26,0.55); box-shadow: 0 0 28px rgba(190,138,26,0.14); }
+  }
+  @keyframes pulse-red {
+    0%, 100% { border-color: rgba(190,42,42,0.25); box-shadow: 0 0 18px rgba(190,42,42,0.08), 0 0 45px rgba(190,42,42,0.03); }
+    50% { border-color: rgba(190,42,42,0.6); box-shadow: 0 0 36px rgba(190,42,42,0.18), 0 0 70px rgba(190,42,42,0.07); }
+  }
+
+  /* Shine sweep */
+  .plate .shine {
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    pointer-events: none;
+    z-index: 2;
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+  }
+
+  /* --- Plate typography --- */
+  /* Content children are lifted above the bg/grain layers. .shine is
+     excluded so it keeps its own absolute positioning (200%×200%
+     overlay); otherwise the selector's specificity (40) beats the
+     .plate .shine rule (20) and relative-positions it inline, stuffing
+     the band stack with a 2x-sized block. */
+  .plate > *:not(.plate-bg):not(.cosmic-player):not(.shine) { position: relative; z-index: 2; }
+  .plate > .plate-bg { position: absolute; z-index: 0; }
+  .plate > canvas { z-index: 1; } /* constellation sits behind content */
+  .plate-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .plate-brand {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    color: #3a3a42;
+    text-transform: uppercase;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+  }
+  .plate-title {
+    font-size: 22px;
+    font-weight: 300;
+    color: #1a1a22;
+    margin-top: 12px;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.35);
+  }
+  .verify-badge {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    padding: 4px 12px;
+    margin: 8px auto 4px;
+    border-radius: 3px;
+    display: inline-block;
+    width: auto;
+    cursor: help;
+  }
+  .verify-badge {
+    display: block; margin-left: auto; margin-right: auto; margin-bottom: 8px; width: fit-content;
+    transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .verify-badge::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    opacity: 0;
+    transition: none;
+    pointer-events: none;
+  }
+  .verify-verified::after { background: linear-gradient(105deg, transparent 30%, rgba(78,200,160,0.5) 48%, rgba(120,240,200,0.7) 50%, rgba(78,200,160,0.5) 52%, transparent 70%); }
+  .verify-authenticated::after { background: linear-gradient(105deg, transparent 30%, rgba(94,168,232,0.5) 48%, rgba(140,210,255,0.7) 50%, rgba(94,168,232,0.5) 52%, transparent 70%); }
+  .verify-embodied::after { background: linear-gradient(105deg, transparent 30%, rgba(168,120,216,0.5) 48%, rgba(210,160,255,0.7) 50%, rgba(168,120,216,0.5) 52%, transparent 70%); }
+  .verify-tampered::after, .verify-forged::after { background: linear-gradient(105deg, transparent 30%, rgba(240,96,64,0.5) 48%, rgba(255,140,110,0.7) 50%, rgba(240,96,64,0.5) 52%, transparent 70%); }
+  .verify-disembodied::after { background: linear-gradient(105deg, transparent 30%, rgba(160,120,96,0.5) 48%, rgba(200,160,130,0.7) 50%, rgba(160,120,96,0.5) 52%, transparent 70%); }
+  .verify-unverified::after { background: linear-gradient(105deg, transparent 30%, rgba(120,120,140,0.4) 48%, rgba(160,160,180,0.6) 50%, rgba(120,120,140,0.4) 52%, transparent 70%); }
+  .verify-badge:hover::after {
+    animation: stamp-flash 0.6s ease-out forwards;
+  }
+  @keyframes stamp-flash {
+    0% { left: -100%; opacity: 1; }
+    50% { left: 100%; opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  .verify-verified:hover {
+    background: rgba(20, 65, 50, 0.75);
+    border-color: rgba(160, 232, 212, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 12px rgba(160, 232, 212, 0.15);
+  }
+  .verify-tampered:hover {
+    background: rgba(75, 25, 18, 0.75);
+    border-color: rgba(240, 96, 64, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 12px rgba(240, 96, 64, 0.12);
+  }
+  .verify-unverified:hover {
+    background: rgba(25, 25, 32, 0.75);
+    border-color: rgba(90, 90, 104, 0.35);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .verify-verified {
+    color: #4ec8a0;
+    background: rgba(10, 30, 22, 0.75);
+    border: 1px solid rgba(78, 200, 160, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.4), 0 1px 1px rgba(0,0,0,0.4);
+  }
+  .verify-tampered {
+    color: #f06040;
+    background: rgba(35, 10, 8, 0.75);
+    border: 1px solid rgba(240, 96, 64, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.3);
+    animation: tamper-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes tamper-pulse {
+    0%, 100% { border-color: rgba(240, 96, 64, 0.3); }
+    50% { border-color: rgba(240, 96, 64, 0.6); }
+  }
+  .verify-unverified {
+    color: #7a7a88;
+    background: rgba(12, 12, 16, 0.75);
+    border: 1px solid rgba(90, 90, 104, 0.3);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.2), 0 1px 1px rgba(0,0,0,0.2);
+  }
+  .verify-icon { margin-right: 4px; }
+  .verify-badge-group {
+    text-align: center;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+  .verify-badge-group .verify-badge {
+    display: inline-block;
+    margin: 0;
+  }
+
+  .verify-authenticated {
+    color: #5ea8e8;
+    background: rgba(10, 20, 35, 0.75);
+    border: 1px solid rgba(94, 168, 232, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.4), 0 1px 1px rgba(0,0,0,0.4);
+  }
+  .verify-authenticated:hover {
+    background: rgba(20, 40, 60, 0.75);
+    border-color: rgba(160, 200, 255, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 12px rgba(160, 200, 255, 0.15);
+  }
+  /* Mirrors cluster — reveals every surface the soul landed on
+     (record.distribution), toggled by clicking the WITNESSED badge.
+     Same collapse-on-default behavior as the alias cluster; tinted
+     with the WITNESSED green so the visual identifies which badge
+     opened it. Hidden during save-cert PNG render via the same
+     CSS-override list used for the alias cluster. */
+  .verify-mirrors-cluster {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.25s ease, opacity 0.25s ease;
+    opacity: 0;
+    padding: 0 12px;
+    margin: 0 auto;
+    max-width: 480px;
+    border-radius: 8px;
+    background: rgba(78, 200, 160, 0.06);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+  }
+  .verify-mirrors-cluster.verify-mirrors-cluster-open {
+    max-height: 360px;
+    opacity: 1;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-color: rgba(78, 200, 160, 0.18);
+  }
+  .verify-mirrors-cluster-head {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4ec8a0;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .verify-mirrors-cluster-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .verify-mirror-row {
+    display: grid;
+    grid-template-columns: 14px 1fr 2fr;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 4px;
+    font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 0.66rem;
+  }
+  .verify-mirror-glyph {
+    color: #4ec8a0;
+    text-align: center;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .verify-mirror-name {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .verify-mirror-url {
+    color: #4ec8a0;
+    font-size: 0.62rem;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .verify-mirror-url:hover { text-decoration: underline; }
+  .verify-mirrors-cluster-foot {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 8px 0 0;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .verify-forged {
+    color: #f06040;
+    background: rgba(35, 10, 8, 0.75);
+    border: 1px solid rgba(240, 96, 64, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.3);
+    animation: tamper-pulse 1.5s ease-in-out infinite;
+  }
+  .verify-forged:hover {
+    background: rgba(75, 25, 18, 0.75);
+    border-color: rgba(240, 96, 64, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 12px rgba(240, 96, 64, 0.12);
+  }
+  .verify-embodied {
+    color: #a878d8;
+    background: rgba(22, 12, 32, 0.75);
+    border: 1px solid rgba(168, 120, 216, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.4), 0 1px 1px rgba(0,0,0,0.4);
+  }
+  .verify-embodied:hover {
+    background: rgba(50, 28, 65, 0.75);
+    border-color: rgba(220, 190, 240, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 12px rgba(220, 190, 240, 0.15);
+  }
+  .verify-disembodied {
+    color: #a07860;
+    background: rgba(20, 12, 8, 0.75);
+    border: 1px solid rgba(160, 120, 96, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.3);
+  }
+  /* Lightweight toast for non-blocking user feedback (save-cert
+     errors, etc). Fixed at top, fades in/out via opacity. Above
+     planetarium (z-index 9999) so it's always reachable. */
+  .mm-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    padding: 10px 18px;
+    background: rgba(20, 20, 28, 0.92);
+    color: #e8e8ee;
+    border: 1px solid rgba(220, 80, 80, 0.4);
+    border-radius: 6px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .mm-toast-visible { opacity: 1; }
+
+  /* Cert carries an Ed25519 signature but the browser couldn't run
+     the verification (Chrome <137 on Windows, etc). Neutral grey
+     palette so it reads as "we know this is signed, but we couldn't
+     check it here" — distinct from AUTHENTICATED (verified) and
+     FORGED (failed). */
+  .verify-signed-unverified {
+    color: #9090a0;
+    background: rgba(18, 18, 24, 0.75);
+    border: 1px solid rgba(120, 120, 140, 0.4);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.3);
+  }
+  .verify-signed-unverified:hover {
+    background: rgba(35, 35, 45, 0.75);
+    border-color: rgba(160, 160, 180, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .verify-signed-unverified::after { background: linear-gradient(105deg, transparent 30%, rgba(120,120,140,0.4) 48%, rgba(180,180,200,0.6) 50%, rgba(120,120,140,0.4) 52%, transparent 70%); }
+  .verify-disembodied:hover {
+    background: rgba(45, 28, 18, 0.75);
+    border-color: rgba(160, 120, 96, 0.5);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  .plate-divider {
+    height: 1px;
+    margin: 6px 0;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);
+  }
+  .plate-divider-short {
+    height: 1px;
+    margin: 0 20% 8px;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+  }
+  .plate-timestamp {
+    font-size: 9px;
+    font-weight: 300;
+    color: #48484e;
+    text-align: center;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  /* --- Prompt --- */
+  .plate-prompt {
+    font-size: 10.5px;
+    font-weight: 300;
+    font-style: italic;
+    color: #2a2520;
+    text-align: center;
+    line-height: 1.5;
+    padding: 12px 10px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  /* --- Section label --- */
+  .plate-section-label {
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #3a3a42;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-top: 4px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  /* --- Generation Params Grid --- */
+  .gen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .gen-cell {
+    background: rgba(0,0,0,0.04);
+    border: 0.5px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 8px 4px;
+    text-align: center;
+  }
+  .gen-cell-label {
+    font-size: 7px;
+    font-weight: 500;
+    color: #50505a;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .gen-cell-value {
+    font-size: 10px;
+    font-weight: 400;
+    color: #2a2a30;
+    word-break: break-all;
+  }
+
+  /* --- Sky Band Container ---
+     Used by gen, machine, sky bands. */
+  .sky-band-wrap {
+    margin: 12px 0 16px;
+  }
+  .sky-band-container {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(180deg, #0d0d1a 0%, #1a1a35 50%, #0a0a18 100%);
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .sky-band-container canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: saturate(0.5);
+    transition: filter 4s ease;
+  }
+
+  /* --- Machine Grid (same silver style as gen-grid) --- */
+  .machine-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .machine-cell {
+    background: rgba(0,0,0,0.03);
+    border-radius: 5px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+  .machine-cell.wide {
+    grid-column: span 2;
+  }
+  .machine-cell-label {
+    font-size: 6.5px;
+    font-weight: 500;
+    color: #50505a;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .machine-cell-value {
+    font-size: 9px;
+    font-weight: 400;
+    color: #2a2a30;
+  }
+
+  /* --- Kernel Entropy --- */
+  .entropy-block {
+    font-size: 7px;
+    font-weight: 300;
+    color: #2a2a30;
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.6;
+    padding: 8px 12px;
+    user-select: all;
+    cursor: text;
+  }
+
+  /* --- GPS Time-Lock --- */
+  /* GPS section interior tints follow rarity. cert-renderer sets
+     --rarity-color on the .plate; descendants here derive their tint
+     via color-mix(). Common (#606060) reads as grey; Uncommon as
+     green; Rare as blue; Very Rare as purple; Epic as amber;
+     Legendary as red. Each property has a static fallback before the
+     color-mix line so legacy browsers (no color-mix support) still
+     get a sensible grey/silver default. */
+  .gps-container {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(180deg, #141414 0%, #1c1c1c 50%, #101010 100%);
+    border: 1px solid rgba(0,0,0,0.2);
+    padding: 16px 14px;
+    margin: 8px 0;
+  }
+  /* Empty-state birthplace — chains with gps_source: none. Lower
+     visual weight than the time-locked block; still occupies the
+     section slot so the cert layout stays consistent. */
+  .gps-container.gps-container-empty {
+    padding: 12px 14px;
+  }
+  .gps-empty-body {
+    text-align: center;
+  }
+  .gps-empty-line {
+    font-size: 9px;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 70%, #c8c8c8);
+    margin: 0 0 6px;
+    letter-spacing: 0.04em;
+  }
+  .gps-empty-hint {
+    font-size: 7px;
+    color: #888;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 40%, #888);
+    margin: 0;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .gps-cipher {
+    font-size: 7px;
+    font-weight: 300;
+    color: #a0a0a0;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 55%, #d8d8d8);
+    text-align: center;
+    word-break: break-all;
+    line-height: 1.6;
+    user-select: all;
+    cursor: pointer;
+    padding: 8px 10px;
+    background: rgba(180,180,180,0.06);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 8%, transparent);
+    border: 1px solid rgba(180,180,180,0.12);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 18%, transparent);
+    border-radius: 6px;
+    transition: border-color 0.3s ease;
+  }
+  .gps-mod-label {
+    font-size: 7px;
+    color: #707070;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 50%, #888888);
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .gps-modulus {
+    font-size: 6px;
+    font-weight: 300;
+    color: #707070;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 50%, #888888);
+    text-align: center;
+    word-break: break-all;
+    line-height: 1.6;
+    padding: 6px 10px;
+    background: rgba(180,180,180,0.04);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 5%, transparent);
+    border: 1px solid rgba(180,180,180,0.08);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 12%, transparent);
+    border-radius: 6px;
+    max-height: 40px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    user-select: all;
+  }
+  .gps-modulus.expanded {
+    max-height: none;
+  }
+  .gps-footnote {
+    font-size: 7px;
+    color: #707070;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 50%, #888888);
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+
+  /* Public-GPS "View on map" link (gps_visibility: public). */
+  .gps-map-link {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: color-mix(in srgb, var(--rarity-color, #a0a0a0) 70%, #cccccc);
+  }
+  .gps-map-link:hover { text-decoration: underline; }
+
+  /* --- GPS Password Unlock --- */
+  .gps-unlock {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(180,180,180,0.12);
+    border-top: 1px dashed color-mix(in srgb, var(--rarity-color, #909090) 18%, transparent);
+  }
+  .gps-unlock .gps-mod-label { margin-top: 0; margin-bottom: 6px; }
+  .gps-unlock-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .gps-pw {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 16px;  /* prevents iOS auto-zoom on focus */
+    padding: 6px 10px;
+    background: rgba(180,180,180,0.06);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 8%, transparent);
+    color: #c8c8c8;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 35%, #e0e0e0);
+    border: 1px solid rgba(180,180,180,0.18);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 25%, transparent);
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .gps-pw:focus {
+    border-color: rgba(210,210,210,0.5);
+    border-color: color-mix(in srgb, var(--rarity-color, #909090) 60%, transparent);
+  }
+  .gps-pw::placeholder { color: rgba(160,160,160,0.4); }
+  .gps-unlock-btn {
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a0a0a0;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 55%, #d8d8d8);
+    background: rgba(180,180,180,0.1);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 12%, transparent);
+    border: 1px solid rgba(180,180,180,0.25);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 30%, transparent);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .gps-unlock-btn:hover:not(:disabled) {
+    background: rgba(180,180,180,0.18);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 22%, transparent);
+    border-color: rgba(210,210,210,0.45);
+    border-color: color-mix(in srgb, var(--rarity-color, #909090) 50%, transparent);
+    color: #d0d0d0;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 30%, #f0f0f0);
+  }
+  .gps-unlock-btn:disabled { opacity: 0.5; cursor: default; }
+  .gps-unlock-result { margin-top: 8px; text-align: center; min-height: 1em; }
+  .gps-unlock-err { color: #e66b6b; font-size: 8px; letter-spacing: 0.04em; }
+  .gps-unlock-pending {
+    color: #a0a0a0;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 50%, #d0d0d0);
+    font-size: 8px; font-style: italic;
+  }
+  .gps-unlock-coords {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 9px;
+    color: #d0d0d0;
+    padding: 6px 10px;
+    /* Successful unlock — green tint stays as the universal "yes"
+       signal regardless of rarity. */
+    background: rgba(100,160,120,0.08);
+    border: 1px solid rgba(100,160,120,0.2);
+    border-radius: 5px;
+  }
+  .gps-unlock-k {
+    font-size: 7px;
+    color: #888888;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 45%, #a0a0a0);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-right: 4px;
+  }
+  .gps-unlock-v { font-weight: 500; }
+
+  /* --- Dark-matter unlock (above the cert chrome) ---
+     Reuses the gps-unlock visual language but lives at the top of the
+     plate (right under the badges) because every other section on a
+     dark-matter cert is gated behind this one input. Padded a little
+     more generously since it's the only signal until unlock succeeds. */
+  .dm-unlock {
+    margin: 14px auto 4px;
+    max-width: 320px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    /* Solid background so the prompt reads as a deliberate action,
+       not a faint hint over the plate texture. Slight rarity tint so
+       it still belongs to the cert visually, but the rgba fallback
+       (and the box-shadow lift) make it pop on any theme. */
+    background: rgb(28, 28, 32);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 18%, #1c1c20);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 45%, rgba(255,255,255,0.18));
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    text-align: center;
+  }
+  .dm-unlock-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #e0e0e4;
+    color: color-mix(in srgb, var(--rarity-color, #909090) 25%, #ececf0);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .dm-unlock-row {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .dm-unlock-pw {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 7px 11px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f0f0f4;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .dm-unlock-pw:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    border-color: color-mix(in srgb, var(--rarity-color, #909090) 65%, rgba(255,255,255,0.5));
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .dm-unlock-pw::placeholder { color: rgba(200,200,210,0.5); }
+  .dm-unlock-btn {
+    padding: 7px 16px;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #f0f0f4;
+    background: rgba(255, 255, 255, 0.12);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 35%, rgba(255,255,255,0.18));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 50%, rgba(255,255,255,0.3));
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .dm-unlock-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--rarity-color, #909090) 55%, rgba(255,255,255,0.28));
+    color: #ffffff;
+  }
+  .dm-unlock-btn:disabled { opacity: 0.5; cursor: default; }
+  .dm-unlock-err {
+    margin-top: 10px;
+    min-height: 1em;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    color: #ff8a8a;
+  }
+  .dm-unlock-err:empty { display: none; }
+
+  /* Tiny Lock control surfaced AFTER a dark-matter cert is unlocked.
+     Clears the sessionStorage cache and re-renders from the encrypted
+     source — useful for re-testing the prompt without opening a new
+     tab, and for viewers who want to explicitly drop the password
+     from their session. */
+  .dm-relock-row {
+    margin: 12px auto 22px;
+    text-align: center;
+  }
+  .dm-relock-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border: 1px solid color-mix(in srgb, var(--rarity-color, #909090) 35%, rgba(255,255,255,0.22));
+    color: rgba(220, 220, 230, 0.65);
+    color: color-mix(in srgb, var(--rarity-color, #909090) 30%, rgba(220,220,230,0.7));
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .dm-relock-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* --- Birth Temperament --- */
+  .temperament-cell {
+    background: rgba(0,0,0,0.04);
+    border: 0.5px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .plate-temperament-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2a2a30;
+    margin-bottom: 6px;
+    font-style: italic;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .plate-temperament-summary {
+    font-size: 10px;
+    color: #3a3a42;
+    line-height: 1.5;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+    margin-bottom: 4px;
+  }
+  /* Trait badges — perk icon badges with hover tooltip */
+  .trait-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .trait-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    cursor: help;
+    position: relative;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+  }
+  .trait-badge:hover {
+    transform: scale(1.35) translateY(-2px);
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35)) drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+  }
+  /* Periodic brightness pulse on hover — the badge glints */
+  .trait-badge:hover .trait-img {
+    animation: traitPulse 6s ease-in-out infinite;
+  }
+  @keyframes traitPulse {
+    0%, 100% { filter: brightness(1.05); }
+    30% { filter: brightness(1.45); }
+    50% { filter: brightness(1.05); }
+    70% { filter: brightness(1.25); }
+    85% { filter: brightness(1.05); }
+  }
+  .trait-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  /* Text fallback for traits without an icon — readable label inside a
+     wider rounded-rectangle badge with the same metallic gradient
+     vocabulary as the iconned variants. */
+  .trait-badge.trait-badge-text {
+    width: auto;
+    height: auto;
+    padding: 4px 10px;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(200,200,210,0.12) 0%, rgba(140,140,160,0.08) 100%);
+    border: 1px solid rgba(220,220,235,0.18);
+    color: rgba(240,240,250,0.85);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+  }
+  .plate-rarity-legendary .temperament-cell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+  .plate-rarity-legendary .plate-temperament-name { color: #e8d8d8; }
+  .plate-rarity-legendary .plate-temperament-summary { color: #c0a8a8; }
+  .plate-rarity-legendary .trait-badge { filter: brightness(0.8); }
+  .plate-rarity-legendary .trait-badge:hover { filter: brightness(1.1); }
+
+  /* --- Rarity --- */
+  .rarity-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.35), 0 1px 1px rgba(0,0,0,0.4);
+    animation: rarity-glow 6s ease-in-out infinite;
+  }
+  @keyframes rarity-glow {
+    0%, 100% { filter: brightness(1); text-shadow: 0 -1px 0 rgba(255,255,255,0.35), 0 1px 1px rgba(0,0,0,0.4), 0 0 2px currentColor; }
+    50% { filter: brightness(1.5); text-shadow: 0 -1px 0 rgba(255,255,255,0.35), 0 1px 1px rgba(0,0,0,0.4), 0 0 6px currentColor, 0 0 12px currentColor; }
+  }
+  .rarity-traits {
+    font-size: 8px;
+    color: #2a2a30;
+    line-height: 1.8;
+    text-align: center;
+    margin-top: 6px;
+  }
+  .plate-rarity-legendary .rarity-traits { color: #d0b8b8; }
+
+  /* --- Machine Identity --- */
+  .identity-fp {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .identity-fp-label {
+    font-size: 7px;
+    color: #78787e;
+  }
+  .identity-fp-value {
+    font-size: 8px;
+    color: #2a2a30;
+    font-weight: 400;
+  }
+  .identity-gen-count {
+    font-size: 7px;
+    color: #78787e;
+  }
+  .identity-personality {
+    text-align: center;
+    font-size: 8.5px;
+    color: #505058;
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  /* --- Lineage --- */
+  .lineage-text {
+    text-align: center;
+    font-size: 11px;
+    color: #2a2a32;
+    margin-top: 12px;
+    text-shadow: 0 0 2px rgba(0,0,0,0.5), 0 1px 1px rgba(0,0,0,0.25);
+  }
+  .bayer-letter {
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .lineage-text a {
+    color: #7ba4d4;
+    text-decoration: none;
+    text-shadow: 0 0 2px rgba(0,0,0,0.6), 0 1px 1px rgba(0,0,0,0.3);
+  }
+  .lineage-text a:hover {
+    text-decoration: underline;
+    color: #a0c4f0;
+  }
+
+  /* --- Plate footer --- */
+  .plate-footer {
+    text-align: center;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .plate-footer-line {
+    font-size: 7px;
+    font-weight: 300;
+    color: #1a1a22;
+    line-height: 1.8;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .plate-footer-italic {
+    font-size: 7px;
+    font-weight: 300;
+    font-style: italic;
+    color: #1a1a22;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .plate-rarity-legendary .plate-footer-line,
+  .plate-rarity-legendary .plate-footer-italic { color: #c0a0a0; }
+  .plate-rarity-legendary .plate-brand,
+  .plate-rarity-legendary .plate-title,
+  .plate-rarity-legendary .plate-timestamp,
+  .plate-rarity-legendary .plate-prompt,
+  .plate-rarity-legendary .plate-section-label,
+  .plate-rarity-legendary .plate-temperament-name,
+  .plate-rarity-legendary .plate-temperament-summary,
+  .plate-rarity-legendary .plate-footer-line,
+  .plate-rarity-legendary .plate-footer-italic {
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* --- Save Certificate button --- */
+  .save-cert-btn {
+    display: block;
+    margin: 14px auto 6px;
+    padding: 7px 24px;
+    background: linear-gradient(180deg, rgba(60, 50, 20, 0.8) 0%, rgba(18, 14, 8, 0.75) 40%, rgba(14, 10, 6, 0.8) 100%);
+    border: 1px solid rgba(200, 170, 80, 0.4);
+    color: #c8a850;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Rarity gold alloys — gold dominant with rarity tint */
+  .save-cert-rarity-common    { color: #bab080; border-color: rgba(186,176,128,0.4); }
+  .save-cert-rarity-common:hover { color: #d8cc98; border-color: rgba(216,204,152,0.55); }
+  .save-cert-rarity-uncommon  { color: #a8b860; border-color: rgba(168,184,96,0.4); background: rgba(16,18,8,0.75); }
+  .save-cert-rarity-uncommon:hover { color: #c4d478; border-color: rgba(196,212,120,0.55); background: rgba(24,28,12,0.8); }
+  .save-cert-rarity-rare      { color: #98b0c8; border-color: rgba(152,176,200,0.4); background: rgba(12,14,18,0.75); }
+  .save-cert-rarity-rare:hover { color: #b0c8e0; border-color: rgba(176,200,224,0.55); background: rgba(18,22,28,0.8); }
+  .save-cert-rarity-veryrare  { color: #b898c8; border-color: rgba(184,152,200,0.4); background: rgba(16,12,20,0.75); }
+  .save-cert-rarity-veryrare:hover { color: #d0b0e0; border-color: rgba(208,176,224,0.55); background: rgba(26,20,32,0.8); }
+  .save-cert-rarity-epic      { color: #dcc050; border-color: rgba(220,192,80,0.5); background: rgba(24,20,8,0.75); }
+  .save-cert-rarity-epic:hover { color: #f4d868; border-color: rgba(244,216,104,0.65); background: rgba(36,30,12,0.8); }
+  .save-cert-rarity-legendary { color: #d8a068; border-color: rgba(216,160,104,0.4); background: rgba(22,12,8,0.75); }
+  .save-cert-rarity-legendary:hover { color: #f0b880; border-color: rgba(240,184,128,0.55); background: rgba(34,18,12,0.8); }
+
+  .save-cert-btn:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3), 0 0 14px rgba(220, 190, 80, 0.12);
+    text-shadow: 0 -1px 0 rgba(255,255,255,0.4), 0 1px 1px rgba(0,0,0,0.4), 0 0 6px currentColor;
+  }
+  .save-cert-btn .sparkle-canvas {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .save-cert-btn:hover .sparkle-canvas {
+    opacity: 1;
+  }
+  .save-cert-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(105deg, transparent 30%, rgba(255,230,150,0.4) 48%, rgba(255,240,180,0.6) 50%, rgba(255,230,150,0.4) 52%, transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .save-cert-btn:hover::after {
+    animation: stamp-flash 0.6s ease-out forwards;
+  }
+
+  /* Portal link — passage between decoder (yang) and validator (yin) */
+  .evidence-wrap {
+    position: relative;
+    text-align: center;
+    margin-top: 0;
+    padding: 0.4rem 0;
+    border-top: 1px dashed rgba(0,0,0,0.1);
+  }
+  /* Portal link base + animations live in layout.css; only theme color here.
+     :hover rules are gated on (hover: hover) so touch devices don't trigger
+     hover styles on the first tap — without the gate, iOS Safari shows the
+     hover state and swallows the click, requiring a second tap to navigate. */
+  .portal-yin { color: #6a6a72; }
+  .portal-yang { color: #606060; }
+  @media (hover: hover) {
+    .portal-yin:hover {
+      color: #000;
+      text-shadow: 0 0 8px rgba(0,0,0,0.15);
+    }
+    .portal-yang:hover {
+      color: #fff;
+      text-shadow: 0 0 8px rgba(255,255,255,0.2);
+    }
+  }
+
+
+  /* Download Soul — dark system silver, sits inside the active
+     input panel below its native content. */
+  .download-soul-btn {
+    display: block;
+    margin: 12px auto 0;
+    padding: 7px 24px;
+    background: linear-gradient(180deg, rgba(55,55,60,0.9) 0%, rgba(30,30,34,0.85) 40%, rgba(22,22,26,0.9) 100%);
+    border: 1px solid rgba(140,140,150,0.2);
+    color: #8a8a94;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+  }
+  .download-soul-btn:hover {
+    color: #c8c8d0;
+    border-color: rgba(170,170,180,0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  /* --- Page footer --- */
+  .page-footer {
+    margin-top: 0.8rem;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    font-weight: 300;
+    text-align: center;
+  }
+  .page-footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .page-footer a:hover { color: var(--accent-purple); }
+
+  /* ================================================================
+     COSMIC AUDIO PLAYER
+     ================================================================ */
+  /* Default: position: sticky so the player rides the viewport bottom
+     while the user scrolls through the cert, then settles naturally at
+     the plate's bottom when the page bottoms out. The plate has
+     padding-bottom (mobile rule below) to give sticky the range it
+     needs — without that slack, the player is the last thing in its
+     container and sticky has zero range. The plate's clip-path rounds
+     the player's bottom ONLY when it reaches the plate bottom; during
+     scroll, the player stays a flat rectangle inside the plate. That
+     means no bevel-against-cert glitch mid-scroll, and a clean round
+     of the player's corners when it docks at the cert's end.
+     Desktop overrides further below make it position: absolute. */
+  .cosmic-player {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border-top: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 24px -30px -30px;
+    overflow: hidden;
+    display: none;
+    /* Lift content above the iOS home-indicator zone. The blur
+       background still extends to the screen edge (the padding fills
+       it), but the toggle pill, EQ, and controls all sit above the
+       gesture area so swipes don't fight the OS. env() returns 0 on
+       non-iOS so layout is unchanged elsewhere. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (max-width: 679px) {
+    /* Player spans the plate's full width + flushes with plate bottom.
+       Plate has padding: 36px 28px 28px, so the player's natural width
+       is 56px narrower than the plate and its natural bottom is 28px
+       above the plate bottom. Negative horizontal margins extend it
+       past the horizontal padding; negative bottom margin pushes it
+       into the bottom padding area so it sits flush with plate bottom.
+       Plate's clip-path rounds the corners at rest. */
+    .cosmic-player { margin: 0 -28px -28px; }
+  }
+  .cosmic-player.visible {
+    display: block;
+    animation: playerSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes playerSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .player-accent {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 2%, var(--rarity-color, #606060) 20%, var(--rarity-color, #606060) 80%, transparent 98%);
+    opacity: 0.7;
+  }
+  /* Drawer-pull toggle at the top edge: V to collapse, ^ to expand.
+     Sits over the EQ canvas as a small chrome control; CSS rotates
+     the chevron 180° when the player carries .minimal so the icon
+     reads correctly in both states. */
+  .player-toggle {
+    position: absolute;
+    top: 5px; left: 50%;
+    transform: translateX(-50%);
+    width: 30px; height: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(220,220,235,0.5);
+    z-index: 5;
+    padding: 0;
+    transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+  }
+  .player-toggle:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: var(--rarity-color, rgba(255,255,255,0.2));
+    color: rgba(245,245,250,0.9);
+  }
+  /* Chevron flip is driven by .flipped on the toggle button itself
+     (not the player's .minimal class) so JS can play the rotation
+     animation FIRST and then apply the panel collapse — clean
+     two-phase sequence instead of running simultaneously.
+
+     --player-toggle-phase-ms is the JS-side delay between phase 1
+     (chevron flip) and phase 2 (panel collapse). cosmic-player.js
+     reads it via getComputedStyle so the timing here is the single
+     source of truth: chevron transition (0.3s) + breathing buffer
+     (~80ms) = 380ms. */
+  :root {
+    --player-toggle-phase-ms: 380;
+  }
+  .player-toggle svg { display: block; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .player-toggle.flipped svg { transform: rotate(180deg); }
+  .player-inner { width: 100%; }
+  .player-eq {
+    width: 100%; height: 40px; display: block; opacity: 0.9;
+    overflow: hidden;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+  }
+  .player-controls { display: flex; align-items: center; padding: 0 16px 12px; gap: 0; transition: padding 0.4s ease; }
+
+  /* Minimal state — full music UI is hidden (EQ, accent, all
+     controls). Only the drawer pill remains, sitting at the bottom
+     of the surface like a pull-handle. The pill itself picks up a
+     hint of rarity color on its border so the cert's identity still
+     reads even when fully collapsed. Background of the player goes
+     transparent so the pill floats over whatever's behind. */
+  .cosmic-player {
+    max-height: 240px;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1),
+                min-height 0.5s cubic-bezier(0.4,0,0.2,1),
+                background 0.4s ease,
+                backdrop-filter 0.4s ease,
+                -webkit-backdrop-filter 0.4s ease,
+                box-shadow 0.4s ease;
+  }
+  .player-accent { transition: opacity 0.4s ease; }
+  .cosmic-player.minimal {
+    max-height: 24px;
+    min-height: 24px;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+  .cosmic-player.minimal .player-accent { opacity: 0; }
+  .cosmic-player.minimal .player-eq { height: 0; opacity: 0; }
+  .cosmic-player.minimal .player-controls { display: none; }
+  .cosmic-player.minimal .player-toggle {
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border-color: var(--rarity-color, rgba(255,255,255,0.2));
+    color: rgba(245,245,250,0.85);
+  }
+
+  /* Play/Stop button */
+  .player-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04); color: #8a8a98;
+    font-size: 0.72rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.6s ease, border-color 0.6s ease, background 0.6s ease, box-shadow 0.6s ease;
+    flex-shrink: 0; position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    font-family: inherit;
+  }
+  /* Hover: glyph brightens to white, ring glows */
+  .player-btn:hover {
+    color: #e8e8f0;
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 0 8px var(--rarity-glow, rgba(96,96,96,0.2));
+    transition: color 0.4s ease, border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+  }
+  .player-btn .play-icon, .player-btn .stop-icon { position: absolute; transition: opacity 0.3s ease, transform 0.3s ease; }
+  .player-btn .stop-icon { opacity: 0; transform: scale(0.8); }
+  .player-btn.playing .play-icon { opacity: 0; transform: scale(0.8); }
+  .player-btn.playing .stop-icon { opacity: 1; transform: scale(1); }
+  /* Playing: glyph bright, ring stays lit via JS applyPlayRing */
+  .player-btn.playing { color: #e0e0e8; }
+  .player-btn.playing:hover { color: #f0f0f8; }
+
+  /* Star label */
+  .player-star-label { flex: 1; padding: 0 12px; min-width: 0; overflow: hidden; }
+  .player-star-name { font-size: 0.68rem; font-weight: 400; color: #c8c8d0; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-song-name { font-size: 0.58rem; font-weight: 300; font-style: italic; color: #b0b0be; letter-spacing: 0.03em; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-star-sub { font-size: 0.48rem; color: #8a8a98; letter-spacing: 0.04em; margin-top: 1px; }
+
+  /* COSMIC VFX button */
+  .player-vfx {
+    position: relative; font-size: 0.44rem; font-family: inherit; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase; color: #3a3a48;
+    background: transparent; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px; padding: 4px 7px 3px; cursor: pointer; flex-shrink: 0;
+    user-select: none; margin-right: 14px;
+    transition: color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+    overflow: hidden;
+  }
+  /* Hover: text goes white, nothing else changes */
+  .player-vfx:hover { color: #d0d0d8; border-color: rgba(255,255,255,0.12); transition: color 0.8s ease, border-color 0.8s ease; }
+  /* Engaged: outer glow kicks in, text stays bright */
+  .player-vfx.engaged { color: #e8e8f0; border-color: var(--rarity-bright, #aaaacc); background: transparent; box-shadow: 0 0 10px var(--rarity-glow-bright, rgba(160,160,230,0.3)), 0 0 24px var(--rarity-glow-bright, rgba(160,160,230,0.12)); animation: vfxPulse 4s ease-in-out infinite; }
+  .player-vfx.engaged:hover { color: #f0f0f8; box-shadow: 0 0 16px var(--rarity-glow-bright, rgba(160,160,230,0.4)), 0 0 34px var(--rarity-glow-bright, rgba(160,160,230,0.2)); transition: all 0.8s ease; }
+  .player-vfx.flash::after { content: ''; position: absolute; inset: 0; background: var(--rarity-color, #8888cc); opacity: 0; animation: vfxFlash 0.5s ease-out; pointer-events: none; border-radius: inherit; }
+  @keyframes vfxFlash { 0% { opacity: 0.4; } 100% { opacity: 0; } }
+  @keyframes vfxPulse {
+    0%, 100% { box-shadow: 0 0 8px var(--rarity-glow-bright, rgba(160,160,230,0.25)), 0 0 20px var(--rarity-glow-bright, rgba(160,160,230,0.1)); }
+    50% { box-shadow: 0 0 16px var(--rarity-glow-bright, rgba(160,160,230,0.4)), 0 0 36px var(--rarity-glow-bright, rgba(160,160,230,0.18)); }
+  }
+
+  /* Volume controls */
+  .player-volume-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .player-volume-icon { font-size: 0.62rem; color: #5a5a68; cursor: pointer; transition: color 0.2s; user-select: none; }
+  .player-volume-icon:hover { color: #a0a0a8; transition: color 0.6s ease; }
+  .player-volume-icon.muted { color: #3a3a48; }
+  .player-volume { -webkit-appearance: none; appearance: none; width: 56px; height: 2px; border-radius: 1px; background: rgba(255,255,255,0.08); outline: none; cursor: pointer; }
+  .player-volume::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--thumb-color, #808088); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.4); cursor: pointer; transition: background 0.2s; }
+  .player-volume::-webkit-slider-thumb:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 0 8px rgba(255,255,255,0.1); }
+  .player-volume::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--thumb-color, #808088); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.4); cursor: pointer; }
+
+  /* Rarity schemes */
+  .cosmic-player[data-rarity="common"]    { --rarity-color: #606060; --rarity-glow: rgba(96,96,96,0.2); }
+  .cosmic-player[data-rarity="uncommon"]  { --rarity-color: #2a7030; --rarity-glow: rgba(42,112,48,0.2); }
+  .cosmic-player[data-rarity="rare"]      { --rarity-color: #2a5090; --rarity-glow: rgba(42,80,144,0.2); }
+  .cosmic-player[data-rarity="veryrare"]  { --rarity-color: #5a2a8a; --rarity-glow: rgba(90,42,138,0.2); }
+  .cosmic-player[data-rarity="epic"]      { --rarity-color: #8a6210; --rarity-glow: rgba(138,98,16,0.2); }
+  .cosmic-player[data-rarity="legendary"] { --rarity-color: #d44040; --rarity-glow: rgba(212,64,64,0.2); }
+
+/* =====================================================================
+   CHAIN BADGE — shared component (dashboard + conception page). One
+   look everywhere so the creator always knows which chain they're on.
+   The DOT COLOR is the chain's readiness (semantic, not decorative):
+     green  = ready        yellow = no payload configured (fine, flagged)
+     orange = update pending (pulses)   red = not ready to conceive
+   Every badge also carries the state WORD so it's never color-only.
+   ===================================================================== */
+.chain-badge {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 7px;
+  padding: 0.55rem 0.7rem;
+}
+.chain-badge-body { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; }
+.chain-badge-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.chain-badge-official { font-weight: 700; font-size: 0.85rem; color: #1a1a20; word-break: break-word; }
+.chain-badge-right { display: flex; align-items: center; gap: 0.4rem; flex: none; }
+.chain-vis { font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: #5a5a64; font-weight: 700; }
+.chain-badge-friendly { font-size: 0.72rem; color: #45454e; word-break: break-word; }
+.chain-badge-friendly:empty { display: none; }
+
+/* The readiness dot. */
+.chain-dot {
+  flex: none; width: 11px; height: 11px; border-radius: 50%;
+  margin-top: 0.18rem;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12) inset;
+}
+.chain-dot[data-state="ready"]     { background: #2ecc71; }
+.chain-dot[data-state="nopayload"] { background: #f1c40f; }
+.chain-dot[data-state="pending"]   { background: #f39c12; animation: chain-pulse 1.8s ease-in-out infinite; }
+.chain-dot[data-state="notready"]  { background: #e74c3c; }
+@keyframes chain-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.55), 0 0 0 2px rgba(0, 0, 0, 0.12) inset; }
+  55%      { box-shadow: 0 0 0 5px rgba(243, 156, 18, 0),  0 0 0 2px rgba(0, 0, 0, 0.12) inset; }
+}
+
+/* The readiness chip — same palette as the dot, with a word. */
+.chain-state-chip {
+  white-space: nowrap; flex: none;
+  font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase;
+  font-weight: 700; padding: 0.13rem 0.5rem; border-radius: 999px;
+}
+.chain-state-chip[data-state="ready"]     { background: rgba(46, 204, 113, 0.16); color: #1c7a44; border: 1px solid rgba(46, 204, 113, 0.5); }
+.chain-state-chip[data-state="nopayload"] { background: rgba(241, 196, 15, 0.18); color: #8a6510; border: 1px solid rgba(241, 196, 15, 0.55); }
+.chain-state-chip[data-state="pending"]   { background: rgba(243, 156, 18, 0.18); color: #9a5410; border: 1px solid rgba(243, 156, 18, 0.55); }
+.chain-state-chip[data-state="notready"]  { background: rgba(231, 76, 60, 0.16); color: #a02a20; border: 1px solid rgba(231, 76, 60, 0.5); }
+
+/* Compact badge. Bare = a stadium pill (single line). With extras, it grows
+   into a rounded card containing the header row + the extras in one bg. */
+.chain-badge.compact {
+  display: inline-flex; flex-direction: column; align-items: stretch;
+  gap: 0.3rem; padding: 0.4rem 0.65rem; border-radius: 999px;
+}
+.chain-badge.compact.has-extra { border-radius: 12px; align-items: flex-start; }
+/* Header row — dot + name + vis + chip on one line. */
+.chain-badge.compact .chain-badge-head {
+  display: flex; align-items: center; gap: 0.5rem;
+  justify-content: flex-start; min-width: 0; width: 100%;
+}
+.chain-badge.compact .chain-dot { margin-top: 0; flex: none; }
+.chain-badge.compact .chain-badge-body { flex-direction: row; align-items: center; gap: 0.4rem; min-width: 0; }
+.chain-badge.compact .chain-vis { flex: none; }
+.chain-badge.compact .chain-state-chip { flex: none; }
+/* Tail — extra head-row markers placed right of the readiness chip (e.g. the
+   Payload tab's LOCKED + BUILD state). Stays on the head line; flex:none so it
+   isn't squeezed. */
+.chain-badge-tail { display: inline-flex; align-items: center; gap: 0.3rem; flex: none; }
+.chain-badge.compact .chain-badge-official { font-size: 0.78rem; }
+.chain-badge.compact .chain-badge-friendly { font-size: 0.68rem; }
+.chain-badge.compact .chain-badge-sep { color: #8a8a92; }
+
+/* Dark surfaces (conception page yin theme) — lift text/bg for contrast. */
+[data-theme="yin"] ~ .panel-layout .chain-badge,
+.conception-section .chain-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.conception-section .chain-badge-official { color: #f0f0f4; }
+.conception-section .chain-badge-friendly { color: #b8b8c2; }
+.conception-section .chain-vis { color: #9a9aa6; }
+
+/* Labeled pill — an optional eyebrow above the pill (e.g. "Target chain"),
+   used on the Conceive + Payload + Config surfaces. The pill itself is the
+   shared chain badge; this just stacks a label + any below-content. */
+.chain-badge-labeled {
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+}
+.chain-badge-label {
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6a6a74; font-weight: 700;
+}
+.chain-badge-sub { margin: -0.05rem 0 0.05rem; }
+/* Extra info under the pill (preset names, identifier sample, chain status) —
+   one item per row so long values don't squish. */
+.chain-badge-extra {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  margin-top: 0.05rem;
+}
+.chain-badge-info { font-size: 0.7rem; color: #54545c; }
+.chain-badge-info strong { color: #1a1a20; font-weight: 700; }
+.conception-section .chain-badge-info { color: #b8b8c2; }
+.conception-section .chain-badge-info strong { color: #f0f0f4; }
+/* Neutral dot (no readiness known — e.g. ticket rows). */
+.chain-dot[data-state=""] { background: #b8b8c0; }
+.conception-section .chain-badge-label { color: #9a9aa6; }

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mememage — Confirm Conception</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/layout.css">
+<link rel="stylesheet" href="/css/mememage.css">
+<link rel="stylesheet" href="/css/conception.css">
+</head>
+<body>
+<canvas id="starfield" data-theme="yin"></canvas>
+
+<!-- Conception-state machine config — read by conception.js. The token
+     identifies the session; gps_source picks the GPS branch. Metadata
+     is stringified JSON that the JS parses for the Origin fields list. -->
+<script id="conception-config" type="application/json">
+{"token":"{{TOKEN}}","gps_source":"{{GPS_SOURCE}}","image_name":"{{IMAGE_NAME}}","metadata":{{METADATA_JSON}}}
+</script>
+
+<div class="panel-layout">
+<div class="panel-left">
+
+<div class="page-header">
+  <h1>Mememage</h1>
+  <p class="subtitle">the soul takes the body</p>
+</div>
+
+<div class="input-section conception-section">
+
+<div class="conception-head">
+  <span class="conception-head-label">Confirm conception</span>
+  <span class="conception-head-file" id="conceptionFile"></span>
+</div>
+
+<!-- Chain badge — server-substituted below. Always shows which chain this
+     conception lands in, so there's no mistake on the phone. -->
+<div class="conception-chain">{{CHAIN_BADGE}}</div>
+
+<!-- Channels strip — server-substituted list of the surfaces this conception
+     will blast to (enabled + configured only). Channel id always shown. -->
+{{CHANNELS}}
+
+<!-- STATE: pre-conceive — populated by JS based on gps_source -->
+<div class="conception-state" data-state="pre">
+  <!-- Staged image thumbnail. Click to open the full-size lightbox.
+       src is set by conception.js to /api/mint/<token>/image (server
+       allows fetch in pending state). -->
+  <button type="button" class="conception-thumb-btn" id="conceptionThumbBtn" title="Tap to view full size" hidden>
+    <img class="conception-thumb" id="conceptionThumb" alt="Staged image">
+  </button>
+
+  <div class="conception-gps" id="conceptionGps">
+    <div class="conception-gps-label" id="conceptionGpsLabel">Creator Location</div>
+    <div class="conception-gps-value" id="conceptionGpsValue">&nbsp;</div>
+    <div class="conception-gps-hint" id="conceptionGpsHint"></div>
+  </div>
+
+  <details class="conception-meta">
+    <summary>Origin fields <span class="conception-meta-count" id="conceptionMetaCount">0</span></summary>
+    <div class="conception-meta-body" id="conceptionMetaBody"></div>
+  </details>
+
+  <button class="conception-confirm" id="conceptionConfirm" type="button" disabled>Conceive</button>
+  <p class="conception-fine-print" id="conceptionFinePrint">This action is permanent. The body and soul will be bound by content hash, signed by your active key, and blasted to every enabled surface.</p>
+</div>
+
+<!-- STATE: minting — pulse animation while server runs the mint -->
+<div class="conception-state conception-state-minting" data-state="minting" hidden>
+  <div class="conception-pulse">
+    <span class="conception-pulse-ring"></span>
+    <span class="conception-pulse-ring"></span>
+    <span class="conception-pulse-ring"></span>
+  </div>
+  <p class="conception-pulse-head">Conceiving<span id="conceptionPulseDots"></span></p>
+  <p class="conception-pulse-body">writing the bar, signing the seal, blasting to your surfaces</p>
+</div>
+
+<!-- STATE: conceived — minted image + identifiers + per-surface downloads -->
+<div class="conception-state conception-state-conceived" data-state="conceived" hidden>
+  <div class="conception-result-head">
+    <span class="conception-result-glyph"></span>
+    Conceived
+  </div>
+
+  <div class="conception-image-wrap">
+    <img class="conception-image" id="conceptionImage" alt="Conceived image">
+  </div>
+
+  <button type="button" class="conception-action conception-action-primary" id="conceptionDownloadImage">
+    <span class="conception-action-label">Download image</span>
+  </button>
+
+  <dl class="conception-facts" id="conceptionFacts"></dl>
+
+  <p class="conception-section-label">Surfaces</p>
+  <div class="conception-surfaces" id="conceptionSurfaces"></div>
+
+  <p class="conception-fine-print">On mobile, long-press the image to save to Photos.</p>
+</div>
+
+<!-- STATE: failed — error message + retry -->
+<div class="conception-state conception-state-failed" data-state="failed" hidden>
+  <div class="conception-fail-head">Conception failed</div>
+  <p class="conception-fail-body" id="conceptionFailBody"></p>
+  <button type="button" class="conception-action" id="conceptionRetry">Retry</button>
+</div>
+
+</div><!-- input-section -->
+
+</div><!-- panel-left -->
+</div><!-- panel-layout -->
+
+<p class="conception-footer">
+  the body is the pixels. the soul is the record. the bar is the spirit binding them.
+</p>
+
+<script src="/js/theme.js"></script>
+<script src="/js/rng.js"></script>
+<script src="/js/cosmic-starfield.js"></script>
+<script src="/js/starfield.js"></script>
+<script src="/js/conception.js"></script>
+</body>
+</html>

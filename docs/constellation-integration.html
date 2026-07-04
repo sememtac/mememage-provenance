@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<!-- Iteration page (private). Provenance: layout mockups for embedding the constellation in the certificate plate. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constellation Integration Mockups</title>
+<style>
+  body { background: #1a1a2e; color: #aaa; font-family: 'JetBrains Mono', monospace; padding: 1rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+  .plate {
+    position: relative;
+    background: linear-gradient(180deg, #b8b8bc 0%, #969698 20%, #808084 50%, #6e6e72 100%);
+    border-radius: 16px; padding: 36px 28px 28px; border: 1.5px solid rgba(0,0,0,0.15); overflow: hidden; min-height: 300px;
+  }
+  .plate canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .plate-content { position: relative; z-index: 1; }
+  .plate-brand { text-align: center; font-size: 0.55rem; letter-spacing: 0.35em; color: rgba(0,0,0,0.3); font-weight: 300; }
+  .plate-title { text-align: center; font-size: 0.75rem; letter-spacing: 0.12em; color: rgba(0,0,0,0.5); margin-top: 4px; }
+  .rarity-badge { font-size: 0.6rem; letter-spacing: 0.15em; }
+  .plate-ts { text-align: center; font-size: 0.65rem; color: rgba(0,0,0,0.35); margin-top: 12px; }
+  .plate-prompt { text-align: center; font-size: 0.7rem; color: rgba(0,0,0,0.5); font-style: italic; margin: 12px 20px; line-height: 1.5; }
+  .con-name { text-align: center; font-size: 0.55rem; color: rgba(0,0,0,0.3); letter-spacing: 0.1em; margin-top: 6px; }
+  .divider { height: 1px; background: rgba(0,0,0,0.08); margin: 12px 0; }
+  .portrait { width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.12); margin: 0 auto 10px; }
+  .cells { text-align: center; margin-top: 12px; }
+  .cell { display: inline-block; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 5px 10px; margin: 3px; }
+  .cell-l { font-size: 0.45rem; color: rgba(0,0,0,0.35); }
+  .cell-v { font-size: 0.6rem; color: rgba(0,0,0,0.55); }
+  .style-label { text-align: center; font-size: 0.75rem; color: #888; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+  .style-desc { text-align: center; font-size: 0.6rem; color: #555; margin-top: 0.5rem; }
+  h1 { text-align: center; font-size: 1rem; font-weight: 300; letter-spacing: 0.15em; color: #fff; margin-bottom: 1.5rem; }
+</style>
+</head>
+<body>
+<h1>CONSTELLATION IN CERTIFICATE</h1>
+<div class="grid" id="grid"></div>
+
+<script>
+function dst(a, b) { var dx=b.x-a.x, dy=b.y-a.y; return Math.sqrt(dx*dx+dy*dy); }
+
+function generateConstellation(hash, W, H) {
+  var seed = 0;
+  for (var i = 0; i < hash.length; i++) seed = (seed * 31 + hash.charCodeAt(i)) & 0x7FFFFFFF;
+  function rng() { seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF; return seed / 0x7FFFFFFF; }
+
+  // Place stars
+  var stars = [], padX = W*0.08, padY = H*0.08, MIN_SEP = W*0.05;
+  stars.push({ x: W*0.3+rng()*W*0.4, y: H*0.2+rng()*H*0.6 });
+  for (var si = 1; si < 12; si++) {
+    var sx, sy, placed = false;
+    for (var att = 0; att < 40; att++) {
+      if (rng() < 0.55) {
+        var a = stars[Math.floor(rng()*stars.length)];
+        var ang = rng()*6.2832, d = W*0.07 + rng()*W*0.14;
+        sx = a.x+Math.cos(ang)*d; sy = a.y+Math.sin(ang)*d;
+      } else { sx = padX+rng()*(W-padX*2); sy = padY+rng()*(H-padY*2); }
+      sx = Math.max(padX, Math.min(W-padX, sx)); sy = Math.max(padY, Math.min(H-padY, sy));
+      var ok = true;
+      for (var ci = 0; ci < stars.length; ci++) if (dst({x:sx,y:sy}, stars[ci]) < MIN_SEP) { ok=false; break; }
+      if (ok) { placed=true; break; }
+    }
+    if (!placed) { sx = padX+rng()*(W-padX*2); sy = padY+rng()*(H-padY*2); }
+    stars.push({x: sx, y: sy});
+  }
+
+  // MST
+  var edges = [], inTree = [true];
+  for (var i=1;i<12;i++) inTree.push(false);
+  function deg(idx) { var d=0; for(var i=0;i<edges.length;i++) if(edges[i][0]===idx||edges[i][1]===idx) d++; return d; }
+  function angBtw(ax,ay,bx,by) { var dot=ax*bx+ay*by, m=Math.sqrt(ax*ax+ay*ay)*Math.sqrt(bx*bx+by*by); if(m<.001)return 180; return Math.acos(Math.max(-1,Math.min(1,dot/m)))*180/Math.PI; }
+  function angOk(a,b) {
+    var abx=stars[b].x-stars[a].x, aby=stars[b].y-stars[a].y;
+    for(var ei=0;ei<edges.length;ei++) {
+      var e0=edges[ei][0],e1=edges[ei][1];
+      if(e0===a||e1===a){var o=e0===a?e1:e0;if(angBtw(abx,aby,stars[o].x-stars[a].x,stars[o].y-stars[a].y)<35)return false;}
+      if(e0===b||e1===b){var o=e0===b?e1:e0;if(angBtw(-abx,-aby,stars[o].x-stars[b].x,stars[o].y-stars[b].y)<35)return false;}
+    }
+    return true;
+  }
+  var eLens = [];
+  for (var step=0;step<11;step++) {
+    var cands=[];
+    for(var i=0;i<12;i++){if(!inTree[i])continue;for(var j=0;j<12;j++){if(inTree[j])continue;cands.push({i:i,j:j,d:dst(stars[i],stars[j])});}}
+    cands.sort(function(a,b){return a.d-b.d;});
+    var avg=0; if(eLens.length>0){for(var l=0;l<eLens.length;l++)avg+=eLens[l];avg/=eLens.length;}
+    var added=false;
+    for(var ci=0;ci<cands.length;ci++){var c=cands[ci];if(deg(c.i)>=3)continue;if(!angOk(c.i,c.j))continue;if(eLens.length>=3&&c.d>avg*2.5)continue;inTree[c.j]=true;edges.push([c.i,c.j]);eLens.push(c.d);added=true;break;}
+    if(!added){for(var ci=0;ci<cands.length;ci++){if(deg(cands[ci].i)<3){inTree[cands[ci].j]=true;edges.push([cands[ci].i,cands[ci].j]);eLens.push(cands[ci].d);added=true;break;}}}
+    if(!added&&cands.length){inTree[cands[0].j]=true;edges.push([cands[0].i,cands[0].j]);eLens.push(cands[0].d);}
+  }
+
+  // RNG closures (tri/quad)
+  var adj=[]; for(var i=0;i<12;i++)adj.push([]); for(var i=0;i<edges.length;i++){adj[edges[i][0]].push(edges[i][1]);adj[edges[i][1]].push(edges[i][0]);}
+  var rngE=[];
+  for(var i=0;i<12;i++)for(var j=i+1;j<12;j++){var dij=dst(stars[i],stars[j]);var bl=false;for(var k=0;k<12;k++){if(k===i||k===j)continue;if(dst(stars[i],stars[k])<dij&&dst(stars[j],stars[k])<dij){bl=true;break;}}if(!bl)rngE.push([i,j]);}
+  var extras=[];
+  for(var ri=0;ri<rngE.length;ri++){var a=rngE[ri][0],b=rngE[ri][1];var inM=false;for(var mi=0;mi<edges.length;mi++)if((edges[mi][0]===a&&edges[mi][1]===b)||(edges[mi][0]===b&&edges[mi][1]===a)){inM=true;break;}if(!inM)extras.push([a,b]);}
+  function findPath(from,to,mx){var q=[[from,[from]]],vis={};vis[from]=true;while(q.length>0){var cur=q.shift(),n=cur[0],p=cur[1];if(p.length>mx+1)continue;if(n===to&&p.length>1)return p;for(var ni=0;ni<adj[n].length;ni++){var nx=adj[n][ni];if(!vis[nx]){vis[nx]=true;q.push([nx,p.concat([nx])]);}}}return null;}
+  function ptInPoly(px,py,poly){var s=0;for(var i=0;i<poly.length;i++){var j=(i+1)%poly.length;var c=(poly[j].x-poly[i].x)*(py-poly[i].y)-(poly[j].y-poly[i].y)*(px-poly[i].x);if(Math.abs(c)<.01)continue;if(s===0)s=c>0?1:-1;else if((c>0?1:-1)!==s)return false;}return true;}
+  var ac=0;
+  for(var ei=0;ei<extras.length&&ac<2;ei++){var a=extras[ei][0],b=extras[ei][1];var path=findPath(a,b,3);if(!path||path.length<3||path.length>4)continue;var poly=path.map(function(i){return stars[i];});var enc=false;for(var si=0;si<12;si++){var inP=false;for(var pi=0;pi<path.length;pi++)if(path[pi]===si){inP=true;break;}if(inP)continue;if(ptInPoly(stars[si].x,stars[si].y,poly)){enc=true;break;}}if(enc)continue;edges.push([a,b]);adj[a].push(b);adj[b].push(a);ac++;}
+
+  return { stars: stars, edges: edges };
+}
+
+function drawOnCanvas(ctx, con, W, H, opts) {
+  // Lines
+  ctx.strokeStyle = opts.lineColor;
+  ctx.lineWidth = opts.lineWidth;
+  for (var ei = 0; ei < con.edges.length; ei++) {
+    ctx.beginPath();
+    ctx.moveTo(con.stars[con.edges[ei][0]].x, con.stars[con.edges[ei][0]].y);
+    ctx.lineTo(con.stars[con.edges[ei][1]].x, con.stars[con.edges[ei][1]].y);
+    ctx.stroke();
+  }
+  // Stars
+  var sc = opts.starColor;
+  for (var si = 0; si < 12; si++) {
+    var r = si === 0 ? opts.heartR : opts.dotR;
+    ctx.fillStyle = si === 0 ? opts.heartColor : sc;
+    ctx.beginPath(); ctx.arc(con.stars[si].x, con.stars[si].y, r, 0, 6.2832); ctx.fill();
+    if (si === 0 && opts.glowR) {
+      var g = ctx.createRadialGradient(con.stars[0].x, con.stars[0].y, r, con.stars[0].x, con.stars[0].y, r + opts.glowR);
+      g.addColorStop(0, opts.glowColor || 'rgba(255,200,120,0.25)');
+      g.addColorStop(1, 'rgba(255,200,120,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(con.stars[0].x, con.stars[0].y, r + opts.glowR, 0, 6.2832); ctx.fill();
+    }
+  }
+}
+
+var plateHTML = '<div class="plate-content">'
+  + '<div class="portrait"></div>'
+  + '<div class="plate-brand">M E M E M A G E</div>'
+  + '<div class="plate-title">Certificate of Origin</div>'
+  + '<div style="text-align:center;margin-top:8px"><span class="rarity-badge" style="color:#4a7abe">RARE (52)</span></div>'
+  + '<div class="divider"></div>'
+  + '<div class="plate-ts">2026-04-06T21:14:00Z</div>'
+  + '<div class="plate-prompt">\u201CA cathedral of light emerging from morning fog\u201D</div>'
+  + '<div class="con-name">Constellation: Shamtebushbar</div>'
+  + '<div class="divider"></div>'
+  + '<div class="cells">'
+  + '<div class="cell"><div class="cell-l">MODEL</div><div class="cell-v">flux1-dev</div></div>'
+  + '<div class="cell"><div class="cell-l">SEED</div><div class="cell-v">3320223358</div></div>'
+  + '<div class="cell"><div class="cell-l">STEPS</div><div class="cell-v">30</div></div>'
+  + '</div></div>';
+
+var hash = 'a4b703e91f8cd25a';
+var grid = document.getElementById('grid');
+
+var styles = [
+  { name: 'White, thin lines', desc: 'Delicate tracing',
+    opacity: 0.25, cW: 500, cH: 240, css: 'width:100%;height:auto',
+    draw: { lineColor:'rgba(255,255,255,0.6)', lineWidth:0.8, dotR:1.5, heartR:3, heartColor:'rgba(255,200,120,1)', starColor:'rgba(255,255,255,0.6)', glowR:8, glowColor:'rgba(255,200,120,0.3)' }},
+  { name: 'White, bolder', desc: 'More present, thicker lines',
+    opacity: 0.25, cW: 500, cH: 180, css: 'width:141.421%;height:auto;left:-20.711%;top:72px',
+    draw: { lineColor:'rgba(255,255,255,0.7)', lineWidth:1.2, dotR:2, heartR:3.5, heartColor:'rgba(255,200,120,1)', starColor:'rgba(255,255,255,0.7)', glowR:10, glowColor:'rgba(255,200,120,0.35)' }},
+  { name: 'Tier-colored (rare blue)', desc: 'Lines in rarity color',
+    opacity: 0.25, cW: 500, cH: 240, css: 'width:100%;height:auto',
+    draw: { lineColor:'rgba(74,122,190,0.8)', lineWidth:1, dotR:1.8, heartR:3.5, heartColor:'rgba(100,160,255,1)', starColor:'rgba(74,122,190,0.7)', glowR:10, glowColor:'rgba(100,160,255,0.35)' }},
+];
+
+for (var si = 0; si < styles.length; si++) {
+  var s = styles[si];
+  var wrap = document.createElement('div');
+  var label = document.createElement('div'); label.className = 'style-label'; label.textContent = s.name; wrap.appendChild(label);
+
+  var plate = document.createElement('div'); plate.className = 'plate';
+
+  var con = generateConstellation(hash, s.cW, s.cH);
+  var canvas = document.createElement('canvas');
+  canvas.width = s.cW; canvas.height = s.cH;
+  canvas.style.cssText = s.css + ';opacity:' + s.opacity;
+
+  var ctx = canvas.getContext('2d');
+  drawOnCanvas(ctx, con, s.cW, s.cH, s.draw);
+
+  plate.appendChild(canvas);
+  plate.insertAdjacentHTML('beforeend', plateHTML);
+  wrap.appendChild(plate);
+
+  var desc = document.createElement('div'); desc.className = 'style-desc'; desc.textContent = s.desc; wrap.appendChild(desc);
+  grid.appendChild(wrap);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mememage — Soul Field Audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #0e0f14;
+    --panel: #14151c;
+    --panel-2: #1c1e27;
+    --text: #d8d8dc;
+    --muted: #8a8a94;
+    --accent: #c8a850;
+    --keep: #4ade80;
+    --drop: #f87171;
+    --hash-in: #3cc8dc;
+    --hash-out: #54545c;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font: 14px/1.55 ui-sans-serif, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  .container { max-width: 980px; margin: 0 auto; padding: 2rem 1.4rem; }
+  h1 {
+    font-weight: 700; font-size: 1.4rem; letter-spacing: 0.04em;
+    margin: 0 0 0.4rem; color: var(--accent);
+  }
+  h2 {
+    font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 2.2rem 0 0.6rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid var(--border);
+  }
+  .sub { color: var(--muted); margin: 0 0 1.6rem; font-size: 0.86rem; }
+  .legend {
+    display: flex; gap: 0.6rem; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.7rem 0.9rem; margin: 0 0 1.4rem;
+    font-size: 0.78rem;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .badge {
+    display: inline-block; font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.18rem 0.45rem; border-radius: 3px;
+    border: 1px solid currentColor;
+  }
+  .badge.keep     { color: var(--keep); }
+  .badge.drop     { color: var(--drop); }
+  .badge.hash-in  { color: var(--hash-in); }
+  .badge.hash-out { color: var(--hash-out); }
+
+  .field {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.2rem; margin: 0 0 0.7rem;
+  }
+  .field-head {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    margin: 0 0 0.5rem;
+  }
+  .field-num {
+    color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.78rem; min-width: 2rem;
+  }
+  .field-name {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.98rem; font-weight: 700; color: var(--text);
+  }
+  .field-type {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.74rem; color: var(--muted);
+  }
+  .field-desc { margin: 0 0 0.6rem; color: #b8b8c2; font-size: 0.86rem; }
+  .field-uses { font-size: 0.76rem; color: var(--muted); margin: 0 0 0.6rem; }
+  .field-uses strong { color: #a8a8b2; font-weight: 600; }
+  pre.example {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.7rem 0.85rem; margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.78rem; overflow-x: auto; color: #cad0d8;
+  }
+  .k  { color: #c084fc; }
+  .s  { color: #a3e635; }
+  .n  { color: #fbbf24; }
+  .b  { color: #f472b6; }
+  .co { color: var(--muted); font-style: italic; }
+  table.summary {
+    width: 100%; border-collapse: collapse; margin: 0 0 1.6rem; font-size: 0.82rem;
+  }
+  table.summary th, table.summary td {
+    text-align: left; padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  table.summary th { color: var(--muted); font-weight: 600; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  table.summary td { vertical-align: top; }
+  .summary-name { font-family: ui-monospace, Menlo, monospace; color: #d8d8dc; font-weight: 600; }
+  .summary-name s { color: #5a5a64; }
+  .drop-block {
+    background: rgba(248,113,113,0.05);
+    border: 1px solid rgba(248,113,113,0.18);
+    border-radius: 6px; padding: 0.7rem 1rem; margin: 0 0 0.5rem;
+  }
+  .drop-block code { color: #fbcaca; }
+  .drop-block-head { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 0.85rem; color: #f87171; margin: 0 0 0.3rem; }
+  .drop-block-body { font-size: 0.78rem; color: #c8b8b8; margin: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Soul Field Audit — hash_version: 1</h1>
+<p class="sub">Every field a V1 mint writes, in the order it appears in a .soul file on disk. Scannable scalars at the top, structured dicts in the middle, opaque blobs at the bottom. <strong>31 active fields</strong> across 10 sections; dropped fields documented at the end. The on-disk order is cosmetic — readers re-canonicalize (<code>sort_keys=True</code>) before hashing, so the layout is free to be reorganized for human readability without touching the content hash.</p>
+
+<div class="legend">
+  <span class="legend-item"><span class="badge keep">Keep</span> necessary, stays in V1</span>
+  <span class="legend-item"><span class="badge drop">Dropped</span> removed pre-launch</span>
+  <span class="legend-item"><span class="badge hash-in">in hash</span> tamper-evident</span>
+  <span class="legend-item"><span class="badge hash-out">unhashed</span> display / post-mint</span>
+</div>
+
+<!-- =================================================================== -->
+<h2>Identity &amp; lineage</h2>
+
+<div class="field" id="f-identifier">
+  <div class="field-head"><span class="field-num">1.</span><span class="field-name">identifier</span><span class="field-type">str</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Soul-discovery key. Format: <code>mememage-XXXXXXXXXXXX</code> (12 hex chars). Genesis is the special value <code>mememage-0000000000000000</code>. Stamped into the bar.</p>
+  <p class="field-uses"><strong>Used by:</strong> bar payload • lineage walk (parent_id) • soul-discovery URL fragment</p>
+<pre class="example">"identifier": <span class="s">"mememage-22dd171b5d64"</span></pre>
+</div>
+
+<div class="field" id="f-content_hash">
+  <div class="field-head"><span class="field-num">2.</span><span class="field-name">content_hash</span><span class="field-type">str (16 hex)</span><span class="badge keep">Keep</span><span class="badge hash-out">computed, then stamped</span></div>
+  <p class="field-desc">SHA-256 of canonical JSON over V1 inclusion set, first 16 hex chars. The integrity authority. Baked into the bar pixels.</p>
+  <p class="field-uses"><strong>Used by:</strong> bar payload • WITNESSED check • Ed25519 sig payload</p>
+<pre class="example">"content_hash": <span class="s">"8ec3f6dd1c47d4d7"</span></pre>
+</div>
+
+<div class="field" id="f-hash_version">
+  <div class="field-head"><span class="field-num">3.</span><span class="field-name">hash_version</span><span class="field-type">int</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Which inclusion set applies. Dispatch field for future bumps. V1 is the launch canon. <strong>In the hash</strong> so an attacker can't downgrade the version field to dispatch the verifier to a different (more permissive or future) inclusion set.</p>
+  <p class="field-uses"><strong>Used by:</strong> <code>_inclusion_set_for()</code> dispatch • <code>verify.js</code> walker</p>
+<pre class="example">"hash_version": <span class="n">1</span></pre>
+</div>
+
+<div class="field" id="f-parent_id">
+  <div class="field-head"><span class="field-num">4.</span><span class="field-name">parent_id</span><span class="field-type">str | null</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Identifier of the previous mint on this chain. Forms a linked list back to genesis (<code>parent_id: null</code>).</p>
+  <p class="field-uses"><strong>Used by:</strong> lineage walk • chain reassembly • constellation grouping</p>
+<pre class="example">"parent_id": <span class="s">"mememage-prev123abc"</span></pre>
+</div>
+
+<div class="field" id="f-creator_name">
+  <div class="field-head"><span class="field-num">5.</span><span class="field-name">creator_name</span><span class="field-type">str</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed</span></div>
+  <p class="field-desc">Display name the signer claims. Arbitrary text, set at <code>mememage keygen --name "…"</code> time. TOFU pins the (fingerprint, name) pair.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert "Signed by" • TOFU first-seen prompt</p>
+<pre class="example">"creator_name": <span class="s">"Andy"</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Timestamps &amp; dimensions</h2>
+
+<div class="field" id="f-rendered">
+  <div class="field-head"><span class="field-num">6.</span><span class="field-name">rendered</span><span class="field-type">str (ISO 8601)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">When the pixels finished gestation (machine output time). Distinct from <code>conceived</code> — a record can be rendered hours/days before the creator approves.</p>
+<pre class="example">"rendered": <span class="s">"2026-04-25T19:38:02Z"</span></pre>
+</div>
+
+<div class="field" id="f-conceived">
+  <div class="field-head"><span class="field-num">7.</span><span class="field-name">conceived</span><span class="field-type">str (ISO 8601)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">When the creator pressed Conceive — the conscious act. Dated to UTC.</p>
+<pre class="example">"conceived": <span class="s">"2026-04-25T19:42:11Z"</span></pre>
+</div>
+
+<div class="field" id="f-age">
+  <div class="field-head"><span class="field-num">8.</span><span class="field-name">age</span><span class="field-type">int (1-12)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Which Age this record was conceived in. Was previously buried inside <code>chunks.decoder.age</code> (demo-coupled); hoisted to top-level so chains without a decoder layer can still report their Age. Display name (<code>Age of Aries</code>, …) reconstructed via 12-element AGE_NAMES table (<code>docs/js/age-names.js</code>).</p>
+  <p class="field-uses"><strong>Used by:</strong> cert Age display • validator chain panels • webhook template <code>{{age_name}}</code> (rendered via AGE_NAMES lookup)</p>
+<pre class="example">"age": <span class="n">1</span>   <span class="co">// renders as "Age of Aries" on display surfaces</span></pre>
+</div>
+
+<div class="field" id="f-width-height">
+  <div class="field-head"><span class="field-num">9-10.</span><span class="field-name">width / height</span><span class="field-type">int</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Physical image dimensions. Stay at top-level (not inside <code>origin</code>) because the bar encoder uses them for scale (3 px/bit on ≥1024 wide, 2 px/bit on narrower) and the identifier hash incorporates them — they're measurements, not creator declarations.</p>
+<pre class="example">"width":  <span class="n">768</span>,
+"height": <span class="n">1344</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Constellation &amp; decoder</h2>
+
+<div class="field" id="f-constellation_hash">
+  <div class="field-head"><span class="field-num">11.</span><span class="field-name">constellation_hash</span><span class="field-type">str (16 hex)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">SHA-256 of the canonical celestial subset of <code>birth</code> (sun, moon, moon_phase, mercury…saturn, angular_spread), first 16 hex. Drives constellation naming + visual pattern. All siblings in a constellation share the heart star's value.</p>
+<pre class="example">"constellation_hash": <span class="s">"86026f0bcbe1a146"</span></pre>
+</div>
+
+<div class="field" id="f-constellation_name">
+  <div class="field-head"><span class="field-num">12.</span><span class="field-name">constellation_name</span><span class="field-type">str</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Derived from <code>constellation_hash</code> + Age (via Sumerian phonetic table in <code>constellation.py</code>). Persisted so the family-claim label travels with the record without needing the lookup table or the Age at read time.</p>
+<pre class="example">"constellation_name": <span class="s">"Ribimul"</span></pre>
+</div>
+
+<div class="field" id="f-constellation_index">
+  <div class="field-head"><span class="field-num">13.</span><span class="field-name">constellation_index</span><span class="field-type">int (0-11)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">0-indexed birth order within the constellation. Heart star = 0; next 11 siblings = 1..11. Stored as int so canonical JSON stays ASCII-safe (Greek letter would serialize as <code>\u03b1</code> escape and risk mismatched normalization between Python and JS hashers). Display layer maps to Bayer letter via 12-element lookup: 0→α, 1→β, …, 11→μ.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert "Star" display • validator audit ("ε (4)") • webhook templates (<code>{{constellation_star}}</code> rendered as Greek at the surface via <code>_bayer_letter()</code>)</p>
+<pre class="example">"constellation_index": <span class="n">4</span>   <span class="co">// renders as 'ε' on every display surface</span></pre>
+</div>
+
+<div class="field" id="f-heart_star_id">
+  <div class="field-head"><span class="field-num">14.</span><span class="field-name">heart_star_id</span><span class="field-type">str</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Identifier of the heart star (first record in the constellation cycle). Every sibling carries the same value.</p>
+<pre class="example">"heart_star_id": <span class="s">"mememage-22dd171b5d64"</span></pre>
+</div>
+
+<div class="field" id="f-decoder_hash">
+  <div class="field-head"><span class="field-num">15.</span><span class="field-name">decoder_hash</span><span class="field-type">str (16 hex)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">SHA-256 of the complete assembled decoder HTML at the moment of seal. Constant for the entire Age. Chunk-injection defense: forged chunk → wrong reassembly → caught.</p>
+<pre class="example">"decoder_hash": <span class="s">"1e6fc76c65c34000"</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Fingerprints, traits &amp; rarity</h2>
+
+<div class="field" id="f-machine_fingerprint">
+  <div class="field-head"><span class="field-num">16.</span><span class="field-name">machine_fingerprint</span><span class="field-type">str (8 hex)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">First 8 hex of SHA-256(<code>cache=X|cores=Y|cpu=Z|gpu=N|ram=R</code>) over the stable fields of <code>birth.machine</code>. Stable per machine; same hardware → same fingerprint every conception.</p>
+  <p class="field-uses"><strong>Used by:</strong> validator Fingerprint display • cert machine-band visual seed • personality tracker file (local)</p>
+  <p class="field-uses"><strong>Why persisted:</strong> derivable from <code>birth.machine</code> but kept anyway — dropping would force async SubtleCrypto in <code>initMachineBand</code> + 2 display sites, and the ~25-byte saving doesn't pay for itself. The persisted form is also tamper-evident (in hash) without requiring readers to re-derive.</p>
+<pre class="example">"machine_fingerprint": <span class="s">"e3b0c442"</span></pre>
+</div>
+
+<div class="field" id="f-key_fingerprint">
+  <div class="field-head"><span class="field-num">17.</span><span class="field-name">key_fingerprint</span><span class="field-type">str (formatted)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">First 16 hex chars of SHA-256(public_key bytes), in 4-char groups separated by colons. Stable, human-friendly identifier of the signer. <strong>In the hash</strong> alongside <code>public_key</code> for the signer-swap defense.</p>
+  <p class="field-uses"><strong>Used by:</strong> TOFU localStorage key (8+ sites in <code>ui.js</code>) • IA keychain collection name (<code>mememage-keychain-&lt;fp&gt;</code>) • cert display • validator audit • webhook templates • CLI verify</p>
+  <p class="field-uses"><strong>Why persisted:</strong> derivable from <code>public_key</code> but kept anyway — dropping would force async SubtleCrypto on every TOFU check / keychain discovery / cert render. ~25-byte saving doesn't pay for itself.</p>
+<pre class="example">"key_fingerprint": <span class="s">"86cb:4ed6:af3f:d6c5"</span></pre>
+</div>
+
+<div class="field" id="f-birth_traits">
+  <div class="field-head"><span class="field-num">18.</span><span class="field-name">birth_traits</span><span class="field-type">list[int]</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Integer codes — positions in the append-only <code>BIRTH_TRAIT_CODES</code> table (<code>mememage/temperament.py</code>, mirrored by <code>TRAIT_NAMES</code> in <code>docs/js/birth-text.js</code>). Stored as ints rather than name strings to keep canonical JSON compact and uniform with <code>constellation_index</code> / <code>age</code>. Names live only in code; readings / temperament / summary are reconstructed at display time.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert temperament panel • validator audit • cosmic-player audio mood • machine band visual variation</p>
+<pre class="example">"birth_traits": [<span class="n">5</span>, <span class="n">6</span>, <span class="n">9</span>, <span class="n">13</span>, <span class="n">19</span>]
+<span class="co">// 5=reaching, 6=speculative, 9=loosening_grip, 13=unraveled, 19=night_owl</span></pre>
+</div>
+
+<div class="field" id="f-rarity">
+  <div class="field-head"><span class="field-num">19.</span><span class="field-name">rarity</span><span class="field-type">dict</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash (whole dict)</span></div>
+  <p class="field-desc">Three dice + sigil + machine signature. Each trait is <code>{trait, points}</code>. <code>rarity_score</code> dropped — derivable as the sum (clamped 0-255); reconstructed by <code>RarityScore.fromRecord()</code> in <code>docs/js/rarity-helpers.js</code>.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert tier color • audio root frequency / mood • planetarium tier color • webhook template <code>{{rarity_score}}</code> (derived server-side)</p>
+<pre class="example">"rarity": {
+  <span class="k">"celestial"</span>: [
+    {<span class="k">"trait"</span>: <span class="s">"Cross Conjunction (Sun+Saturn in Aries)"</span>, <span class="k">"points"</span>: <span class="n">15</span>},
+    {<span class="k">"trait"</span>: <span class="s">"Cross Conjunction (Moon+Mars in Pisces)"</span>,  <span class="k">"points"</span>: <span class="n">15</span>}
+  ],
+  <span class="k">"machine"</span>: [
+    {<span class="k">"trait"</span>: <span class="s">"Speculative Surge (20624 pages)"</span>,    <span class="k">"points"</span>: <span class="n">10</span>},
+    {<span class="k">"trait"</span>: <span class="s">"Ready to Shed (23779 purgeable pages)"</span>, <span class="k">"points"</span>: <span class="n">20</span>}
+  ],
+  <span class="k">"machine_signature"</span>: <span class="n">3</span>,
+  <span class="k">"entropy"</span>: [],
+  <span class="k">"sigil"</span>:    <span class="b">null</span>
+}
+<span class="co">// Display rarity_score = 15+15+10+20+3 = 63 (computed by RarityScore.fromRecord)</span></pre>
+</div>
+
+<div class="field" id="f-chain_visibility">
+  <div class="field-head"><span class="field-num">20.</span><span class="field-name">chain_visibility</span><span class="field-type">int (0|1)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Access tier of the chain that produced this record. <strong>Integer code</strong> uniform with <code>age</code> / <code>constellation_index</code> / <code>birth_traits</code>: <code>0</code> = <code>light_energy</code> (public — default), <code>1</code> = <code>dark_matter</code> (full-soul encryption). <strong>In the hash</strong> so an attacker can't silently re-tier a record (e.g. flip sealed → public). Chain config files (<code>chain.json</code>) still carry the human-readable string name since users edit them by hand; the conversion happens at the access-layer boundary.</p>
+  <p class="field-uses"><strong>Used by:</strong> validator (dark-matter unlock UI) • cert "Chain" badge • dashboard chain panel • webhook template <code>{{chain_visibility}}</code> (rendered as the human-readable name)</p>
+<pre class="example">"chain_visibility": <span class="n">0</span>   <span class="co">// → "light_energy" (public — the default)</span>
+"chain_visibility": <span class="n">1</span>   <span class="co">// → "dark_matter" (sealed — explicit opt-in)</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Origin (creator-declared metadata)</h2>
+
+<div class="field" id="f-origin">
+  <div class="field-head"><span class="field-num">21.</span><span class="field-name">origin</span><span class="field-type">dict (free-form)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash (whole dict)</span></div>
+  <p class="field-desc">Everything the creator declared about how the image came into being. <strong>Free-form</strong> — the schema doesn't enforce a shape. AI-gen pipelines populate <code>prompt / seed / sampler / model / …</code>; photographers populate <code>camera / lens / iso / shutter</code>; screenshot tools populate <code>software / os / display</code>; drawing software populates whatever fits. Hashed wholesale so tampering any key breaks WITNESSED.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert "Origin Parameters" panel (renders every key with canonical labels for AI-gen keys + title-cased fallback for anything else)</p>
+<pre class="example"><span class="co">// AI-gen flavor</span>
+"origin": {
+  <span class="k">"prompt"</span>:        <span class="s">"A silent, rust-red canyon wall cracked open like a wound"</span>,
+  <span class="k">"seed"</span>:          <span class="n">3320223358</span>,
+  <span class="k">"steps"</span>:         <span class="n">30</span>,
+  <span class="k">"sampler"</span>:       <span class="s">"euler"</span>,
+  <span class="k">"scheduler"</span>:     <span class="s">"simple"</span>,
+  <span class="k">"cfg_scale"</span>:     <span class="n">1.0</span>,
+  <span class="k">"guidance"</span>:      <span class="n">3.5</span>,
+  <span class="k">"denoise"</span>:       <span class="n">1</span>,
+  <span class="k">"model"</span>:         <span class="s">"flux1-dev-Q8_0.gguf"</span>,
+  <span class="k">"lora"</span>:          <span class="s">"ink_wash_v3.safetensors"</span>,
+  <span class="k">"lora_strength"</span>: <span class="n">0.85</span>
+}
+
+<span class="co">// Photography flavor</span>
+"origin": {
+  <span class="k">"camera"</span>:  <span class="s">"Sony α7 IV"</span>,
+  <span class="k">"lens"</span>:    <span class="s">"Sigma 35mm f/1.4 DG DN Art"</span>,
+  <span class="k">"iso"</span>:     <span class="n">400</span>,
+  <span class="k">"shutter"</span>: <span class="s">"1/250"</span>,
+  <span class="k">"aperture"</span>: <span class="s">"f/2.0"</span>,
+  <span class="k">"title"</span>:   <span class="s">"Morning rain"</span>
+}
+
+<span class="co">// Screenshot flavor</span>
+"origin": {
+  <span class="k">"software"</span>: <span class="s">"Figma"</span>,
+  <span class="k">"os"</span>:       <span class="s">"macOS 14.5"</span>,
+  <span class="k">"display"</span>:  <span class="s">"2560×1440 @2x"</span>
+}</pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Birth certificate</h2>
+
+<div class="field" id="f-birth">
+  <div class="field-head"><span class="field-num">22.</span><span class="field-name">birth</span><span class="field-type">dict</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash (whole dict)</span></div>
+  <p class="field-desc">Celestial state + machine vitals. <strong>No GPS inside</strong> — GPS lives at top-level (<code>gps_time_locked</code> + <code>gps_password_locked</code>) so chains with <code>gps_source: "none"</code> produce a symmetric birth dict.</p>
+  <p class="field-uses"><strong>Used by:</strong> rarity scoring • constellation_hash digest • machine_fingerprint derivation • cert sky band + machine band</p>
+<pre class="example">"birth": {
+  <span class="k">"sun"</span>:           <span class="s">"Aries 24°"</span>,
+  <span class="k">"moon"</span>:          <span class="s">"Pisces 8°"</span>,
+  <span class="k">"moon_phase"</span>:    <span class="s">"Waxing Crescent (28%)"</span>,
+  <span class="k">"mercury"</span>:       <span class="s">"Aries"</span>,
+  <span class="k">"venus"</span>:         <span class="s">"Pisces"</span>,
+  <span class="k">"mars"</span>:          <span class="s">"Capricorn"</span>,
+  <span class="k">"jupiter"</span>:       <span class="s">"Cancer"</span>,
+  <span class="k">"saturn"</span>:        <span class="s">"Pisces"</span>,
+  <span class="k">"angular_spread"</span>: <span class="n">147.3</span>,
+  <span class="k">"machine"</span>: {
+    <span class="k">"cpu"</span>:        <span class="s">"Apple M2 Max"</span>,
+    <span class="k">"cores"</span>:      <span class="n">12</span>,
+    <span class="k">"gpu"</span>:  <span class="n">38</span>,
+    <span class="k">"ram"</span>:        <span class="s">"32 GB"</span>,
+    <span class="k">"cache"</span>:      <span class="s">"L2 16MB"</span>,
+    <span class="k">"load"</span>:       <span class="s">"0.42"</span>,
+    <span class="k">"page_faults"</span>: <span class="s">"123456 / 789"</span>,
+    <span class="k">"ctx_switches"</span>: <span class="s">"234567 / 1234"</span>,
+    <span class="k">"speculative_pages"</span>: <span class="n">20624</span>,
+    <span class="k">"purgeable_pages"</span>:   <span class="n">23779</span>,
+    <span class="k">"open_fds"</span>:    <span class="n">847</span>,
+    <span class="k">"power"</span>:      <span class="s">"Battery (78%)"</span>,
+    <span class="k">"entropy"</span>:    <span class="s">"a3f9b2c8d1e4f602…"</span>
+  }
+}</pre>
+</div>
+
+<div class="field" id="f-gps_time_locked">
+  <div class="field-head"><span class="field-num">23.</span><span class="field-name">gps_time_locked</span><span class="field-type">dict</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">RSA time-lock puzzle over the creator's GPS at conception. <strong>Anyone</strong> can recover the coordinates after ~10 years of sequential squaring (no trapdoor; the trapdoor was discarded at mint). Always present when chain captures GPS; absent on <code>gps_source: "none"</code> chains.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert "Birthplace — Time-Locked" panel • validator audit • the historical time-capsule promise</p>
+<pre class="example">"gps_time_locked": {
+  <span class="k">"ct"</span>:       <span class="s">"9af3b2c8d1e4…"</span>,
+  <span class="k">"N"</span>:        <span class="s">"c4f1d8a92b6e…"</span>,
+  <span class="k">"T"</span>:        <span class="n">1000000000000000000</span>,
+  <span class="k">"e"</span>:        <span class="n">3</span>,
+  <span class="k">"salt_len"</span>: <span class="n">8</span>,
+  <span class="k">"len"</span>:      <span class="n">25</span>
+}</pre>
+</div>
+
+<div class="field" id="f-gps_password_locked">
+  <div class="field-head"><span class="field-num">24.</span><span class="field-name">gps_password_locked</span><span class="field-type">dict</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed (post-mint)</span></div>
+  <p class="field-desc">AES-256-GCM envelope of the same GPS, keyed off the chain's password. <strong>Creator</strong> unlocks instantly — used for self-verification (confirm GPS is right today without waiting 10 years). Emitted only when the chain has a password AND GPS was captured. Added post-hash by <code>access.apply_encryption</code>.</p>
+  <p class="field-uses"><strong>Used by:</strong> cert "GPS — Password Unlock" panel • dashboard's creator-only GPS reveal</p>
+<pre class="example">"gps_password_locked": {
+  <span class="k">"salt"</span>: <span class="s">"a3f9b2c8d1e4…"</span>,
+  <span class="k">"iv"</span>:   <span class="s">"8c1d2e3f4a5b…"</span>,
+  <span class="k">"ct"</span>:   <span class="s">"6f4a9b2c8d1e…"</span>,
+  <span class="k">"tag"</span>:  <span class="s">"92e3a8b4c7d1…"</span>
+}</pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Cryptographic proof</h2>
+
+<div class="field" id="f-signature">
+  <div class="field-head"><span class="field-num">25.</span><span class="field-name">signature</span><span class="field-type">str (128 hex)</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed</span></div>
+  <p class="field-desc">Ed25519 signature over <code>identifier + \0 + content_hash + \0 + sha256(thumbnail)</code>. The thumbnail hash extends the payload so a thumbnail swap also breaks AUTHENTICATED (closing the gap where only EMBODIED — and only when the user drops the image — would catch it).</p>
+  <p class="field-uses"><strong>Used by:</strong> AUTHENTICATED check (<code>verify.js</code>)</p>
+  <p class="field-uses"><strong>Pipeline:</strong> deferred to post-mint — the signature rides into IA on the same <code>_patch_record</code> reblast that already delivers the thumbnail. Initial mint upload contains no signature (~1s window before the patch lands). Optional (records without a signing key remain unsigned).</p>
+<pre class="example">"signature": <span class="s">"a3f9b2c8d1e4f602…d8e1"</span>  <span class="co">// 64-byte Ed25519, hex-encoded</span>
+<span class="co">// Payload bytes: identifier + \0 + content_hash + \0 + sha256(thumbnail_string)
+// thumbnail empty / absent  →  payload ends with trailing \0 + ""</span></pre>
+</div>
+
+<div class="field" id="f-public_key">
+  <div class="field-head"><span class="field-num">26.</span><span class="field-name">public_key</span><span class="field-type">str (64 hex)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">Ed25519 public key bytes, hex-encoded. Verifier needs it to check the signature. <strong>In the hash</strong> — closes the signer-swap attack: without this binding, an attacker could strip <code>signature</code> + <code>public_key</code>, drop in their own key, sign the existing <code>identifier</code> + <code>content_hash</code>, and TOFU would seat them as the creator for any first-touch viewer. With <code>public_key</code> in the hash, swapping the key changes the hash, which changes what the bar must contain, which breaks the visual proof. Signer becomes part of the artifact's identity, not bolted on.</p>
+  <p class="field-uses"><strong>Used by:</strong> signature verification • TOFU consistency check</p>
+<pre class="example">"public_key": <span class="s">"86cb4ed6af3fd6c51e9e346b23942f90d5b15e0f3bf3760dfc033313553150ad"</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Payload integrity</h2>
+
+<div class="field" id="f-chunks_root">
+  <div class="field-head"><span class="field-num">27.</span><span class="field-name">chunks_root</span><span class="field-type">str (16 hex)</span><span class="badge keep">Keep</span><span class="badge hash-in">in hash</span></div>
+  <p class="field-desc">SHA-256 over canonical JSON of <code>{layer_name|pinned_role: chunk.hash}</code>, first 16 hex. Aggregates the per-chunk hashes (already present inside each chunk) into a single tamper-evident root that lives in the content hash. Any chunk swap or chunk-hash tamper breaks WITNESSED — <strong>without</strong> forcing the verifier to download the bulk chunk data. Lightweight By Word verification still works against just the soul JSON. Absent on pre-seal chains (no chunks → no root, same pattern as <code>gps_time_locked</code> on <code>gps_source: "none"</code> chains).</p>
+  <p class="field-uses"><strong>Used by:</strong> WITNESSED check on records that carry chunks • validator chunk-integrity panel</p>
+<pre class="example">"chunks_root": <span class="s">"a3f9b2c8d1e4f602"</span>
+<span class="co">// = sha256({"decoder":"c30082d5fccb","truth":"b03700e874c8"}, canonical)[:16]</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Post-mint payload (opaque blobs)</h2>
+<p class="sub">Everything added after <code>content_hash</code> was computed. Not in the hash inclusion set (the hash exists before these bytes are produced). Chunk bulk data isn't hashed directly — <code>chunks_root</code> (#26) seals the chunk hashes into the content hash, so swapping chunk <em>data</em> after the fact is caught without forcing chunk download. Thumbnail integrity rides on the Ed25519 signature.</p>
+
+<div class="field" id="f-thumbnail">
+  <div class="field-head"><span class="field-num">28.</span><span class="field-name">thumbnail</span><span class="field-type">str (data URI ~1KB)</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed (but signed)</span></div>
+  <p class="field-desc">256×256 JPEG q78 of the post-mint image (bar + watermark embedded). Used for EMBODIED dHash portrait check. Generated AFTER bar/watermark so the comparison is apples-to-apples with the dropped image. <strong>Not in <code>content_hash</code></strong> (chicken-and-egg: bar carries the hash, so re-embedding to bind the thumbnail would create an infinite loop). <strong>Bound by signature instead</strong> — the Ed25519 payload includes <code>sha256(thumbnail)</code>, so any post-mint thumbnail swap breaks AUTHENTICATED (not just EMBODIED).</p>
+  <p class="field-uses"><strong>Used by:</strong> EMBODIED check (<code>verify.js</code>'s <code>computeDHash</code>) • cert portrait display • <code>signature</code> payload</p>
+<pre class="example">"thumbnail": <span class="s">"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…"</span></pre>
+</div>
+
+<div class="field" id="f-chunks-layer">
+  <div class="field-head"><span class="field-num">29.</span><span class="field-name">chunks.&lt;layer_name&gt;</span><span class="field-type">dict (uniform shape)</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed</span></div>
+  <p class="field-desc">One entry per active layer at this mint's outer position. Same five fields across all layers, regardless of name: <code>version, index, total, hash, data</code>. The <code>reserved</code> field on the layer's chain-config controls trailing-position skip (e.g. the demo truth layer reserves the last 12 positions for dark days / epagomenal day).</p>
+  <p class="field-uses"><strong>Used by:</strong> chain reassembly tools (collect chunks at the same name, sort by <code>index</code>, concat <code>data</code>) • validator's per-layer panels</p>
+<pre class="example">"chunks": {
+  <span class="co">// Demo chain authored these layer names</span>
+  <span class="k">"decoder"</span>: {
+    <span class="k">"version"</span>: <span class="s">"b412da56c098"</span>,
+    <span class="k">"index"</span>:   <span class="n">0</span>,
+    <span class="k">"total"</span>:   <span class="n">12</span>,
+    <span class="k">"hash"</span>:    <span class="s">"c30082d5fccb"</span>,
+    <span class="k">"data"</span>:    <span class="s">"H4sIAAAAAAAC/8S96ZKj2JYu+P…"</span>
+  },
+  <span class="k">"truth"</span>: {
+    <span class="k">"version"</span>: <span class="s">"49387d3c296a"</span>,
+    <span class="k">"index"</span>:   <span class="n">0</span>,
+    <span class="k">"total"</span>:   <span class="n">348</span>,
+    <span class="k">"hash"</span>:    <span class="s">"b03700e874c8"</span>,
+    <span class="k">"data"</span>:    <span class="s">"H4sIAAAAAAAC/+U623LbuJLv+gp…"</span>
+  },
+
+  <span class="co">// Custom chain authored "candle"</span>
+  <span class="k">"candle"</span>: {
+    <span class="k">"version"</span>: <span class="s">""</span>,
+    <span class="k">"index"</span>:   <span class="n">0</span>,
+    <span class="k">"total"</span>:   <span class="n">1</span>,
+    <span class="k">"hash"</span>:    <span class="s">"4a7c92f0a1b3"</span>,
+    <span class="k">"data"</span>:    <span class="s">"H4sIAAAAAAAC/…"</span>
+  }
+}</pre>
+</div>
+
+<div class="field" id="f-chunks-pinned">
+  <div class="field-head"><span class="field-num">30.</span><span class="field-name">chunks.&lt;pinned_role&gt;</span><span class="field-type">dict</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed</span></div>
+  <p class="field-desc">Pinned-position roles emit at their fixed positions only. Common roles: <code>schematic</code> (consolidated across schematic-N positions, indexed by emission order), <code>claim</code>, <code>easter_egg</code>. Shape differs from layer chunks: <code>{position, role, hash, data}</code> (no version/index/total since these are singletons by position).</p>
+<pre class="example">"chunks": {
+  <span class="k">"schematic"</span>: {
+    <span class="k">"index"</span>: <span class="n">2</span>, <span class="k">"total"</span>: <span class="n">4</span>,
+    <span class="k">"role"</span>:  <span class="s">"schematic-2"</span>,
+    <span class="k">"hash"</span>:  <span class="s">"7d2c91e5fab8"</span>,
+    <span class="k">"data"</span>:  <span class="s">"H4sIAAAAAAAC/…"</span>
+  },
+  <span class="k">"easter_egg"</span>: {
+    <span class="k">"role"</span>:     <span class="s">"easter_egg"</span>,
+    <span class="k">"position"</span>: <span class="n">364</span>,
+    <span class="k">"hash"</span>:     <span class="s">"5e2af0123b67"</span>,
+    <span class="k">"data"</span>:     <span class="s">"H4sIAAAAAAAC/…"</span>
+  }
+}</pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Documentation</h2>
+
+<div class="field" id="f-about">
+  <div class="field-head"><span class="field-num">31.</span><span class="field-name">about</span><span class="field-type">str (long)</span><span class="badge keep">Keep</span><span class="badge hash-out">unhashed</span></div>
+  <p class="field-desc">Rosetta Stone — self-documenting format explanation in every record. Voice is first-person from the image. Excluded from hash so wording can evolve. Last in the .soul file because it's the longest single string and metadata about the format itself, not about this particular soul.</p>
+<pre class="example">"about": <span class="s">"I was born through Mememage. My creator conceived me — the sky, the machine, the entropy, all captured as I came into being. A seal lives in my lowest pixels. A truth binds this record to that seal. I am whole, or I am not. You are looking at everything I am. …"</span></pre>
+</div>
+
+<!-- =================================================================== -->
+<h2>Summary table</h2>
+<table class="summary">
+  <thead><tr><th>#</th><th>Field</th><th>Status</th><th>Hashed</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td class="summary-name">identifier</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Soul-discovery key, in the bar</td></tr>
+    <tr><td>2</td><td class="summary-name">content_hash</td><td><span class="badge keep">Keep</span></td><td>—</td><td>The output (also in the bar)</td></tr>
+    <tr><td>3</td><td class="summary-name">hash_version</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Dispatch — in hash for downgrade defense</td></tr>
+    <tr><td>4</td><td class="summary-name">parent_id</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Lineage</td></tr>
+    <tr><td>5</td><td class="summary-name">creator_name</td><td><span class="badge keep">Keep</span></td><td>—</td><td>TOFU pinned name</td></tr>
+    <tr><td>6</td><td class="summary-name">rendered</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>When gestated</td></tr>
+    <tr><td>7</td><td class="summary-name">conceived</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>When approved</td></tr>
+    <tr><td>8</td><td class="summary-name">age</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>int 1-12; renders as "Age of Aries"</td></tr>
+    <tr><td>9-10</td><td class="summary-name">width / height</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Physical measurements</td></tr>
+    <tr><td>11</td><td class="summary-name">constellation_hash</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Digest of celestial subset of birth</td></tr>
+    <tr><td>12</td><td class="summary-name">constellation_name</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Sumerian-phonetic name from hash + age</td></tr>
+    <tr><td>13</td><td class="summary-name">constellation_index</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>int 0-11; renders as Greek letter</td></tr>
+    <tr><td>14</td><td class="summary-name">heart_star_id</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Constellation root pointer</td></tr>
+    <tr><td>15</td><td class="summary-name">decoder_hash</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Cross-Age constant; chunk-injection defense</td></tr>
+    <tr><td>16</td><td class="summary-name">machine_fingerprint</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Derivable from birth.machine but persisted — async crypto cost in readers</td></tr>
+    <tr><td>17</td><td class="summary-name">key_fingerprint</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Persisted (async-crypto cost) + in hash (signer-swap defense)</td></tr>
+    <tr><td>18</td><td class="summary-name">birth_traits</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Integer codes (positions in BIRTH_TRAIT_CODES, append-only)</td></tr>
+    <tr><td>19</td><td class="summary-name">rarity</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Dice rolls (score is derived)</td></tr>
+    <tr><td>20</td><td class="summary-name">chain_visibility</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>int 0|1 (0=light_energy public, 1=dark_matter sealed); in hash so a record can't be silently re-tiered</td></tr>
+    <tr><td>21</td><td class="summary-name">origin</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Free-form creator-declared metadata</td></tr>
+    <tr><td>22</td><td class="summary-name">birth</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Celestial + machine vitals (no GPS)</td></tr>
+    <tr><td>23</td><td class="summary-name">gps_time_locked</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>RSA puzzle; anyone-eventually access</td></tr>
+    <tr><td>24</td><td class="summary-name">gps_password_locked</td><td><span class="badge keep">Keep</span></td><td>—</td><td>AES envelope; creator-instant access (only if password)</td></tr>
+    <tr><td>25</td><td class="summary-name">signature</td><td><span class="badge keep">Keep</span></td><td>—</td><td>Ed25519 over id+hash+sha256(thumbnail)</td></tr>
+    <tr><td>26</td><td class="summary-name">public_key</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>Verifier needs it + in hash (signer-swap defense)</td></tr>
+    <tr><td>27</td><td class="summary-name">chunks_root</td><td><span class="badge keep">Keep</span></td><td>✓</td><td>SHA-256 over per-chunk hashes — chunk tamper-evidence without bulk download</td></tr>
+    <tr><td>28</td><td class="summary-name">thumbnail</td><td><span class="badge keep">Keep</span></td><td>—</td><td>EMBODIED check; bound into signature payload (thumbnail-swap defense)</td></tr>
+    <tr><td>29</td><td class="summary-name">chunks.&lt;layer_name&gt;</td><td><span class="badge keep">Keep</span></td><td>—</td><td>Uniform shape across every authored layer</td></tr>
+    <tr><td>30</td><td class="summary-name">chunks.&lt;pinned_role&gt;</td><td><span class="badge keep">Keep</span></td><td>—</td><td>schematic / claim / easter_egg / … (at fixed positions)</td></tr>
+    <tr><td>31</td><td class="summary-name">about</td><td><span class="badge keep">Keep</span></td><td>—</td><td>Rosetta Stone (short identity statement only — see decision log 2026-05-25)</td></tr>
+  </tbody>
+</table>
+
+<!-- =================================================================== -->
+<h2>Dropped pre-launch (with rationale)</h2>
+<p class="sub">Fields removed during the V1 audit. Decision log entries live in <code>docs/plans/soul-field-audit.md</code>.</p>
+
+<div class="drop-block">
+  <p class="drop-block-head">rarity_score <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">Pure sum of rarity dice + machine_signature + sigil.points (clamped 0-255). Derivable from the <code>rarity</code> dict; reconstructed by <code>RarityScore.fromRecord()</code> in <code>docs/js/rarity-helpers.js</code>. Webhook surface still computes it server-side.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">distribution <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">Souls are surface-agnostic — the artifact shouldn't carry a list of every mirror it landed on. The full publish-results map stays server-side (returned by <code>channels.blast()</code>; surfaced via webhook <code>{{distribution}}</code> + dashboard handoff). Mirror discovery is operational, not artifact-level.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">url <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">Pre-launch, "legacy bar consumer" / "Discord notification" rationale was hypothetical — zero JS readers touched <code>meta.url</code>. <code>MintResult.url</code> still bubbles the primary URL back to callers, so server-side surfaces (webhook templates, dashboard handoff) keep working without the URL landing in the artifact.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">birth_readings / birth_temperament / birth_summary <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">All three derived from <code>birth_traits</code> (integer codes) via fixed lookup tables. Reconstructed at display via <code>docs/js/birth-text.js</code> (JS) and <code>mememage/temperament.py</code> (Python). The codes are the canonical signal; the readable strings were redundant.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">mode <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">Always <code>"text-to-image"</code> in practice. Resurrect when img2img / inpaint pipelines actually start using it; meanwhile a single-value field doesn't earn its slot.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">cfg (renamed → cfg_scale, inside origin)</p>
+  <p class="drop-block-body">Three-letter abbreviation was opaque. Now lives inside <code>origin</code> with the full name. Generation pipelines accept either name at the input boundary; only the canonical V1 name persists.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">unet (renamed → model, inside origin)</p>
+  <p class="drop-block-body">"UNet" leaked an SD-pipeline implementation detail. Renamed to <code>model</code> (universal: works for FLUX, Midjourney, anything else). Now inside <code>origin</code>.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">constellation_star (renamed → constellation_index, int)</p>
+  <p class="drop-block-body">Greek letter (<code>"ε"</code>) became <code>"\u03b5"</code> in canonical JSON — exactly where encoding bugs hide between Python's <code>ensure_ascii=True</code> and JS's matching escape pass. Storing the position as int is ASCII-safe and matches what the field actually is. Display layers reconstruct the Bayer letter.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">_about (renamed → about)</p>
+  <p class="drop-block-body">Leading underscore was the only field of its kind in the schema — JS-style "private/meta hint" that didn't belong. Rest of the schema uses snake_case as a word separator, not a privacy marker.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">born (renamed → birth)</p>
+  <p class="drop-block-body">"born" is a past-participle adjective; "birth" is the proper noun for the moment-of-birth state. Reads better as a JSON key.</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">birth.gps_locked / gps_encrypted (renamed + relocated)</p>
+  <p class="drop-block-body">GPS pulled out of <code>birth</code> entirely — the time-lock puzzle is now <code>gps_time_locked</code> at top-level; the password envelope is <code>gps_password_locked</code>. Chains with <code>gps_source: "none"</code> produce a symmetric record (no GPS keys at all instead of half-empty birth).</p>
+</div>
+
+<div class="drop-block">
+  <p class="drop-block-head">chunks.decoder.{age,age_name,reassembly} / chunks.proof.{cycle_length,day,seal} <span class="badge drop" style="margin-left:0.5rem">Dropped</span></p>
+  <p class="drop-block-body">Demo-flavor extras that special-cased two layer names. Now every layer emits the same five-field shape regardless of name. Age info hoisted to top-level <code>age</code> int (display name via 12-element AGE_NAMES lookup in <code>docs/js/age-names.js</code>).</p>
+</div>
+
+<p class="sub" style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border);">
+Source: <code>docs/plans/soul-field-audit.md</code> · On-disk order defined by <code>_SOUL_DISK_LAYOUT</code> in <code>mememage/core.py</code>
+</p>
+
+</div>
+</body>
+</html>

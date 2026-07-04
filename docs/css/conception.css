@@ -1,0 +1,778 @@
+/* Conception page — the yin sibling of the validator.
+ *
+ * Dashboard Mint = yang (silver, hands moving): pre-commitment workbench.
+ * Conception   = yin (cream + dark, hushed): the conscious act, the moment.
+ *
+ * Visual chrome (body bg, header colors, starfield contrast) mirrors
+ * the validator side: cream backdrop with dark stars, dark system-box
+ * floating on it. The conception flow inside is single-column and
+ * reverent — no tabs, no toolbar, just the moment.
+ */
+
+/* --- Page chrome: copy validator.css's body/header treatment so the
+       conception page and validator read as siblings, not strangers. --- */
+body {
+  background: #f4f4f0;
+  color: #1a1a22;
+}
+.page-header h1 { color: #1a1a22; }
+.page-header .subtitle { color: #8a8a90; }
+
+/* --- System box: opt into yin variant ---
+ * Narrower than the validator's 680px because the conception flow
+ * is single-column and benefits from a tighter, more reverent frame.
+ * Center within the wider .panel-left parent so the box stays
+ * aligned with the MEMEMAGE title above and the footer below. */
+.input-section.conception-section {
+  background: var(--system-box-bg-yin);
+  background-color: var(--system-box-bg-color-yin);
+  background-blend-mode: var(--system-box-blend-mode-yin);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* --- Head strip (file name) ---
+ * Replaces the validator's tab row. The conception page is single-
+ * purpose; the head just names what's about to be bound. */
+.conception-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.18);
+}
+.conception-head-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.conception-head-file {
+  font-size: 0.7rem;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+/* --- Chain badge strip ---
+ * The server-substituted chain badge. Pad it to the same 1.1rem gutter
+ * as the head + state blocks so the pill sits inside the section instead
+ * of flush against its edge. The badge is an inline-flex pill; the wrapper
+ * just provides the gutter. */
+.conception-chain {
+  display: flex;
+  padding: 0.85rem 1.1rem 0;
+}
+
+/* --- Channels strip ---
+ * The surfaces this conception will blast to (server-rendered). Each chip
+ * leads with the channel id (the stable slug that appears on viewer
+ * certificates) and trails the local friendly name. The primary surface
+ * carries a small flag. Sits between the chain badge and the staged image. */
+.conception-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.8rem 1.1rem 0;
+}
+/* display:flex above beats the UA [hidden] rule, so be explicit — the strip
+   is hidden post-conception (the Surfaces list is the truth then). */
+.conception-channels[hidden] { display: none; }
+.conception-channels-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* One channel per row — they stack, so multiple surfaces read cleanly
+   instead of wrapping into a chip soup. */
+.conception-channels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.conception-channel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.32rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.conception-channel-id {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.conception-channel-name {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+}
+.conception-channel-primary {
+  margin-left: auto;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6fd08c;
+}
+.conception-channels-none {
+  font-size: 0.66rem;
+  color: #e0907a;
+}
+
+/* --- State container --- */
+.conception-state {
+  padding: 1.1rem 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.conception-state[hidden] { display: none; }
+
+/* --- Staged thumbnail ---
+ * Sits at the top of the pre-conceive state. Tap to open the
+ * full-size lightbox (lets the creator zoom into details on a phone
+ * before committing). */
+.conception-thumb-btn {
+  display: block;
+  align-self: center;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(180, 180, 200, 0.18);
+  border-radius: var(--radius-sm);
+  cursor: zoom-in;
+  overflow: hidden;
+  max-width: 100%;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.conception-thumb-btn:hover {
+  border-color: rgba(200, 200, 220, 0.45);
+}
+.conception-thumb-btn:focus-visible {
+  outline: 2px solid rgba(100, 160, 220, 0.5);
+  outline-offset: 2px;
+}
+.conception-thumb {
+  display: block;
+  max-width: 100%;
+  max-height: 40vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* --- GPS box ---
+ * Reads like a celestial reading. Three lines: label, value, hint.
+ * Border color shifts with mode (none = muted, acquiring = warm gold,
+ * acquired = green, failed = red). */
+.conception-gps {
+  border: 1px solid rgba(180, 180, 200, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  background: rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.conception-gps[data-mode="acquiring"],
+.conception-gps[data-mode="phone"]:has(.conception-gps-acquiring) {
+  border-color: rgba(212, 184, 123, 0.35);  /* gold */
+}
+.conception-gps[data-mode="acquired"] {
+  border-color: rgba(123, 196, 160, 0.35);  /* green */
+}
+.conception-gps[data-mode="failed"] {
+  border-color: rgba(166, 40, 40, 0.4);
+}
+.conception-gps-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.conception-gps-value {
+  font-size: 1.05rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.conception-gps-acquiring {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--accent-gold);
+}
+.conception-gps-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent-gold);
+  animation: conception-pulse 2.4s ease-in-out infinite;
+}
+.conception-gps-hint {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* --- Origin fields (collapsible) --- */
+.conception-meta {
+  border: 1px solid rgba(180, 180, 200, 0.08);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.16);
+}
+.conception-meta summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.conception-meta summary::-webkit-details-marker { display: none; }
+.conception-meta summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.45rem;
+  transition: transform 0.18s ease;
+  color: var(--text-muted);
+}
+.conception-meta[open] summary::before { transform: rotate(90deg); }
+.conception-meta-count {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  background: rgba(180, 180, 200, 0.1);
+  border-radius: 999px;
+  color: var(--text-secondary);
+}
+.conception-meta-body {
+  padding: 0.2rem 0.9rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+}
+.conception-meta-row {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 0.6rem;
+  font-size: 0.74rem;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+}
+.conception-meta-row .k {
+  color: var(--text-muted);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+.conception-meta-row .v {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+/* --- Confirm button ---
+ * Brushed-gold family matching the cert page's "Save Certificate"
+ * button: dark gradient body, gold border + text, inset highlight,
+ * AND the glow ceremony — a slow idle breath, a hover gold-aura,
+ * and a diagonal shimmer that sweeps across on hover. This is the
+ * conscious act; the button should feel alive even before pressed.
+ */
+.conception-confirm {
+  align-self: center;
+  margin: 0.4rem 0 0;
+  padding: 0.55rem 1.8rem;
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.85) 0%, rgba(18, 14, 8, 0.8) 40%, rgba(14, 10, 6, 0.85) 100%);
+  border: 1px solid rgba(200, 170, 80, 0.45);
+  color: #c8a850;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.18), 0 1px 1px rgba(0,0,0,0.5);
+  box-shadow:
+    0 2px 3px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 0 0 rgba(220, 190, 80, 0);  /* glow alpha animates */
+  position: relative;
+  overflow: hidden;
+  transition: background 0.45s ease, border-color 0.45s ease,
+              color 0.45s ease, box-shadow 0.6s ease;
+  animation: conception-breath 4.2s ease-in-out infinite;
+}
+/* Idle breath — outer gold glow rises and falls at a cosmic tempo.
+   Slow enough to never read as flashy, present enough to mark the
+   button as "ready, waiting." */
+@keyframes conception-breath {
+  0%, 100% {
+    box-shadow:
+      0 2px 3px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.12),
+      0 0 8px rgba(220, 190, 80, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.18),
+      0 0 18px rgba(220, 190, 80, 0.22);
+  }
+}
+.conception-confirm:hover:not(:disabled) {
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.7);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.88) 0%, rgba(24, 18, 10, 0.82) 40%, rgba(18, 14, 8, 0.88) 100%);
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    0 0 22px rgba(220, 190, 80, 0.35);
+  text-shadow:
+    0 -1px 0 rgba(255,255,255,0.35),
+    0 1px 1px rgba(0,0,0,0.45),
+    0 0 8px currentColor;
+  animation: none;  /* hover takes over from the breath */
+}
+.conception-confirm:active:not(:disabled) {
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.45),
+    inset 0 1px 3px rgba(0,0,0,0.35),
+    0 0 28px rgba(240, 210, 100, 0.5);
+  transform: translateY(0.5px);
+}
+.conception-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: saturate(0.35);
+  animation: none;
+}
+
+/* Diagonal shimmer — sweeps across on hover, the "stamp" flash
+   that marks the moment. Reuses the stamp-flash keyframes already
+   defined in mememage.css for the verify badges. */
+.conception-confirm::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(105deg,
+    transparent 30%,
+    rgba(255, 230, 150, 0.4) 48%,
+    rgba(255, 240, 180, 0.6) 50%,
+    rgba(255, 230, 150, 0.4) 52%,
+    transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+.conception-confirm:hover:not(:disabled)::after {
+  animation: stamp-flash 0.6s ease-out forwards;
+}
+/* Local copy of stamp-flash so this CSS file is self-contained
+   even when mememage.css isn't loaded (preview pages, embeds). */
+@keyframes stamp-flash {
+  0%   { left: -100%; opacity: 1; }
+  50%  { left:  100%; opacity: 1; }
+  100% { left:  100%; opacity: 0; }
+}
+
+/* --- Fine print --- */
+.conception-fine-print {
+  margin: 0.1rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+/* --- Minting state ---
+ * The pulse — three nested rings expanding outward at a cosmic
+ * tempo. Slow, never frenetic. */
+.conception-state-minting {
+  align-items: center;
+  text-align: center;
+  padding-top: 2.2rem;
+  padding-bottom: 2.2rem;
+}
+.conception-pulse {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 0.4rem;
+}
+.conception-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 80, 220, 0.4);
+  animation: conception-ring 3.6s ease-out infinite;
+}
+.conception-pulse-ring:nth-child(2) {
+  animation-delay: 1.2s;
+  border-color: rgba(220, 200, 60, 0.4);
+}
+.conception-pulse-ring:nth-child(3) {
+  animation-delay: 2.4s;
+  border-color: rgba(60, 200, 220, 0.4);
+}
+@keyframes conception-ring {
+  0%   { transform: scale(0.4); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.conception-pulse-head {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  margin: 0;
+}
+.conception-pulse-body {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+@keyframes conception-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* --- Conceived state --- */
+.conception-state-conceived { padding-top: 1rem; }
+.conception-result-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  margin: 0 0 0.3rem;
+}
+.conception-result-glyph {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 9px rgba(123, 196, 160, 0.5);
+}
+
+.conception-image-wrap {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.conception-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* --- Action button (Download image, Retry, etc.) --- */
+.conception-action {
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: center;
+  transition: background 160ms, border-color 160ms;
+}
+.conception-action:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.conception-action-meta {
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-muted);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-weight: 400;
+}
+/* Primary action — same brushed-gold family as the per-surface
+   "Download soul" buttons (.conception-surface-dl) and Conceive, so the
+   whole conceived view reads with one motif instead of a lone green button. */
+.conception-action-primary {
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.75) 0%, rgba(18, 14, 8, 0.7) 40%, rgba(14, 10, 6, 0.75) 100%);
+  border-color: rgba(200, 170, 80, 0.35);
+  color: #c8a850;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.15), 0 1px 1px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.conception-action-primary:hover {
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.55);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.8) 0%, rgba(24, 18, 10, 0.75) 40%, rgba(18, 14, 8, 0.8) 100%);
+}
+
+/* --- Facts list (identifier, hash, gps, constellation, rarity) --- */
+.conception-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.32rem 0.85rem;
+  margin: 0.55rem 0 0;
+  padding: 0.7rem 0.9rem;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.76rem;
+}
+.conception-facts dt {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  align-self: center;
+}
+.conception-facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+.conception-facts dd code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+}
+.conception-facts-dim { color: var(--text-muted); font-style: italic; }
+.conception-facts-greek {
+  font-family: "JetBrains Mono", serif;
+  color: var(--accent-gold);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0.15rem;
+}
+.conception-facts-rarity {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: inherit;
+}
+.conception-facts-rarity[data-tier="common"]    { background: rgba(160, 160, 160, 0.18); color: #c8c8d0; }
+.conception-facts-rarity[data-tier="uncommon"]  { background: rgba(74, 158, 74, 0.22); color: #9bd49b; }
+.conception-facts-rarity[data-tier="rare"]      { background: rgba(74, 122, 190, 0.22); color: #98b9e8; }
+.conception-facts-rarity[data-tier="veryrare"]  { background: rgba(138, 74, 190, 0.22); color: #c2a4e0; }
+.conception-facts-rarity[data-tier="epic"]      { background: rgba(190, 138, 26, 0.24); color: #e8c47b; }
+.conception-facts-rarity[data-tier="legendary"] { background: rgba(190, 42, 42, 0.28); color: #ef9090; }
+
+/* --- Surfaces (one row per channel) ---
+ * Each row: channel label on the left, "Download soul" button on
+ * the right. URL is intentionally hidden — channel names are what
+ * the user picks from, full URLs were long and got cut off on
+ * narrow viewports. */
+.conception-section-label {
+  margin: 0.6rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.conception-surfaces {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.conception-surface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.7rem 0.5rem 0.9rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+}
+.conception-surface-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* "Download soul" button — same brushed-gold family as Conceive,
+   compact size since it lives in a per-row context. */
+.conception-surface-dl {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.85rem;
+  background: linear-gradient(180deg, rgba(60, 50, 20, 0.75) 0%, rgba(18, 14, 8, 0.7) 40%, rgba(14, 10, 6, 0.75) 100%);
+  border: 1px solid rgba(200, 170, 80, 0.35);
+  color: #c8a850;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 -1px 0 rgba(255,255,255,0.15), 0 1px 1px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  white-space: nowrap;
+}
+.conception-surface-dl:hover {
+  color: #e0c070;
+  border-color: rgba(224, 192, 112, 0.55);
+  background: linear-gradient(180deg, rgba(72, 60, 24, 0.8) 0%, rgba(24, 18, 10, 0.75) 40%, rgba(18, 14, 8, 0.8) 100%);
+}
+.conception-surface-dl:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* Partial-failure row — a channel that errored mid-blast while
+   at least one other surface accepted the soul. Sits below the
+   success list with a muted red tint so the user can see at a
+   glance which mirror dropped without scraping logs. */
+.conception-surface-error {
+  background: rgba(60, 20, 18, 0.32);
+  border-color: rgba(200, 80, 60, 0.22);
+}
+.conception-surface-error-msg {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  color: rgba(220, 140, 120, 0.85);
+  text-align: right;
+  font-style: italic;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Failed state --- */
+.conception-state-failed {
+  align-items: stretch;
+  text-align: left;
+}
+.conception-fail-head {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-red);
+  margin: 0 0 0.2rem;
+}
+.conception-fail-body {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 0.5rem;
+}
+.conception-fail-body code {
+  background: rgba(166, 40, 40, 0.15);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  color: #f0a0a0;
+}
+
+/* --- Footer ---
+ * Just the philosophical line on the cream body bg. */
+.conception-footer {
+  margin: 1.2rem auto 0;
+  max-width: 520px;
+  padding: 0.4rem 1rem;
+  font-size: 0.7rem;
+  color: #8a8a90;
+  font-style: italic;
+  text-align: center;
+}
+
+/* --- Preview-only switcher --- */
+.preview-switcher {
+  position: fixed;
+  top: 0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  background: rgba(20, 20, 24, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.66rem;
+}
+.preview-switcher-label {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 0.3rem;
+}
+.preview-switcher button {
+  padding: 0.28rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.preview-switcher button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-primary);
+}
+.preview-switcher button.active {
+  background: rgba(220, 80, 220, 0.18);
+  border-color: rgba(220, 80, 220, 0.4);
+  color: #f0d0f0;
+}
+
+/* Chain badge wrapper — server-injected ({{CHAIN_BADGE}}). The .chain-*
+   styles live in mememage.css; this just spaces it under the head. */
+.conception-chain { margin: 0.2rem 0 0.9rem; }
+
+/* State chip on the DARK conception card. mememage.css tunes the chip text
+   for a light dashboard (dark amber / green / red), which is near-invisible
+   against this yin plate — restore contrast with bright semantic text and a
+   touch more fill. Scoped to .conception-chain so the light dashboard chip
+   is untouched. */
+.conception-chain .chain-state-chip[data-state="ready"]     { background: rgba(46, 204, 113, 0.20); color: #5fe39a; border-color: rgba(46, 204, 113, 0.6); }
+.conception-chain .chain-state-chip[data-state="nopayload"] { background: rgba(241, 196, 15, 0.22); color: #f4d24f; border-color: rgba(241, 196, 15, 0.65); }
+.conception-chain .chain-state-chip[data-state="pending"]   { background: rgba(243, 156, 18, 0.22); color: #f6ad48; border-color: rgba(243, 156, 18, 0.65); }
+.conception-chain .chain-state-chip[data-state="notready"]  { background: rgba(231, 76, 60, 0.20); color: #f2877a; border-color: rgba(231, 76, 60, 0.6); }

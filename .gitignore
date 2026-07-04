@@ -1,0 +1,48 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+docs/standalone.html
+mememage/getloc
+mememage/getloc.swift
+
+# Private / working docs
+career.md
+NEXT_SESSION.md
+render_involution.py
+
+# Internal / private docs
+docs/internal/
+MERGE_HANDOFF.md
+SESSION_HANDOFF_CYCLES.md
+decoder-sealing-notes.md
+Committee.md
+novelty.md
+productivity.md
+chatgpt.rtf
+
+# Generated
+validation-report.html
+platform-test-results/
+prompts/
+mememage.egg-info/
+tmp/
+
+# PyInstaller desktop-app build artifacts (tools/build_app.py)
+/build/
+/dist/
+validator_fixtures/
+core_demo_out/
+sample_souls/
+
+# Build / publish staging
+dist/
+tests/golden_baseline.json
+
+# Validation scratch — kept locally to re-run the human checklist, never committed
+HUMAN_VALIDATION.md
+VALIDATION_PLAN.md
+docs/plans/canonical-payload-seal.md
+test_pattern.png
+photobook_20260622_163012.png

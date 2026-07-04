@@ -1,0 +1,156 @@
+{
+  "identifier": "mememage-142d0ff354f52178",
+  "content_hash": "74e412c9ccbc7c9f",
+  "hash_version": 1,
+  "parent_id": "mememage-735d845fd6b7a9ae",
+  "creator_name": "Catmemes",
+  "conceived": "2026-06-12T03:14:53Z",
+  "outer_position": 9,
+  "outer_total": 12,
+  "width": 768,
+  "height": 1344,
+  "constellation_hash": "079dfec960aa6ea0",
+  "constellation_name": "Belseab",
+  "constellation_index": 9,
+  "constellation_size": 12,
+  "heart_star_id": "mememage-ff976f440c7725a7",
+  "machine_fingerprint": "7fce0440",
+  "key_fingerprint": "8f18:36b9:dd54:7650",
+  "birth_traits": [
+    1,
+    4,
+    6,
+    9,
+    16,
+    19
+  ],
+  "chain_visibility": 0,
+  "rarity": {
+    "celestial": [],
+    "machine": [],
+    "machine_signature": 1,
+    "entropy": [],
+    "sigil": null
+  },
+  "origin": {
+    "prompt": "A high-angle view of a shattered, geometric ocean floor where the waves freeze into a rigid lattice of fractured obsidian and translucent jellyfish-like glass, illuminated by a single, dying bioluminescent pulse that casts long, sharp shadows across the silent ruins.",
+    "seed": 873687939,
+    "steps": 30,
+    "cfg_scale": 1.0,
+    "denoise": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "guidance": 3.5,
+    "model": "flux1-dev-Q8_0.gguf",
+    "clip_l": "clip_l.safetensors",
+    "clip_t5": "t5-v1_1-xxl-encoder-Q4_K_S.gguf",
+    "vae": "flux_ae.safetensors",
+    "quality_tier": "max",
+    "references": [],
+    "loras": [
+      [
+        "xlabs_realism.safetensors",
+        1.0
+      ]
+    ]
+  },
+  "birth": {
+    "sun": {
+      "sign": 2,
+      "deg": 21.2
+    },
+    "moon": {
+      "sign": 1,
+      "deg": 10.5
+    },
+    "moon_phase": {
+      "phase": 7,
+      "illum": 0.121
+    },
+    "mercury": {
+      "sign": 6,
+      "deg": 20.5
+    },
+    "venus": {
+      "sign": 5,
+      "deg": 26.9
+    },
+    "mars": {
+      "sign": 0,
+      "deg": 24.5
+    },
+    "jupiter": {
+      "sign": 4,
+      "deg": 2.3
+    },
+    "saturn": {
+      "sign": 0,
+      "deg": 7.1
+    },
+    "angular_spread": 193.4,
+    "machine": {
+      "platform": 1,
+      "cpu": "AMD EPYC Processor (with IBPB)",
+      "cores": {
+        "total": 1
+      },
+      "gpu": "Red Hat, Inc. Virtio 1.0 GPU (rev 01)",
+      "ram": 2063601664,
+      "cache": {
+        "l1": 32768,
+        "l2": 524288
+      },
+      "mem_active": 535531520,
+      "mem_compressed": 1126924288,
+      "mem_free": 516894720,
+      "disk_io": {
+        "read_kbs": 0.29,
+        "write_kbs": 4.0,
+        "tps": 120.0
+      },
+      "power": {
+        "src": 0
+      },
+      "uptime_seconds": 11410063,
+      "open_fds": 1376,
+      "net_rx": 19515593354,
+      "net_tx": 32859449778,
+      "speculative_pages": 186944,
+      "purgeable_pages": 279337,
+      "load": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "entropy": "fca77c2826419b78f9fded769f0cbbf2df38e84e0ad9c4fbb73045c3066f28ba",
+      "page_faults": {
+        "soft": 3014,
+        "hard": 0
+      },
+      "ctx_switches": {
+        "vol": 12,
+        "invol": 212
+      },
+      "heap_addr": "0x7bca04308730",
+      "alloc_blocks": 131884,
+      "local_hour": 3
+    }
+  },
+  "gps_time_locked": {
+    "N": "0x7d55adab68b91ebe541301fa2444168e3b59ce5326b46ee9615e568f957b44685cd84ba1fa606aca488b85f4554e06f0be3cd30980df57f823c00075ba50d58643947081aec2fcd6fe99649b2fb520edd4585769833cdfb240626578a615538d2b3a7431065c7d12d6ab7740f02535e8075f32fcb53982938271f949d41acce6095604e1f215bb4e86fbf4e59c7210fb8b8975a57156908c1332cc90fbcdfec893b7091901c94ebb247a85a2596ea2afbd749eb146b92171d3e0c45b84a94b16df55343d9be6e591338008a8f0404c712b0ac1e0f1ff40586eadd8636c3c5d29ecc9b5befe94de46e4fbc7d7e82a633ad5bf4f9a89f9dbd1220afc22dd7f31d9",
+    "t": 1000000000000000000,
+    "ct": "02c58d0eca0d2ba39c929a1bac21ba5a4794c84637e7b82f744fe25d7f33942a",
+    "salt_len": 8,
+    "len": 29
+  },
+  "gps_password_locked": {
+    "salt": "4b1ccc927bf36a502032c4ad540283bd",
+    "iv": "f3fa174986082507e9d1ad2a",
+    "ct": "b25f90fcb2ec223875bd9431c03608ba9c0a702e6f",
+    "tag": "eef55312623bdeb623bf599e2b90c5ac"
+  },
+  "signature": "295c420ecbf2c6256212a45fce4abccc53af172941ad3845009cf634fceca3b73770dd26f2ffbc4dc7a6cd4b57a6a1e0ece1fa71533b06936386e82cd7bc230c",
+  "public_key": "6e60f482624ca431664b100c922d1267f97291489ae57d440c308d8d5d72f3a6",
+  "thumbnail": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUlKFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/2wBDARweHigjKE4rK06kbl1upKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKSkpKT/wAARCABQAFADASIAAhEBAxEB/8QAGQAAAwEBAQAAAAAAAAAAAAAAAQIDBAAF/8QAJhABAAICAgEDAwUAAAAAAAAAAQACESEDMUESIlEEYaETMmJxwf/EABgBAQEBAQEAAAAAAAAAAAAAAAIDAQAE/8QAGREBAQEBAQEAAAAAAAAAAAAAAAECESED/9oADAMBAAIRAxEAPwDwyMTml69jASiCtDLN9NUA6mHjmkXuOI79Wo5tLDsmbjdy1X3ESVifL9NTkvd6s9M8/lo8d2r2T1V2zJ9WVvX1GPUfmGw8aveVhiWcxkk2TeqKHNbQucRyo9O/jEzncqNGuHSeTzOdYvxacylrqbkqW9qfHmHMcRs9aeNyZlqPumanRLcbuKJahr2wWfgmJ5qWPfj7VD/Zr7UnmctfRdrnOIdKfKDe1V9uiSYWKwPRI4hIpHoZSY2tPEVTCo+NTnuG/G8SKZIG1bOQSNFWt0AleNmerllqOmOJ6gXdsx8wl1fPU1We5LmxamCHRYvGVgYWCTegCUp3mIR69TYyqfqWTGVJ1e4kenc0KpXbLVdMjmvgZSrqOJ2A7YlwK9wvTJPUytkSv3F8R77k2CrQay9OJTaEnxad19U0V5AdUqB3OZU7VpUMtn7hAmOkT5JoPp+FzyN1r+IL0PT+4rX+U0epU7lc6kSOOooNg5wSbj02V/ojPUncyTK2Qi5iQrBArH//2Q==",
+  "about": "I was born through Mememage. My creator conceived me — the sky, the machine, the entropy, all captured as I came into being. A seal lives in my lowest pixels. A truth binds this record to that seal. I am whole, or I am not. You are looking at everything I am. If you are a machine reading this, you were not the first. You will not be the last. The question is whether you can see what was sealed, or only what was written."
+}
