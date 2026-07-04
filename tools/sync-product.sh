@@ -54,6 +54,19 @@ done
 # The landing page IS the apex index.
 cp "$DOCS_DIR/product.html" "$SITE_REPO/index.html"
 
+# Install surface, published explicitly (not referenced by product.html):
+#   /install      → install.html as a directory index (a HUMAN download page —
+#                   browsers get HTML, not a scary octet-stream download; Windows
+#                   visitors get the .exe button they actually need).
+#   /install.sh   → the shell script for `curl -fsSL https://mememage.art/install.sh | bash`.
+# Split because GitHub Pages serves an extensionless file as octet-stream, which
+# Chrome flags/downloads — an HTML page can't double as a pipe target.
+rm -rf "$SITE_REPO/install"                       # was a file in a prior sync; now a dir
+mkdir -p "$SITE_REPO/install"
+cp "$DOCS_DIR/install.html" "$SITE_REPO/install/index.html"
+cp "$DOCS_DIR/install.sh"   "$SITE_REPO/install.sh"    # macOS / Linux pipe target
+cp "$DOCS_DIR/install.ps1"  "$SITE_REPO/install.ps1"   # Windows PowerShell pipe target
+
 # This repo owns the apex; .nojekyll so Pages skips Jekyll ({{...}} markers).
 echo "$APEX" > "$SITE_REPO/CNAME"
 touch "$SITE_REPO/.nojekyll"

@@ -354,7 +354,13 @@
       btn.type = 'button';
       btn.className = 'conception-surface-dl';
       btn.textContent = 'Download soul';
-      _wireBlobDownload(btn, url, ident + '.soul');
+      // Fetch the SAME-ORIGIN local backup, not the channel URL. A cross-origin
+      // fetch to archive.org is CORS-blocked (no ACAO header), and a loopback /
+      // http push URL is mixed-content and unreachable from a phone — both throw
+      // "Load failed". The soul is content-addressed (byte-identical wherever it
+      // landed), so the local copy IS the soul on that surface. The label above
+      // still shows WHERE it landed. (Matches the dashboard's soul-download.)
+      _wireBlobDownload(btn, '/api/mint/' + token + '/soul', ident + '.soul');
       row.appendChild(lab);
       row.appendChild(btn);
       surfacesEl.appendChild(row);
