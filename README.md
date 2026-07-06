@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://mememage.art/img/mememage-icon.png" width="112" alt="Mememage">
+</p>
+
 # Mememage — Provenance
 
 A self-hostable toolkit for **image provenance** — give any image a tamper-evident mark tied to a record you keep, so anyone can confirm where it came from and that it hasn't been altered from any copy. It's built on [mememage](https://github.com/sememtac/mememage): a 2-pixel bar links an image to a JSON record, verified by hash alone. This repo bundles the full stack around that core — a **mint server** to stamp and publish images, and a web **decoder** and **validator** to read and verify them.
