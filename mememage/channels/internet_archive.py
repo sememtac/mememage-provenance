@@ -15,6 +15,7 @@ channel.
 
 from __future__ import annotations
 
+import json
 import logging
 import urllib.error
 import urllib.request
@@ -107,6 +108,30 @@ class InternetArchiveChannel(Channel):
             urlopen_with_retry(json_req)
         except Exception:
             log.warning("IA .json mirror upload failed (non-fatal) — .soul is primary")
+
+        # Full minted image — LIGHT-ENERGY chains ONLY. IA is permanent + public
+        # (an item can be darkened but never truly released), so a dark-matter
+        # chain NEVER gets its image uploaded — that would publish the sealed
+        # image irreversibly. Non-fatal: the soul is primary; the image is a bonus
+        # that makes the conception publicly viewable + decodable straight from IA
+        # (archive.org/download/<id>/<id>.png).
+        if image_path:
+            try:
+                visibility = int(json.loads(soul_bytes).get("chain_visibility", 0))
+            except Exception:
+                visibility = 0
+            if visibility == 0:   # 0 == light_energy (public); 1 == dark_matter
+                try:
+                    with open(image_path, "rb") as f:
+                        img_bytes = f.read()
+                    img_url = f"{IA_S3_URL}/{identifier}/{identifier}.png"
+                    img_req = urllib.request.Request(img_url, data=img_bytes, method="PUT")
+                    img_req.add_header("authorization", f"LOW {access_key}:{secret_key}")
+                    img_req.add_header("Content-Type", "image/png")
+                    img_req.add_header("x-archive-meta-mediatype", "image")
+                    urlopen_with_retry(img_req)
+                except Exception as e:
+                    log.warning("IA image upload failed (non-fatal) — soul is primary: %s", e)
 
         # The canonical URL pattern that decoders fetch. Stable
         # across reupload + admin-side metadata edits.
