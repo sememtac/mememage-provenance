@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Install Mememage Provenance</title>
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20fill%3D'%23fff'%2F%3E%3Crect%20x%3D'3'%20y%3D'3'%20width%3D'94'%20height%3D'74'%20fill%3D'%23000'%2F%3E%3Crect%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'33.33'%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'66.66'%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%233cc8dc'%2F%3E%3C%2Fsvg%3E">
 <meta name="description" content="Download Mememage Provenance for macOS, Windows, or Linux — or install the mememage library with pip.">
-<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -19,13 +19,22 @@
   body{margin:0;background:var(--bg);color:var(--fg);
     font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
     line-height:1.6;-webkit-font-smoothing:antialiased;}
+  /* Themed scrollbar — matches the dark panel (webkit + firefox). */
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;
+    border:2px solid var(--bg);}
+  ::-webkit-scrollbar-thumb:hover{background:#3a3a48;}
+  html{scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
   .wrap{max-width:680px;margin:0 auto;padding:60px 24px 90px;}
   a{color:var(--cyc);text-decoration:none;}
   a:hover{text-decoration:underline;}
   .brand{display:flex;align-items:center;gap:13px;margin-bottom:10px;}
-  .brand svg{width:26px;height:26px;border-radius:3px;flex:none;}
+  .brand svg{width:26px;height:26px;flex:none;}
   h1{font-size:25px;font-weight:600;margin:0;letter-spacing:-.4px;}
   .sub{color:var(--dim);margin:4px 0 44px;font-size:14px;}
+  .sub code{font-size:13px;}
+  .app-lead{margin:2px 0 18px;}
   .rec{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.16em;margin:0 0 13px;}
   .cards{display:grid;gap:11px;}
   .card{display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -35,7 +44,7 @@
   .card.you{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
   .card .os{font-weight:500;font-size:15px;}
   .card .meta{color:var(--dim);font-size:12px;margin-left:2px;}
-  .badge{display:inline-block;font-size:10px;color:var(--bg);background:var(--accent);
+  .badge{display:inline-block;font-size:10px;color:var(--bg);background:var(--mag);
     border-radius:99px;padding:1px 8px;margin-left:9px;vertical-align:middle;letter-spacing:.04em;}
   .dl{background:var(--accent);color:#0a0a0f;padding:8px 17px;border-radius:7px;
     font-weight:600;font-size:13px;white-space:nowrap;}
@@ -47,57 +56,71 @@
   code{font-family:inherit;color:var(--yel);white-space:pre;}
   .cc{color:var(--dim);}
   .note{color:var(--dim);font-size:12.5px;margin:13px 0 0;}
+  .unblock-note{color:var(--dim);font-size:11px;line-height:1.5;margin:14px 0 0;}
+  .unblock-note b{color:var(--fg);font-weight:500;}
+  .unblock-note ul{margin:5px 0 0;padding:0;list-style:none;}
+  .unblock-note li{position:relative;padding-left:13px;margin:2px 0;}
+  .unblock-note li::before{content:"\2192";position:absolute;left:0;color:var(--accent);}
   footer{margin-top:54px;color:var(--dim);font-size:12px;
     border-top:1px solid var(--line);padding-top:20px;}
   footer a{color:var(--dim);}
   footer a:hover{color:var(--fg);}
+  /* Embedded in the product page's install modal (same-origin iframe): read as a
+     panel, not a page — tighten the top and drop the footer nav. */
+  html.embedded .wrap{padding:30px 26px 34px;}
+  html.embedded footer{display:none;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="brand">
-    <svg viewBox="0 0 3 3" aria-hidden="true">
-      <rect width="1" height="1.5" fill="#dc50dc"/><rect x="1" width="1" height="1.5" fill="#dcc83c"/><rect x="2" width="1" height="1.5" fill="#3cc8dc"/>
-      <rect y="1.5" width="1" height="1.5" fill="#3cc8dc"/><rect x="1" y="1.5" width="1" height="1.5" fill="#dcc83c"/><rect x="2" y="1.5" width="1" height="1.5" fill="#dc50dc"/>
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <rect width="100" height="100" fill="#fff"/>
+      <rect x="3" y="3" width="94" height="74" fill="#000"/>
+      <rect y="80" width="33.34" height="20" fill="#dc50dc"/><rect x="33.33" y="80" width="33.34" height="20" fill="#dcc83c"/><rect x="66.66" y="80" width="33.34" height="20" fill="#3cc8dc"/>
     </svg>
     <h1>Install Mememage Provenance</h1>
   </div>
-  <p class="sub">The app bundles the mint server and the full web UI — no Python needed.</p>
+  <p class="sub">Mememage library for your own code.</p>
 
-  <p class="rec" id="rec">Choose your platform</p>
-  <div class="cards" id="cards">
-    <div class="card" data-os="mac">
-      <div><span class="os">macOS</span><span class="meta">Apple Silicon · .app</span></div>
-      <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-macOS.zip">Download</a>
-    </div>
-    <div class="card" data-os="win">
-      <div><span class="os">Windows</span><span class="meta">.exe</span></div>
-      <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-Windows.exe">Download</a>
-    </div>
-    <div class="card" data-os="linux">
-      <div><span class="os">Linux</span><span class="meta">x86-64 binary</span></div>
-      <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-Linux">Download</a>
-    </div>
-  </div>
-  <p class="note">Unsigned, so a <b style="color:var(--fg);font-weight:500">direct download</b> needs
-    one manual unblock the first time &mdash; macOS: <b style="color:var(--fg);font-weight:500">System&nbsp;Settings
-    &rarr; Privacy&nbsp;&amp;&nbsp;Security &rarr; Open&nbsp;Anyway</b>; Windows:
-    <b style="color:var(--fg);font-weight:500">More&nbsp;info &rarr; Run&nbsp;anyway</b>. The one-line
-    installs below skip that step entirely.</p>
-
-  <section id="oneliner">
-    <p class="rec">One-line install &middot; skips the security prompt</p>
-    <div class="block" data-os="mac linux"><code><span class="cc">$ </span>curl -fsSL https://mememage.art/install.sh | bash</code></div>
-    <div class="block" data-os="win"><code><span class="cc">PS&gt; </span>irm https://mememage.art/install.ps1 | iex</code></div>
-    <p class="note">Downloads the right build, installs it, and launches it &mdash; no Gatekeeper or
-      SmartScreen step, because a script download isn&rsquo;t flagged the way a browser download is.</p>
+  <!-- Library first — the dependency, and the developer entry point. -->
+  <section>
+    <p class="rec">Developers &middot; Library</p>
+    <div class="block"><code><span class="cc"># encode &middot; decode &middot; verify in your own code
+</span><span class="cc">$ </span>pip install mememage</code></div>
   </section>
 
+  <!-- The full app — Python-free download, built on the library above. -->
   <section>
-    <p class="rec">Developers &middot; the library</p>
-    <div class="block"><code><span class="cc"># encode &middot; decode &middot; verify, in your own code
-</span><span class="cc">$ </span>pip install mememage</code></div>
+    <p class="sub app-lead">Mint server and full web UI in one app. No Python needed.</p>
+    <p class="rec" id="rec">Choose your platform</p>
+    <div class="cards" id="cards">
+      <div class="card" data-os="mac">
+        <div><span class="os">macOS</span><span class="meta">Apple Silicon &middot; .app</span></div>
+        <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-macOS.zip">Download</a>
+      </div>
+      <div class="card" data-os="win">
+        <div><span class="os">Windows</span><span class="meta">.exe</span></div>
+        <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-Windows.exe">Download</a>
+      </div>
+      <div class="card" data-os="linux">
+        <div><span class="os">Linux</span><span class="meta">x86-64 binary</span></div>
+        <a class="dl" href="https://github.com/sememtac/mememage-provenance/releases/latest/download/Mememage-Provenance-Linux">Download</a>
+      </div>
+    </div>
+    <div class="unblock-note">Unsigned &mdash; a <b>direct download</b> needs manual unblock:
+      <ul>
+        <li><b>macOS</b> &mdash; System&nbsp;Settings &rarr; Privacy&nbsp;&amp;&nbsp;Security &rarr; Open&nbsp;Anyway</li>
+        <li><b>Windows</b> &mdash; More&nbsp;info &rarr; Run&nbsp;anyway</li>
+      </ul>
+    </div>
+
+    <section id="oneliner">
+      <p class="rec">One-line install</p>
+      <div class="block" data-os="mac linux"><code><span class="cc">$ </span>curl -fsSL https://mememage.art/install.sh | bash</code></div>
+      <div class="block" data-os="win"><code><span class="cc">PS&gt; </span>irm https://mememage.art/install.ps1 | iex</code></div>
+    </section>
   </section>
 
   <footer>
@@ -110,6 +133,11 @@
 
 <script>
   (function () {
+    // In the product page's install modal we're a same-origin iframe — flag it
+    // so the CSS above collapses to a panel.
+    try { if (window.self !== window.top) document.documentElement.classList.add("embedded"); }
+    catch (e) { document.documentElement.classList.add("embedded"); }
+
     var uad = navigator.userAgentData && navigator.userAgentData.platform;
     var p = (uad || navigator.platform || navigator.userAgent || "").toLowerCase();
     var os = /mac|iphone|ipad/.test(p) ? "mac"
@@ -122,7 +150,7 @@
     document.getElementById("cards").prepend(card);          // float to top
     var b = document.createElement("span");
     b.className = "badge"; b.textContent = "you";
-    card.querySelector(".os").appendChild(b);
+    card.querySelector(".os").parentNode.appendChild(b);   // after .meta, not between os/.exe
     document.getElementById("rec").textContent = "Recommended for your system";
     // Emphasize the one-liner that matches the visitor's OS; fade the others.
     document.querySelectorAll('#oneliner .block[data-os]').forEach(function (el) {

@@ -105,6 +105,57 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
 }
 @keyframes lightbox-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Install shadowbox — the pip CTA opens /install in a same-origin iframe so
+   visitors get the download options without leaving mememage.art. */
+.install-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 3vw;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(4px);
+  animation: lightbox-fade 0.25s ease;
+}
+.install-modal[hidden] { display: none; }
+.install-modal-card {
+  position: relative;
+  width: min(560px, 94vw);
+  height: min(700px, 88vh);
+  background: #0a0a0f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+.install-modal-card iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.install-modal-close {
+  position: absolute;
+  top: 9px;
+  right: 11px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 20, 28, 0.85);
+  color: #dcc83c;
+  font-size: 17px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.install-modal-close:hover { background: #dcc83c; color: #0a0a0f; }
+
 .cta-row {
   display: flex;
   gap: 0.7rem;
@@ -255,8 +306,13 @@
 .product-fineprint { margin-top: 2.2rem; font-size: 0.72rem; color: #5a5a70; }
 
 @media (max-width: 600px) {
+  .product-wrap { padding: 0 1.15rem 5rem; }   /* a touch more content width */
   .tri, .cc-grid { grid-template-columns: 1fr; }
   .product-tagline { font-size: 1.15rem; }
+  .product-sub { font-size: 0.88rem; }
+  /* Wrap the code instead of clipping the inline comments off the right edge. */
+  .code-block { padding: 0.9rem 0.95rem; }
+  .code-block pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.68rem; }
   .prove { flex-direction: column; gap: 0.1rem; }
   .prove b { min-width: 0; }
 }

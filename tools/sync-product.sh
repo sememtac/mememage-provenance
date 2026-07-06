@@ -51,6 +51,11 @@ for a in $ASSETS; do
     cp "$DOCS_DIR/$a" "$SITE_REPO/$a"
 done
 
+# OG social-preview image — referenced only in an <meta property="og:image">
+# (not src/href), so the asset parser above misses it. Copy it explicitly.
+mkdir -p "$SITE_REPO/img"
+cp "$DOCS_DIR/img/og.png" "$SITE_REPO/img/og.png"
+
 # The landing page IS the apex index.
 cp "$DOCS_DIR/product.html" "$SITE_REPO/index.html"
 

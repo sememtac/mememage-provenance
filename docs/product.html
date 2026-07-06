@@ -4,8 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mememage — own your image's data</title>
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20fill%3D'%23fff'%2F%3E%3Crect%20x%3D'3'%20y%3D'3'%20width%3D'94'%20height%3D'74'%20fill%3D'%23000'%2F%3E%3Crect%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'33.33'%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'66.66'%20y%3D'80'%20width%3D'33.34'%20height%3D'20'%20fill%3D'%233cc8dc'%2F%3E%3C%2Fsvg%3E">
 <meta name="description" content="An identifier encoded into an image's pixels survives compression and re-uploads. It points back to data you keep — stored where you choose.">
-<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%203%203'%3E%3Crect%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3Crect%20x%3D'1'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%233cc8dc'%2F%3E%3Crect%20x%3D'1'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dcc83c'%2F%3E%3Crect%20x%3D'2'%20y%3D'1.5'%20width%3D'1'%20height%3D'1.5'%20fill%3D'%23dc50dc'%2F%3E%3C%2Fsvg%3E">
+<!-- Social preview (Open Graph + Twitter Card) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mememage">
+<meta property="og:url" content="https://mememage.art/">
+<meta property="og:title" content="Mememage — own your image's data">
+<meta property="og:description" content="An identifier in the pixels survives re-uploads and points to a record you keep, verified by hash.">
+<meta property="og:image" content="https://mememage.art/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mememage — the genesis image beside the Mememage wordmark and icon">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mememage — own your image's data">
+<meta name="twitter:description" content="An identifier in the pixels survives re-uploads and points to a record you keep, verified by hash.">
+<meta name="twitter:image" content="https://mememage.art/img/og.png">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/layout.css">
@@ -24,7 +38,7 @@
     <p class="product-sub">An identifier encoded into the pixels survives compression and re-uploads. It points back to data you keep.</p>
     <div class="cta-row">
       <a class="cta cta-gold" id="ctaTry" href="#">See live examples &rarr;</a>
-      <a class="cta cta-code" href="#install">pip install mememage</a>
+      <a class="cta cta-code" href="/install">pip install mememage</a>
     </div>
     <!-- The actual minted genesis image (mememage-0000000000000000) — bar and
          all, so it decodes + verifies if saved. Clicking opens it full-res in
@@ -71,6 +85,7 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
            being deprecated; the live decoder/validator ride the mint server.) -->
       <a href="https://github.com/sememtac/mememage">Core</a>
       <a href="https://github.com/sememtac/mememage-provenance">Provenance</a>
+      <a id="linkDiscord" href="#" target="_blank" rel="noopener">Discord</a>
     </div>
     <p class="product-fineprint">Mememage is an image encoding technique. Check out the feed, decoder, and validator for our demo application.</p>
   </footer>
@@ -80,6 +95,17 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
 <!-- Hero image lightbox — click the genesis image to examine it full-res. -->
 <div class="lightbox" id="heroLightbox" hidden>
   <img class="lightbox-img" id="heroLightboxImg" src="" alt="the genesis conception, full resolution">
+</div>
+
+<!-- Install shadowbox — the pip CTA opens /install in a same-origin iframe so
+     visitors get the download options without leaving the page. The CTA stays a
+     real /install link (no-JS + cmd-click open the page). iframe is lazy: its
+     src is set on first open. -->
+<div class="install-modal" id="installModal" hidden>
+  <div class="install-modal-card">
+    <button class="install-modal-close" id="installModalClose" type="button" aria-label="Close">&times;</button>
+    <iframe id="installFrame" title="Install Mememage" data-src="/install/" loading="lazy"></iframe>
+  </div>
 </div>
 
 <script src="js/theme.js"></script>
@@ -94,6 +120,7 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
 (function () {
   var soulsOrigin = 'https://souls.mememage.art';
   var feedOrigin = 'https://mint.mememage.art';
+  var discordInvite = 'https://discord.gg/3NXaFNNBxh';   // single source — swap to a vanity link here
   try {
     if (window.MEMEMAGE_SOULS_BASE) soulsOrigin = new URL(window.MEMEMAGE_SOULS_BASE).origin;
   } catch (e) {}
@@ -102,6 +129,7 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
   set('linkFeed', feedOrigin + '/');
   set('linkDecoder', soulsOrigin + '/');
   set('linkValidator', soulsOrigin + '/validator');
+  set('linkDiscord', discordInvite);
 })();
 
 // Hero image → full-res lightbox (examine the image; no navigation). Reads the
@@ -129,6 +157,40 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
   box.addEventListener('click', close);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !box.hidden) close();
+  });
+})();
+
+// Install shadowbox: the pip CTA opens /install in an overlay iframe, so the
+// visitor never leaves mememage.art. Plain left-clicks open the modal; modified
+// clicks (cmd/ctrl/shift/alt/middle) fall through to the real /install link.
+(function () {
+  var cta = document.querySelector('.cta-code');
+  var modal = document.getElementById('installModal');
+  var frame = document.getElementById('installFrame');
+  var closeBtn = document.getElementById('installModalClose');
+  if (!cta || !modal || !frame) return;
+  // Escape mememage.css's `body > *` position:relative (same as the lightbox).
+  document.documentElement.appendChild(modal);
+  function open() {
+    // Cache-bust so the modal always shows the current /install (Pages serves it
+    // with a 10-min max-age, which otherwise leaves a stale panel after a deploy).
+    if (!frame.src) frame.src = frame.getAttribute('data-src') + '?t=' + Date.now();
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+  cta.addEventListener('click', function (e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    open();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
   });
 })();
 </script>

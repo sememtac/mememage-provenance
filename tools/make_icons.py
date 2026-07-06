@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Generate the Mememage desktop icons from the canonical favicon design.
 
-The icon IS the favicon: a square split into 3 columns x 2 rows = 6 cells.
-Top row Magenta / Yellow / Cyan, bottom row mirrors to Cyan / Yellow / Magenta
-— echoing the bar's bilateral M/Y/C<->C/Y/M symmetry. It's six solid
-rectangles, so we draw it straight with Pillow (no SVG rasterizer needed) and
-emit both platform formats:
+The Polaroid icon: a white card framing a black photo (thin border + a gap above
+the bar) with the M/Y/C bar along the bottom 20% — the icon IS a Mememage-stamped
+image. It's a few solid rectangles, so we draw it straight with Pillow (no SVG
+rasterizer needed) and emit both platform formats:
 
     tools/Mememage.icns   — macOS app bundle icon (built via `iconutil`)
     tools/Mememage.ico    — Windows .exe icon (multi-size, Pillow-native)
@@ -36,17 +35,21 @@ C = (0x3C, 0xC8, 0xDC)
 
 
 def render(size: int) -> Image.Image:
-    """Draw the 6-cell icon at `size`x`size`. Column/row edges are computed
-    per-pixel (rounded) so every size tiles cleanly with no seam or gap."""
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    """Draw the Polaroid icon at `size`x`size`: a WHITE card framing a black
+    photo (thin border top/left/right + a white gap above the bar), with the
+    M/Y/C bar full-width along the bottom 20%. On light surfaces the white card
+    recedes; on dark it frames the photo, so one icon works on either."""
+    img = Image.new("RGBA", (size, size), (255, 255, 255, 255))   # white card
     d = ImageDraw.Draw(img)
-    xs = [round(size * i / 3) for i in range(4)]   # 4 column edges
-    ys = [round(size * j / 2) for j in range(3)]   # 3 row edges
-    top = [M, Y, C]
-    bot = [C, Y, M]
+    b = round(size * 0.031)                     # frame border (~32/1024)
+    bar_top = size - round(size * 0.20)         # M/Y/C bar = bottom 20%
+    gap = round(size * 0.032)                   # white gap above the bar
+    photo_bottom = bar_top - gap
+    d.rectangle([b, b, size - b - 1, photo_bottom - 1], fill=(0, 0, 0, 255))
+    xs = [round(size * i / 3) for i in range(4)]            # 3 equal columns
+    cols = [M, Y, C]
     for col in range(3):
-        d.rectangle([xs[col], ys[0], xs[col + 1] - 1, ys[1] - 1], fill=top[col])
-        d.rectangle([xs[col], ys[1], xs[col + 1] - 1, ys[2] - 1], fill=bot[col])
+        d.rectangle([xs[col], bar_top, xs[col + 1] - 1, size - 1], fill=cols[col])
     return img
 
 
