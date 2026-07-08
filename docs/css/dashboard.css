@@ -141,6 +141,13 @@
   line-height: 1.55;
   color: rgba(0, 0, 0, 0.75);
 }
+.glossary-entry-body ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.15rem;
+}
+.glossary-entry-body li {
+  margin: 0.18rem 0;
+}
 .glossary-entry-body code {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.7rem;
