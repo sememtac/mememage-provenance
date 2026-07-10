@@ -69,9 +69,9 @@
   <section class="product-section">
     <p class="section-lead">Encode an image. Look up your data. Encrypt what's private.</p>
     <div class="tri">
-      <div class="tri-cell tri-m"><h4>Identifier</h4><p>A short code baked into the pixels. Survives compression and re-uploads.</p></div>
+      <div class="tri-cell tri-m"><h4>Identifier</h4><p>A short code baked into the pixels. Survives compression and re-uploads. Heavy downscaling is where it ends.</p></div>
       <div class="tri-cell tri-y"><h4>Data</h4><p>A record whose fields you define. Stored wherever you keep it.</p></div>
-      <div class="tri-cell tri-c"><h4>Encryption</h4><p>Mememage supports encrypting your data, in full or field by field.</p></div>
+      <div class="tri-cell tri-c"><h4>Encryption</h4><p>Encrypt your data, in full or field by field. Add it with the encrypt extra.</p></div>
     </div>
   </section>
 
@@ -82,7 +82,7 @@
     <div class="code-block"><pre><span class="cc"># pip install mememage</span>
 <span class="ck">result</span> = mememage.<span class="ck">encode</span>(<span class="cs">"photo.png"</span>, {<span class="cs">"title"</span>: <span class="cs">"Morning fog"</span>})  <span class="cc"># encode image</span>
 mememage.<span class="ck">decode</span>(<span class="cs">"photo.png"</span>)  <span class="cc"># return id + hash</span>
-mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, result.record)  <span class="cc"># True if match</span></pre></div>
+mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, result.record)  <span class="cc"># truthy if match</span></pre></div>
   </section>
 
   <!-- Close -->

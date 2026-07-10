@@ -939,6 +939,43 @@ def main():
             print(f"  Decoder cycles:  {dec_cycles}/30 complete")
             print(f"  Truth chunks:    {truth_done}/{TRUTH_CHUNKS} distributed")
 
+        # The counter above tallies every mint ever attempted. The living
+        # chain — records that exist and verify — is the real star count.
+        # Say so out loud when they disagree rather than printing fiction.
+        from mememage.site_embed import chain_state_drift
+        drift = chain_state_drift()
+        if drift:
+            print()
+            print(f"  ⚠ Counter disagrees with the living chain.")
+            print(f"    Stars conceived (verified, from genesis): {drift['stars']}")
+            print(f"    Counter says:                             {drift['stored_outer']}")
+            if not drift["contiguous"]:
+                print(f"    Local chain has gaps at: {drift['missing']} "
+                      f"(fetch those souls before reconciling)")
+            if drift["stored_heart"] != drift["expected_heart"]:
+                print(f"    Heart star stored: {drift['stored_heart']}")
+                print(f"    Heart star truth:  {drift['expected_heart']}")
+            print("    Run 'python -m mememage.site_pack reconcile' to fix.")
+
+    elif cmd == "reconcile":
+        from mememage.site_embed import reconcile_from_chain
+        dry = "--dry-run" in sys.argv
+        try:
+            r = reconcile_from_chain(dry_run=dry)
+        except RuntimeError as e:
+            print(f"Cannot reconcile: {e}")
+            sys.exit(1)
+        b, a = r["before"], r["after"]
+        print(f"Living chain: {r['stars']} stars (newest {r['last_star']})")
+        if b == a:
+            print("Already in sync — nothing to change.")
+        else:
+            for k in ("outer_position", "inner_position", "heart_star"):
+                if b[k] != a[k]:
+                    print(f"  {k}: {b[k]} → {a[k]}")
+            print("(dry run — nothing written)" if dry
+                  else "Reconciled. Previous state backed up alongside chunk_state.json.")
+
     else:
         # Dry run
         b64, version = pack_site()

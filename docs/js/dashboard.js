@@ -1310,38 +1310,22 @@ setInterval(function() {
       var distErr = s.distribution_errors || {};
       var ids = Object.keys(dist).concat(Object.keys(distErr));
       var seen = {};
-      var rows = [];
+      var entries = [];
       ids.forEach(function(id) {
         if (seen[id]) return;
         seen[id] = 1;
         if (Object.prototype.hasOwnProperty.call(dist, id)) {
-          var url = dist[id];
-          rows.push(
-            '<li class="mint-result-channel mint-result-channel-ok">' +
-            '<span class="mint-result-channel-status" aria-hidden="true">\u2713</span>' +
-            '<span class="mint-result-channel-id">' + escapeHtml(id) + '</span>' +
-            '<a class="mint-result-channel-url" href="' + escapeHtml(url) +
-              '" target="_blank" rel="noopener">' + escapeHtml(url) + '</a>' +
-            '</li>'
-          );
+          entries.push({ name: id, url: dist[id], ok: true });
         } else {
-          rows.push(
-            '<li class="mint-result-channel mint-result-channel-fail">' +
-            '<span class="mint-result-channel-status" aria-hidden="true">\u2717</span>' +
-            '<span class="mint-result-channel-id">' + escapeHtml(id) + '</span>' +
-            '<span class="mint-result-channel-err" title="' + escapeHtml(distErr[id] || '') +
-              '">' + escapeHtml(distErr[id] || 'failed') + '</span>' +
-            '</li>'
-          );
+          entries.push({ name: id, ok: false, error: distErr[id] || 'failed' });
         }
       });
-      var totalRows = rows.length;
       var hasFail = Object.keys(distErr).length > 0;
       // Suppress the block for trivial single-success blasts — the soul
       // URL above conveys it. Show it whenever there's a failure or more
-      // than one channel involved.
-      if (totalRows > 1 || hasFail) {
-        els.resultChannelsList.innerHTML = rows.join('');
+      // than one surface involved.
+      if (entries.length > 1 || hasFail) {
+        Surfaces.render(els.resultChannelsList, entries);
         els.resultChannels.hidden = false;
       } else {
         els.resultChannelsList.innerHTML = '';

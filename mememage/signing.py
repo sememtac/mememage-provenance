@@ -439,7 +439,8 @@ def upload_keychain_record(record, chain_id, filename):
     # initiator of a pair) would never see its own outbound alias
     # chip because Mac's channels publish outward but nothing arrives
     # inward via http_push (the peer can't reach back when behind NAT).
-    local_dir = Path(_os.path.expanduser("~/.mememage/received/keychain")) / chain_id
+    from mememage import chains as _chains
+    local_dir = _chains.keychain_dir() / chain_id
     try:
         local_dir.mkdir(parents=True, exist_ok=True)
         (local_dir / filename).write_bytes(payload)

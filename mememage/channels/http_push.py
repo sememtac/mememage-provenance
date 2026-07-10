@@ -266,11 +266,16 @@ class HttpPushChannel(Channel):
 
     @staticmethod
     def _local_store_dir():
-        """The flat soul store this server reads/serves from. Kept inline (no
-        core import) so the channel layer stays pure."""
-        import os
-        from pathlib import Path
-        return Path(os.path.expanduser("~/.mememage/received"))
+        """The flat soul store this server reads/serves from.
+
+        Resolved through ``chains.MEMEMAGE_ROOT`` (same value core's
+        ``soul_store_dir()`` derives) rather than a raw ``expanduser`` — a
+        hardcoded ``~/.mememage/received`` ignores a redirected root, which
+        let the test suite write souls into the operator's real store. Same
+        path in production; the import is local so the channel layer stays
+        free of a core import at module scope."""
+        from mememage import chains
+        return chains.MEMEMAGE_ROOT / "received"
 
     def upload(self, identifier: str, soul_bytes: bytes,
                image_path: str | None = None) -> str:

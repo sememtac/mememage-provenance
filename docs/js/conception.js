@@ -41,6 +41,7 @@
   var pulseDotsEl = document.getElementById('conceptionPulseDots');
   var imageEl = document.getElementById('conceptionImage');
   var downloadImageBtn = document.getElementById('conceptionDownloadImage');
+  var downloadSoulBtn = document.getElementById('conceptionDownloadSoul');
   var factsEl = document.getElementById('conceptionFacts');
   var surfacesEl = document.getElementById('conceptionSurfaces');
   var failBodyEl = document.getElementById('conceptionFailBody');
@@ -309,8 +310,13 @@
       addFact('Birthplace', '\u2014', { dim: true });
     }
 
-    // Image download
+    // Image + soul downloads (page-level). Both fetch the SAME-ORIGIN
+    // backup, not a channel URL — a cross-origin archive.org fetch is
+    // CORS-blocked and a loopback/http-push URL is mixed-content and
+    // unreachable from a phone. The soul is content-addressed, so the
+    // local copy IS the soul on every surface.
     _wireBlobDownload(downloadImageBtn, imgUrl, ident + '.png');
+    _wireBlobDownload(downloadSoulBtn, '/api/mint/' + token + '/soul', ident + '.soul');
 
     // Surface buttons — one per channel that accepted the soul.
     // Below the success list, surface any channels that errored
@@ -321,7 +327,7 @@
     surfacesEl.innerHTML = '';
     var dist = data.distribution || {};
     var distKeys = Object.keys(dist);
-    var entries = distKeys.length
+    var okEntries = distKeys.length
       ? distKeys.map(function(k) { return [k, dist[k]]; })
       : [['local', '/api/mint/' + token + '/soul']];
 
@@ -341,48 +347,17 @@
       return channelId;
     }
 
-    entries.forEach(function(e) {
-      var label = e[0];
-      var url = e[1];
-      var row = document.createElement('div');
-      row.className = 'conception-surface';
-      var lab = document.createElement('span');
-      lab.className = 'conception-surface-label';
-      lab.textContent = _surfaceLabel(label, url);
-      lab.title = label;  // the channel slug, for reference
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'conception-surface-dl';
-      btn.textContent = 'Download soul';
-      // Fetch the SAME-ORIGIN local backup, not the channel URL. A cross-origin
-      // fetch to archive.org is CORS-blocked (no ACAO header), and a loopback /
-      // http push URL is mixed-content and unreachable from a phone — both throw
-      // "Load failed". The soul is content-addressed (byte-identical wherever it
-      // landed), so the local copy IS the soul on that surface. The label above
-      // still shows WHERE it landed. (Matches the dashboard's soul-download.)
-      _wireBlobDownload(btn, '/api/mint/' + token + '/soul', ident + '.soul');
-      row.appendChild(lab);
-      row.appendChild(btn);
-      surfacesEl.appendChild(row);
+    // Display-only rows via the shared Surfaces component: name = where the
+    // soul landed + the full URL. Downloading is the page-level button above
+    // (every surface holds the same content-addressed soul).
+    var surfaceEntries = okEntries.map(function(e) {
+      return { name: _surfaceLabel(e[0], e[1]), url: e[1], ok: true };
     });
-
     var errors = data.distribution_errors || {};
-    var errorKeys = Object.keys(errors);
-    if (errorKeys.length) {
-      errorKeys.forEach(function(eid) {
-        var row = document.createElement('div');
-        row.className = 'conception-surface conception-surface-error';
-        var lab = document.createElement('span');
-        lab.className = 'conception-surface-label';
-        lab.textContent = eid;
-        var msg = document.createElement('span');
-        msg.className = 'conception-surface-error-msg';
-        msg.textContent = errors[eid] || 'unknown error';
-        row.appendChild(lab);
-        row.appendChild(msg);
-        surfacesEl.appendChild(row);
-      });
-    }
+    Object.keys(errors).forEach(function(eid) {
+      surfaceEntries.push({ name: eid, ok: false, error: errors[eid] || 'unknown error' });
+    });
+    Surfaces.render(surfacesEl, surfaceEntries);
   }
 
   // ===== Failed state render =====

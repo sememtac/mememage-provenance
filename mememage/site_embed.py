@@ -496,3 +496,188 @@ def advance_chunk_index() -> None:
     state["outer_position"] = next_outer
     state["proof_position"] = next_proof
     _save_chunk_state(state)
+
+
+# ---------------------------------------------------------------------------
+# Reconcile: the living chain is the truth, chunk_state is only a cache
+# ---------------------------------------------------------------------------
+
+def walk_living_chain(records: dict | None = None) -> list:
+    """Walk the local soul store from genesis and return the living chain.
+
+    A "star" is a record that actually exists and verifies — not a tick of a
+    counter. ``chunk_state`` counts every mint ever *attempted* on this chain,
+    so a purged dev mint leaves the counter permanently ahead of reality;
+    records that were deleted from their surface stop being stars, but the
+    counter never learns. Only the records can answer "how many stars have I
+    conceived", so this walks them: genesis (``parent_id is None``) forward
+    through ``parent_id`` links.
+
+    Returns the chain in birth order (genesis first). Records whose stored
+    content_hash doesn't verify are excluded — a corrupt soul is not a star.
+    When two files claim the same identifier (an old pre-V1 copy alongside the
+    current one) the verifying copy wins.
+    """
+    from mememage import core
+
+    if records is None:
+        records = {}
+        store = chains.MEMEMAGE_ROOT / "received"
+        if not store.exists():
+            return []
+        for path in sorted(store.glob("*.soul")):
+            try:
+                rec = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            ident = rec.get("identifier")
+            if not ident:
+                continue
+            rec.pop("_verified", None)
+            ok = core.verify_metadata(rec) is True
+            if ident not in records or (ok and not records[ident][1]):
+                records[ident] = (rec, ok)
+
+    prefix = chains.get_identifier_prefix()
+    alive = {i: r for i, (r, ok) in records.items()
+             if ok and i.rsplit("-", 1)[0] == prefix}
+    kids: dict = {}
+    for rec in alive.values():
+        kids.setdefault(rec.get("parent_id"), []).append(rec)
+
+    genesis = [r for r in alive.values() if r.get("parent_id") is None]
+    if not genesis:
+        return []
+    if len(genesis) > 1:
+        # A chain has exactly one genesis (parent_id is null). More than one
+        # means a stray record is claiming it — a junk/test soul dropped into
+        # the store, or a second chain's record under the same prefix. The
+        # hash filter above already drops unverifiable impostors; if two
+        # genuinely verify, take the eldest and say so rather than picking
+        # arbitrarily (which would silently truncate or re-root the chain).
+        genesis.sort(key=lambda r: r.get("conceived", ""))
+        log.warning(
+            "Multiple verifying genesis records under prefix %r: %s. "
+            "Walking from the eldest (%s).",
+            prefix, [r["identifier"] for r in genesis], genesis[0]["identifier"],
+        )
+    chain = []
+    cur = genesis[0]
+    while cur is not None:
+        chain.append(cur)
+        children = sorted(kids.get(cur["identifier"], []),
+                          key=lambda r: r.get("conceived", ""))
+        cur = children[0] if children else None
+    return chain
+
+
+def chain_state_drift() -> dict | None:
+    """Compare ``chunk_state`` against the living chain. None when in sync.
+
+    Returns ``{stars, stored_outer, expected_outer, stored_heart,
+    expected_heart, contiguous, missing}`` when they disagree, so ``status``
+    and the dashboard can say so out loud instead of printing a number that
+    quietly isn't true.
+    """
+    chain = walk_living_chain()
+    if not chain:
+        return None
+    stars = len(chain)
+    positions = [r.get("outer_position") for r in chain]
+    contiguous = positions == list(range(stars))
+    missing = [] if contiguous else [
+        p for p in range(max(x for x in positions if x is not None) + 1)
+        if p not in positions
+    ]
+
+    state = _load_chunk_state()
+    stored_outer = state.get("outer_position", 0)
+    stored_heart = (state.get("heart_star") or {}).get("identifier")
+    expected_heart = chain[-1].get("heart_star_id")
+
+    if stored_outer == stars and stored_heart == expected_heart and contiguous:
+        return None
+    return {
+        "stars": stars,
+        "stored_outer": stored_outer,
+        "expected_outer": stars,
+        "stored_heart": stored_heart,
+        "expected_heart": expected_heart,
+        "contiguous": contiguous,
+        "missing": missing,
+    }
+
+
+def reconcile_from_chain(dry_run: bool = False) -> dict:
+    """Rebuild ``chunk_state`` from the living chain. Returns what changed.
+
+    Every counter in chunk_state is derivable from the records themselves —
+    ``outer_position`` is the star count (genesis is star 0, so after N stars
+    the next position is N), the decoder's ``inner_position`` is
+    ``N % DECODER_CHUNKS``, and the heart star is whatever the newest record
+    says its heart star is. So drift is always repairable without guessing.
+
+    Refuses on a non-contiguous chain: a gap means a soul is missing locally
+    (fetch it from its surface first) and the star count would be a lie in the
+    other direction. Backs the old state up before writing.
+    """
+    chain = walk_living_chain()
+    if not chain:
+        raise RuntimeError("No living chain found: no verifying genesis record "
+                           f"in {chains.MEMEMAGE_ROOT / 'received'}")
+    stars = len(chain)
+    positions = [r.get("outer_position") for r in chain]
+    if positions != list(range(stars)):
+        highest = max(p for p in positions if p is not None)
+        gaps = [p for p in range(highest + 1) if p not in positions]
+        raise RuntimeError(
+            f"Refusing to reconcile: the local chain has gaps at outer_position "
+            f"{gaps}. {stars} souls walk from genesis but the newest claims "
+            f"position {highest}. Fetch the missing soul(s) into "
+            f"{chains.MEMEMAGE_ROOT / 'received'} first — otherwise the star "
+            f"count would under-report the chain."
+        )
+
+    last = chain[-1]
+    state = _load_chunk_state()
+    before = {
+        "outer_position": state.get("outer_position", 0),
+        "inner_position": state.get("inner_position", 0),
+        "heart_star": (state.get("heart_star") or {}).get("identifier"),
+    }
+
+    state["outer_position"] = stars % OUTER_CYCLE
+    state["inner_position"] = (stars % DECODER_CHUNKS
+                               if stars < DECODER_RANGE
+                               else state.get("inner_position", 0))
+    state["proof_position"] = (stars % PROOF_CYCLE
+                               if stars < PROOF_RANGE
+                               else state.get("proof_position", 0))
+    # The heart star is a property of the constellation the newest record
+    # belongs to — it says so itself. Drop it only when the next record opens
+    # a fresh constellation (a heart lands on every cadence multiple).
+    if stars % constellation_cadence() == 0:
+        state.pop("heart_star", None)
+    elif last.get("heart_star_id"):
+        state["heart_star"] = {
+            "identifier": last["heart_star_id"],
+            "constellation_name": last.get("constellation_name"),
+            "constellation_hash": last.get("constellation_hash"),
+        }
+
+    after = {
+        "outer_position": state["outer_position"],
+        "inner_position": state["inner_position"],
+        "heart_star": (state.get("heart_star") or {}).get("identifier"),
+    }
+    if not dry_run:
+        csf = chunk_state_file()
+        if csf.exists():
+            # Stamp the backup with the newest star's conceived time — a fact
+            # read from the chain, so the name is deterministic (no clock read).
+            stamp = (last.get("conceived") or "unknown").replace(":", "").replace("-", "")
+            backup = csf.with_name(f"{csf.name}.pre-reconcile-{stamp}")
+            backup.write_text(csf.read_text(encoding="utf-8"), encoding="utf-8")
+        _save_chunk_state(state)
+    return {"stars": stars, "before": before, "after": after,
+            "last_star": last["identifier"], "dry_run": dry_run}

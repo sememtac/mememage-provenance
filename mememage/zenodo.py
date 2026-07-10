@@ -84,14 +84,22 @@ def _set_metadata_and_publish(
         "metadata": {
             "title": f"Mememage metadata for {identifier}",
             "upload_type": "dataset",
+            # Published verbatim on Zenodo. Mememage is provenance for ANY
+            # image — a render, a photo, a screenshot, a scan — so this text
+            # names no source. It also names no "primary" surface: the soul
+            # carries the identifier + content hash and verifies by hash from
+            # wherever a reader found it (Zenodo included).
             "description": (
-                f"Provenance record for AI-generated image {identifier}. "
+                f"Provenance record for image {identifier}. "
                 f"Part of the Mememage format — a steganographic provenance "
-                f"system that encodes lookup keys into image pixels. "
-                f"Primary record: https://archive.org/download/{identifier}/metadata.json"
+                f"system that encodes an identifier and a content hash into "
+                f"an image's pixels. The record is tamper-evident: recomputing "
+                f"its hash and comparing against the hash in the pixels proves "
+                f"the two belong together, from any source."
             ),
             "creators": [{"name": "Mememage"}],
-            "keywords": ["mememage", "ai-art", "provenance", identifier],
+            "keywords": ["mememage", "image", "provenance", "tamper-evident",
+                         "content-hash", identifier],
         }
     }).encode("utf-8")
 

@@ -520,9 +520,9 @@ body {
   font-family: ui-monospace, "JetBrains Mono", monospace;
   font-weight: 400;
 }
-/* Primary action — same brushed-gold family as the per-surface
-   "Download soul" buttons (.conception-surface-dl) and Conceive, so the
-   whole conceived view reads with one motif instead of a lone green button. */
+/* Primary action — same brushed-gold family as Conceive, so the whole
+   conceived view reads with one motif instead of a lone green button.
+   Both Download image and Download soul share it. */
 .conception-action-primary {
   background: linear-gradient(180deg, rgba(60, 50, 20, 0.75) 0%, rgba(18, 14, 8, 0.7) 40%, rgba(14, 10, 6, 0.75) 100%);
   border-color: rgba(200, 170, 80, 0.35);
@@ -606,80 +606,19 @@ body {
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.conception-surfaces {
+.conception-dl-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
-.conception-surface {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.5rem 0.7rem 0.5rem 0.9rem;
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-sm);
-}
-.conception-surface-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* "Download soul" button — same brushed-gold family as Conceive,
-   compact size since it lives in a per-row context. */
-.conception-surface-dl {
-  flex: 0 0 auto;
-  padding: 0.35rem 0.85rem;
-  background: linear-gradient(180deg, rgba(60, 50, 20, 0.75) 0%, rgba(18, 14, 8, 0.7) 40%, rgba(14, 10, 6, 0.75) 100%);
-  border: 1px solid rgba(200, 170, 80, 0.35);
-  color: #c8a850;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-shadow: 0 -1px 0 rgba(255,255,255,0.15), 0 1px 1px rgba(0,0,0,0.4);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-  white-space: nowrap;
-}
-.conception-surface-dl:hover {
-  color: #e0c070;
-  border-color: rgba(224, 192, 112, 0.55);
-  background: linear-gradient(180deg, rgba(72, 60, 24, 0.8) 0%, rgba(24, 18, 10, 0.75) 40%, rgba(18, 14, 8, 0.8) 100%);
-}
-.conception-surface-dl:disabled {
-  opacity: 0.5;
-  cursor: wait;
-}
+.conception-dl-actions .conception-action { flex: 1 1 0; }
 
-/* Partial-failure row — a channel that errored mid-blast while
-   at least one other surface accepted the soul. Sits below the
-   success list with a muted red tint so the user can see at a
-   glance which mirror dropped without scraping logs. */
-.conception-surface-error {
-  background: rgba(60, 20, 18, 0.32);
-  border-color: rgba(200, 80, 60, 0.22);
-}
-.conception-surface-error-msg {
-  flex: 0 0 auto;
-  font-size: 0.62rem;
-  color: rgba(220, 140, 120, 0.85);
-  text-align: right;
-  font-style: italic;
-  max-width: 60%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* The surface rows are the shared Surfaces component (docs/js/surfaces.js
+   + .surfaces-* in mememage.css). On this dark plate we only override the
+   ok/fail accent tokens for contrast; name + URL inherit the light text. */
+.conception-surfaces {
+  --surface-name-color: #f0f0f4;
+  --surface-ok: #6ac47a;
+  --surface-fail: rgba(224, 150, 130, 0.95);
 }
 
 /* --- Failed state --- */

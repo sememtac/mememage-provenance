@@ -1,4 +1,12 @@
-"""Core functions for uploading and fetching metadata from the Internet Archive."""
+"""The conception pipeline: build, hash, and publish a soul.
+
+Assembles the metadata record (identifier, birth certificate, rarity,
+constellation, luma grid), seals it with the versioned content hash,
+optionally encrypts it (creator access layer), and blasts it to every
+enabled distribution channel (``mememage.channels`` — Internet Archive,
+self-hosted push, etc.). Also the fetch/verify counterpart for reading
+records back.
+"""
 
 import hashlib
 import json
@@ -23,7 +31,7 @@ def soul_store_dir() -> Path:
     ``records/`` backup, which duplicated this and leaked the local chain name
     into a path."""
     from mememage import chains as _chains
-    return _chains.MEMEMAGE_ROOT / "received"
+    return _chains.received_dir()
 
 from mememage.hashing import (
     OPEN_HASH_VERSION, _HASH_EXCLUDED_OPEN, _normalize_for_hash, hash_fields,
@@ -38,8 +46,7 @@ from mememage.temperament import read_birth_temperament
 from mememage.rarity import compute_rarity
 from mememage.constellation import name_from_hash
 from mememage.site_embed import advance_chunk_index, constellation_cadence, current_outer_position, current_outer_total, get_current_age_info, get_current_chunk, get_heart_star, is_heart_star, set_heart_star
-from mememage.thumbnail import generate_thumbnail
-from mememage.signing import sign as sign_record, has_key, get_fingerprint, get_signer_info
+from mememage.signing import get_signer_info
 
 # Fields required for a valid metadata upload.
 #
@@ -184,7 +191,8 @@ _HASH_INCLUDED_V1 = {
     # (someone re-stamping a record at a different outer_position to
     # lie about where in the chain it lives is caught here).
     "outer_position", "outer_total",
-    # Luma grid — 16x16 mean-luma map (base64), the localized-tamper half of
+    # Luma grid — 32x32 full-frame per-tile luma stats (base64: mean/min/
+    # max + flat-bits + version byte), the localized-tamper half of
     # EMBODIED. IN the hash so a defacer can't swap in a grid matching their
     # altered image without breaking WITNESSED (dHash alone can't tell a drawn
     # line from JPEG — see mememage/embodiment.py). Protected on dark_matter
@@ -287,19 +295,19 @@ class ConceptionState:
     gps: tuple | None
     image_path: str | None = None
 
-    # Populated by pipeline steps
+    # Populated by pipeline steps. (thumbnail + signature are NOT here:
+    # both happen post-mint in mint.py, after the bar exists, so the
+    # signature can bind sha256(thumbnail).)
     birth: dict | None = None
     rarity: dict | None = None
     machine: dict | None = None
     personality: dict | None = None
     temperament: dict | None = None
     fingerprint: str | None = None
-    thumbnail: str | None = None
     identifier: str | None = None
     content_hash: str | None = None
     record: dict | None = None
     constellation_name: str | None = None
-    signature: str | None = None
     public_key: str | None = None
     key_fingerprint: str | None = None
 
@@ -768,9 +776,11 @@ def _step_build_record(state: ConceptionState) -> None:
     #
     #   gps_password_locked — AES envelope, creator-instant access.
     #                         Added later by _step_encrypt only when
-    #                         the chain has a password. Not hashed
-    #                         (post-hash addition; matches the prior
-    #                         gps_password_locked behavior).
+    #                         the chain has a password. Also in the
+    #                         hash: encryption runs before the hash,
+    #                         and the V1 inclusion set covers the
+    #                         envelope when present, so ciphertext
+    #                         tampering breaks WITNESSED.
     if state.gps is not None and len(state.gps) == 2:
         from mememage.timelock import lock_gps
         state.record["gps_time_locked"] = lock_gps(state.gps[0], state.gps[1], 10**18)
@@ -813,12 +823,12 @@ def _step_build_record(state: ConceptionState) -> None:
         state.record["outer_position"] = current_outer_position()
         state.record["outer_total"] = current_outer_total()
 
-    # Constellation size (display-only, NOT in the content hash) — how many
-    # stars this constellation holds, so the cert backdrop and the
-    # planetarium can draw the right N-star shape. Decorative: the real
-    # cadence is pinned by the hashed outer_position + the seal, and the true
-    # member count is recoverable by walking the chain. Parallels song_name
-    # as a derived display field excluded from the hash.
+    # Constellation size — how many stars this constellation holds, so
+    # the cert backdrop and the planetarium can draw the right N-star
+    # shape. IN the content hash (V1 inclusion set): constellation_index
+    # is derived from it (outer_position mod size), so an unhashed size
+    # would let someone re-tier a record's position claims without
+    # breaking WITNESSED. See the _HASH_INCLUDED_V1 entry.
     state.record["constellation_size"] = constellation_cadence()
 
     # Strip None values
@@ -826,15 +836,16 @@ def _step_build_record(state: ConceptionState) -> None:
 
 
 def _step_luma_grid(state: ConceptionState) -> None:
-    """Stamp the 16x16 luma grid (localized-tamper half of EMBODIED).
+    """Stamp the 32x32 full-frame luma grid (localized-tamper half of EMBODIED).
 
     Computed from the PRE-bar source image (the bar isn't embedded until after
-    the content hash exists). The bar occupies the bottom 2 rows, which the
-    center-crop-to-square drops on portrait images and dilutes to <1 luma unit
-    on square/landscape — well inside the threshold. Runs BEFORE _step_encrypt
-    so dark_matter chains seal it, and BEFORE _step_content_hash so it's bound
-    into WITNESSED. Silently skips if Pillow is unavailable or no image (raw /
-    metadata-only paths) — the field is presence-filtered everywhere.
+    the content hash exists). The bar occupies the bottom 2 rows; verifiers
+    skip the bottom tile row entirely (embodiment.SKIP_BOTTOM_ROWS), so the
+    pre-bar grid never disagrees with a post-bar image there. Runs BEFORE
+    _step_encrypt so dark_matter chains seal it, and BEFORE _step_content_hash
+    so it's bound into WITNESSED. Silently skips if Pillow is unavailable or no
+    image (raw / metadata-only paths) — the field is presence-filtered
+    everywhere.
     """
     if not state.image_path:
         return
@@ -878,22 +889,6 @@ def _step_signer_setup(state: ConceptionState) -> None:
     state.record["key_fingerprint"] = fingerprint
     if creator_name:
         state.record["creator_name"] = creator_name
-
-
-def _step_sign(state: ConceptionState) -> None:
-    """Sign identifier + content_hash with Ed25519. Adds the signature only.
-
-    public_key / key_fingerprint / creator_name were already populated
-    by _step_signer_setup (they're in the V1 hash). This step exists
-    purely to append the signature, which cannot be in the hash
-    (chicken-and-egg).
-    """
-    result = sign_record(state.identifier, state.content_hash)
-    if result:
-        sig_hex, _pub_hex, fingerprint, _creator_name = result
-        state.signature = sig_hex
-        state.record["signature"] = sig_hex
-        log.info("Signed: %s (key %s)", state.identifier, fingerprint)
 
 
 _BAYER_LETTERS = "αβγδεζηθικλμνξοπρστυφχψω"  # 24 Greek letters α..ω (display only; record stores integer index). Caps constellation_size; keep in sync with server.py + JS tables.
@@ -960,12 +955,15 @@ def _step_constellation(state: ConceptionState) -> None:
 def _step_encrypt(state: ConceptionState) -> None:
     """Encrypt protected fields with creator's password.
 
-    Runs AFTER content hash and signing (hash covers plaintext).
-    GPS, when present, is encrypted alongside the time-lock puzzle
-    (creator's instant-unlock key to their own time capsule); when
-    ``gps_source: none`` records have no GPS at all, that encryption
-    step is simply skipped — there's nothing to seal. Dark matter
-    chains encrypt the entire soul independently of GPS presence.
+    Runs BEFORE the content hash, so the hash covers what actually ends
+    up in the saved soul: on dark_matter chains the protected plaintext
+    fields are deleted and replaced by ciphertext envelopes, and those
+    envelopes are what the hash seals (see the pipeline comment in
+    upload_metadata). GPS, when present, is encrypted alongside the
+    time-lock puzzle (creator's instant-unlock key to their own time
+    capsule); when ``gps_source: none`` records have no GPS at all, that
+    encryption step is simply skipped — there's nothing to seal. Dark
+    matter chains encrypt the entire soul independently of GPS presence.
 
     Snapshots the pre-encryption record onto ``state`` so the upload
     step can replay encrypt + about cleanly after a NamespaceBlocked
@@ -1168,14 +1166,20 @@ def _step_upload(state: ConceptionState, prepare_image=None) -> None:
 
 def upload_metadata(metadata: dict, gps: tuple | None, image_path: str = None, rendered: str = None,
                     password: str = None,
-                    chain_visibility: str = None, prepare_image=None) -> tuple[str, str]:
-    """Upload metadata JSON to the Internet Archive.
+                    chain_visibility: str = None,
+                    prepare_image=None) -> tuple[str, str, dict | None, str | None]:
+    """Run the conception pipeline and blast the soul to every enabled channel.
 
     Computes the identifier, builds the full record with birth certificate
-    and content hash, and uploads to IA's S3 endpoint.
+    and content hash, and publishes it through the channels framework
+    (``mememage.channels``) — Internet Archive, self-hosted push, etc.,
+    whichever surfaces the active profile has enabled.
 
     Args:
-        metadata: Generation parameters (prompt, seed, dimensions, model, etc.)
+        metadata: Creator-declared origin fields (width/height required;
+                  everything else — prompt/seed for AI gens, camera/lens
+                  for photos, whatever the workflow knows — is optional
+                  and passes into the ``origin`` dict).
         gps: (lat, lon) tuple, or ``None`` when the chain's gps_source
              is ``none``. Absent GPS is recorded honestly — no
              ``gps_time_locked`` field, cert renders a visible placeholder.
@@ -1186,7 +1190,12 @@ def upload_metadata(metadata: dict, gps: tuple | None, image_path: str = None, r
         chain_visibility: "light_energy" (public) or "dark_matter" (private).
                           Only meaningful when password is provided.
 
-    Returns (identifier, content_hash) — both needed for bar encoding.
+    Returns (identifier, content_hash, distribution, primary_url):
+        identifier / content_hash — what the bar encodes.
+        distribution — {channel_id: url} map from the blast (or None).
+        primary_url — the primary channel's URL for dashboard/webhook
+                      handoff. Operational data; never written into
+                      the soul itself.
     """
     state = ConceptionState(metadata=metadata, gps=gps, image_path=image_path)
     state._rendered = rendered
@@ -1242,13 +1251,6 @@ def upload_metadata(metadata: dict, gps: tuple | None, image_path: str = None, r
         state.distribution,
         state.primary_url,
     )
-
-
-from mememage import chains as _chains
-# Backup dir is resolved per call via _chains.path("records") inside
-# the write paths (e.g. _write_local_backup). Multi-chain migration
-# means the active chain can change between mints, so this must not
-# be cached at import time.
 
 
 # ---------------------------------------------------------------------------
@@ -1377,8 +1379,8 @@ def fetch_metadata(identifier: str) -> dict | None:
         False = content_hash present but doesn't match (ALTERED)
         None = no content_hash (legacy record, can't witness)
     """
-    # Try .soul files first (new format), fall back to metadata.json (old format)
-    # The .soul filename includes the hash, but we don't know it yet — try listing
+    # List the item's files and take the first .soul (current format,
+    # named {identifier}.soul) or metadata.json (oldest legacy format).
     record = None
 
     # Try IA metadata API to find the soul file

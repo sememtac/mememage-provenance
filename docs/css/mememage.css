@@ -2789,3 +2789,65 @@
 /* Neutral dot (no readiness known — e.g. ticket rows). */
 .chain-dot[data-state=""] { background: #b8b8c0; }
 .conception-section .chain-badge-label { color: #9a9aa6; }
+
+/* =====================================================================
+   Surfaces list — ONE shared component (docs/js/surfaces.js) for the
+   "where the soul landed" list on both the dashboard mint result and the
+   conception page. Two lines per row so two variable-length strings
+   (name + URL) never share a row and nothing truncates. Colors inherit
+   from the host page; only the ok/fail accents are tokens, so the same
+   markup works on the light dashboard and the dark conception plate.
+   ===================================================================== */
+.surfaces-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+}
+.surface-row { line-height: 1.35; min-width: 0; }
+.surface-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.surface-status {
+  flex: none;
+  width: 1rem;
+  text-align: center;
+  font-weight: 700;
+}
+.surface-row-ok .surface-status { color: var(--surface-ok, #2c8a3a); }
+.surface-row-fail .surface-status { color: var(--surface-fail, #b04040); }
+.surface-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 600;
+  /* Strong, readable name. Defaults suit the light dashboard plate; the dark
+     conception plate overrides --surface-name-color to a light value. */
+  color: var(--surface-name-color, rgba(0, 0, 0, 0.70));
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.surface-detail {
+  display: block;
+  margin-left: 1.4rem;  /* align under the name: ✓ width 1rem + gap 0.4rem */
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.surface-url {
+  /* Deliberately washed/ghosted — the bold name carries the identity, the URL
+     is a faint secondary. Inherits the plate's own text tone and dims it, so it
+     reads light on both the light dashboard and the dark conception plate. */
+  color: inherit;
+  opacity: 0.62;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+.surface-url:hover { opacity: 0.9; }
+.surface-err {
+  color: var(--surface-fail, #b04040);
+  font-style: italic;
+}

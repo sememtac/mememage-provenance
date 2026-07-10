@@ -1,4 +1,8 @@
-"""Celestial birth certificate for AI-generated images.
+"""Celestial birth certificate for a conceived image.
+
+The image can be anything — a render, a photograph, a screenshot, a scan.
+Nothing here inspects how the pixels were made; the certificate records
+*when and where* a creator conceived them.
 
 Computes the exact state of the sky at the moment and place of creation:
 moon phase, sun position, and planetary positions in the zodiac.

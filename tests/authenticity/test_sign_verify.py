@@ -122,13 +122,19 @@ class TestSignatureScope(unittest.TestCase):
         shutil.rmtree(self.key_dir, ignore_errors=True)
 
     def test_signed_record_verifiable(self):
-        """Full pipeline produces a record whose signature verifies."""
+        """Pipeline hash + post-pipeline signature verify together.
+
+        Signing happens post-mint in production (mint.py binds
+        sha256(thumbnail) too); here we sign the metadata-only shape
+        to prove the pipeline's identifier + content_hash sign and
+        verify cleanly.
+        """
         from mememage.core import (
             ConceptionState, _step_validate, _step_birth_certificate,
             _step_rarity, _step_identity, _step_build_record,
-            _step_content_hash, _step_sign, _step_signer_setup,
+            _step_content_hash, _step_signer_setup,
         )
-        from mememage.signing import verify
+        from mememage.signing import sign, verify
 
         state = ConceptionState(
             metadata={"prompt": "test", "seed": 42, "width": 1024, "height": 1024},
@@ -145,12 +151,13 @@ class TestSignatureScope(unittest.TestCase):
         # info must be populated before _step_content_hash.
         _step_signer_setup(state)
         _step_content_hash(state)
-        _step_sign(state)
+        sig_result = sign(state.identifier, state.content_hash)
 
-        self.assertIsNotNone(state.signature)
+        self.assertIsNotNone(sig_result)
+        sig_hex = sig_result[0]
         self.assertTrue(verify(
             state.identifier, state.content_hash,
-            state.signature, state.public_key,
+            sig_hex, state.public_key,
         ))
 
     def test_unsigned_record_graceful(self):
@@ -158,8 +165,9 @@ class TestSignatureScope(unittest.TestCase):
         from mememage.core import (
             ConceptionState, _step_validate, _step_birth_certificate,
             _step_rarity, _step_identity, _step_build_record,
-            _step_content_hash, _step_sign,
+            _step_content_hash,
         )
+        from mememage.signing import sign
         os.remove(self.profile_dir / "private.key")
 
         state = ConceptionState(
@@ -174,9 +182,8 @@ class TestSignatureScope(unittest.TestCase):
         state.identifier = "mememage-unsigned123456"
         _step_build_record(state)
         _step_content_hash(state)
-        _step_sign(state)
 
-        self.assertIsNone(state.signature)
+        self.assertIsNone(sign(state.identifier, state.content_hash))
         self.assertNotIn("signature", state.record)
 
     def test_signature_does_not_affect_content_hash(self):

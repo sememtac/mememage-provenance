@@ -29,6 +29,10 @@ from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+# Soul-store paths resolve through chains (never a hardcoded expanduser) so a
+# redirected MEMEMAGE_ROOT — tests, a sandbox — cannot write into the real store.
+from mememage import chains as _chains
+
 from mememage.mint import mint
 from mememage import access as _access
 
@@ -1656,7 +1660,7 @@ def _migrate_records_to_store(chains_root=None, store=None):
     except Exception:
         return
     import shutil as _shutil
-    store = Path(store) if store else Path(os.path.expanduser("~/.mememage/received"))
+    store = Path(store) if store else _chains.received_dir()
     store.mkdir(parents=True, exist_ok=True)
     migrated = 0
     for cdir in root.iterdir():
@@ -1747,9 +1751,9 @@ def _cleanup_stale_part_files(roots=None):
     upload's temp is young, so the age gate never races an in-flight stream.
     """
     if roots is None:
-        roots = [Path(os.path.expanduser("~/.mememage/received"))]
+        from mememage import chains as _chains
+        roots = [_chains.received_dir()]
         try:
-            from mememage import chains as _chains
             if _chains.CHAINS_ROOT.is_dir():
                 roots += [d / "uploads" for d in _chains.CHAINS_ROOT.iterdir() if d.is_dir()]
         except Exception:
@@ -2622,7 +2626,7 @@ class MintHandler(BaseHTTPRequestHandler):
                         cap // (1024 * 1024), self.request_version)
             self._send_json({"error": f"Content-Length missing or over the {cap // (1024*1024)} MiB cap"}, 400)
             return
-        target_dir = Path(os.path.expanduser("~/.mememage/received"))
+        target_dir = _chains.received_dir()
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / filename
         tmp = target.with_name(target.name + ".part")
@@ -2669,7 +2673,7 @@ class MintHandler(BaseHTTPRequestHandler):
                         cap // (1024 * 1024))
             self._send_json({"error": f"Content-Length missing or over the {cap // (1024*1024)} MiB cap"}, 400)
             return
-        target_dir = Path(os.path.expanduser("~/.mememage/received"))
+        target_dir = _chains.received_dir()
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / filename
         tmp = target.with_name(target.name + ".part")
@@ -2714,7 +2718,7 @@ class MintHandler(BaseHTTPRequestHandler):
         except Exception:
             self._send_json({"error": "Body must be UTF-8 JSON"}, 400)
             return
-        target_dir = Path(os.path.expanduser("~/.mememage/received/keychain")) / chain_id
+        target_dir = _chains.keychain_dir() / chain_id
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / filename
         target.write_bytes(body)
@@ -2743,7 +2747,7 @@ class MintHandler(BaseHTTPRequestHandler):
         # Listing case — bare chain_id, no filename
         m_chain = self._KEYCHAIN_CHAIN_RE.match(tail)
         if m_chain:
-            chain_dir = Path(os.path.expanduser("~/.mememage/received/keychain")) / tail
+            chain_dir = _chains.keychain_dir() / tail
             files = []
             if chain_dir.is_dir():
                 for f in sorted(chain_dir.iterdir()):
@@ -2768,7 +2772,7 @@ class MintHandler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         chain_id, filename = m.group(1), m.group(2)
-        path = Path(os.path.expanduser("~/.mememage/received/keychain")) / chain_id / filename
+        path = _chains.keychain_dir() / chain_id / filename
         if not path.is_file():
             self.send_error(404)
             return
@@ -2872,7 +2876,7 @@ class MintHandler(BaseHTTPRequestHandler):
             limit = 500
         # Glob translation — only "*" wildcards matter for our identifiers.
         import fnmatch
-        received = Path(os.path.expanduser("~/.mememage/received"))
+        received = _chains.received_dir()
         items = []
         if received.is_dir():
             for entry in sorted(received.iterdir()):
@@ -2923,7 +2927,7 @@ class MintHandler(BaseHTTPRequestHandler):
             self._send_json({"error": "Invalid filename"}, 400)
             return
         identifier = m.group(1)
-        received = Path(os.path.expanduser("~/.mememage/received"))
+        received = _chains.received_dir()
         deleted = 0
         # Both .soul and .json (the CORS-friendly mirror IA-style flows
         # use) are scrubbed in one call.
@@ -2956,7 +2960,7 @@ class MintHandler(BaseHTTPRequestHandler):
         if not m:
             self.send_error(404)
             return
-        path = Path(os.path.expanduser("~/.mememage/received")) / filename
+        path = _chains.received_dir() / filename
         if not path.is_file():
             self.send_error(404)
             return
@@ -5541,7 +5545,7 @@ class MintHandler(BaseHTTPRequestHandler):
             if fp:
                 fp_to_id[fp.replace(":", "")] = p["id"]
 
-        keychain_root = Path(os.path.expanduser("~/.mememage/received/keychain"))
+        keychain_root = _chains.keychain_dir()
         alias_pat = re.compile(r"^alias-([0-9a-f]{16})\.json$")
         for p in profile_list:
             p["aliases"] = []

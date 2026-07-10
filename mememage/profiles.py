@@ -478,7 +478,8 @@ def remove(profile_id: str) -> dict:
     # any verifier walking IA still finds the alias — only the local
     # view is reconciled with the user's intent.
     if fp_clean:
-        received_root = Path(os.path.expanduser("~/.mememage/received/keychain"))
+        from mememage import chains as _chains
+        received_root = _chains.keychain_dir()
         if received_root.is_dir():
             removed_chain = received_root / f"mememage-keychain-{fp_clean}"
             if removed_chain.is_dir():

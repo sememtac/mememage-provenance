@@ -51,7 +51,11 @@ class TestFeedImageBlast(unittest.TestCase):
             daemon=True).start()
         assert _wait_health(cls.base), "test server never came up"
         cls.token = S._load_mint_token()
-        cls.rdir = os.path.expanduser("~/.mememage/received")
+        # Resolve the soul store the same way the code under test does, rather
+        # than hardcoding ~/.mememage/received — that hardcoded path wrote test
+        # souls and PNGs into the operator's REAL store (see tests/conftest.py).
+        from mememage.core import soul_store_dir
+        cls.rdir = str(soul_store_dir())
 
     @classmethod
     def tearDownClass(cls):

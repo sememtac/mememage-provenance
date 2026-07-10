@@ -243,11 +243,32 @@ function extractBitsAtScale(px,w,h,scale,ppb,thr){
 // into the data: asym camo data pixels can be cyan-hued and would extend the run
 // past the true edge. mag_start (image edge) and cyan_start (bounded by yellow)
 // never touch data, and span exactly two band widths. Mirrors bar.py.
-function findHeaderEnd(px,w,y){
+// Two predicate passes: the strict absolute cutoffs, then a SOFT fallback that
+// classifies a band pixel by channel ORDERING (relative dominance) instead.
+// JPEG 4:2:0 chroma subsampling smears a downscaled band's colour toward its
+// neighbours: at 0.5x the 8px bands are 4px, and a pixel like (241,233,122)
+// fails the strict yellow test (b<120) by 2 while still being unmistakably
+// yellow by ordering (r-b=119, g-b=111). Subsampling shifts a pixel's chroma
+// together, so it cannot reorder the channels until the band is blended away.
+// Strict runs first, so a pristine image resolves exactly as before at zero
+// cost; a soft false anchor is rejected downstream by the frame's magic +
+// CRC-16 + Reed-Solomon checks, making this a strict decode-side superset.
+// Mirrors bar.py:_BAND_PREDICATE_PASSES / _is_*_soft.
+var SOFT_DOMINANCE=40;
+var BAND_PREDICATE_PASSES=[
+  {m:function(c){return c[0]>130&&c[1]<120&&c[2]>130;},
+   y:function(c){return c[0]>130&&c[1]>130&&c[2]<120;},
+   c:function(c){return c[0]<120&&c[1]>130&&c[2]>130;}},
+  {m:function(c){return c[0]-c[1]>SOFT_DOMINANCE&&c[2]-c[1]>SOFT_DOMINANCE;},
+   y:function(c){return c[0]-c[2]>SOFT_DOMINANCE&&c[1]-c[2]>SOFT_DOMINANCE;},
+   c:function(c){return c[1]-c[0]>SOFT_DOMINANCE&&c[2]-c[0]>SOFT_DOMINANCE;}}
+];
+
+function findHeaderEndWith(px,w,y,p){
   function rgb(x){var i=(y*w+x)*4;return [px[i],px[i+1],px[i+2]];}
-  function isM(x){var c=rgb(x);return c[0]>130&&c[1]<120&&c[2]>130;}
-  function isY(x){var c=rgb(x);return c[0]>130&&c[1]>130&&c[2]<120;}
-  function isC(x){var c=rgb(x);return c[0]<120&&c[1]>130&&c[2]>130;}
+  function isM(x){return p.m(rgb(x));}
+  function isY(x){return p.y(rgb(x));}
+  function isC(x){return p.c(rgb(x));}
   var x=0,nm=0,ny=0,nc=0;
   while(x<w&&x<40&&!isM(x))x++;
   var magStart=x;
@@ -261,11 +282,18 @@ function findHeaderEnd(px,w,y){
   var bandWidth=(cyanStart-magStart)/2.0;
   return pyRound(cyanStart+bandWidth);
 }
-function findFooterStart(px,w,y){
+function findHeaderEnd(px,w,y){
+  for(var i=0;i<BAND_PREDICATE_PASSES.length;i++){
+    var r=findHeaderEndWith(px,w,y,BAND_PREDICATE_PASSES[i]);
+    if(r!==null)return r;
+  }
+  return null;
+}
+function findFooterStartWith(px,w,y,p){
   function rgb(x){var i=(y*w+x)*4;return [px[i],px[i+1],px[i+2]];}
-  function isM(x){var c=rgb(x);return c[0]>130&&c[1]<120&&c[2]>130;}
-  function isY(x){var c=rgb(x);return c[0]>130&&c[1]>130&&c[2]<120;}
-  function isC(x){var c=rgb(x);return c[0]<120&&c[1]>130&&c[2]>130;}
+  function isM(x){return p.m(rgb(x));}
+  function isY(x){return p.y(rgb(x));}
+  function isC(x){return p.c(rgb(x));}
   var x=w-1,nm=0,ny=0,nc=0;
   while(x>=0&&x>w-40&&!isM(x))x--;
   var magStart=x;
@@ -278,6 +306,13 @@ function findFooterStart(px,w,y){
   if(nm<2||ny<2||nc<2)return null;
   var bandWidth=(magStart-cyanStart)/2.0;
   return pyRound(cyanStart-bandWidth)+1;
+}
+function findFooterStart(px,w,y){
+  for(var i=0;i<BAND_PREDICATE_PASSES.length;i++){
+    var r=findFooterStartWith(px,w,y,BAND_PREDICATE_PASSES[i]);
+    if(r!==null)return r;
+  }
+  return null;
 }
 
 // High-res even-fill decode. Mirrors mememage/bar.py:_decode_even_fill.

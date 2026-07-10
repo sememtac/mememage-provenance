@@ -46,6 +46,24 @@ from pathlib import Path
 
 MEMEMAGE_ROOT = Path.home() / ".mememage"
 CHAINS_ROOT = MEMEMAGE_ROOT / "chains"
+
+
+def received_dir() -> Path:
+    """The single flat soul store: ``<MEMEMAGE_ROOT>/received``.
+
+    Resolved from ``MEMEMAGE_ROOT`` at call time, NOT via a hardcoded
+    ``expanduser("~/.mememage/received")``. A hardcoded path ignores a
+    redirected root, so the test suite wrote souls (and a polluted chunk
+    counter) straight into the operator's live chain. Lives here, in the
+    lowest layer, because ``signing`` and ``profiles`` cannot import ``core``
+    (core imports signing). ``core.soul_store_dir()`` delegates to this.
+    """
+    return MEMEMAGE_ROOT / "received"
+
+
+def keychain_dir() -> Path:
+    """``<MEMEMAGE_ROOT>/received/keychain`` — same reasoning as received_dir."""
+    return received_dir() / "keychain"
 CURRENT_CHAIN_FILE = MEMEMAGE_ROOT / "current_chain"
 
 # ---------------------------------------------------------------------------
@@ -855,7 +873,7 @@ def reset_state(chain_id: str, *, clear_records: bool = False,
         # are caught together; this is an explicit destructive flag.) Published
         # copies on remote surfaces are untouched — use the cleanup tool.
         prefix = get_identifier_prefix(chain_id)
-        store = Path(os.path.expanduser("~/.mememage/received"))
+        store = received_dir()
         purged = 0
         if store.is_dir():
             for p in store.glob(f"{prefix}-*.soul"):

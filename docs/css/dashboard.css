@@ -1240,57 +1240,9 @@ html[data-fs-pick="none"] [data-fs-browse] { display: none !important; }
   color: rgba(0, 0, 0, 0.55);
   font-size: 0.66rem;
 }
-.mint-result-channels-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.mint-result-channel {
-  display: grid;
-  grid-template-columns: 1rem 5rem 1fr;
-  gap: 0.4rem;
-  align-items: baseline;
-  line-height: 1.3;
-  min-width: 0;  /* let the URL column shrink + ellipsize */
-}
-.mint-result-channel-status {
-  font-weight: 700;
-  text-align: center;
-}
-.mint-result-channel-ok .mint-result-channel-status { color: #2c8a3a; }
-.mint-result-channel-fail .mint-result-channel-status { color: #b04040; }
-.mint-result-channel-id {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.75);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mint-result-channel-url,
-.mint-result-channel-err {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-.mint-result-channel-url {
-  color: rgba(0, 0, 0, 0.7);
-  text-decoration: underline;
-  text-decoration-color: rgba(0, 0, 0, 0.3);
-}
-.mint-result-channel-url:hover {
-  color: rgba(0, 0, 0, 0.95);
-  text-decoration-color: rgba(0, 0, 0, 0.6);
-}
-.mint-result-channel-err {
-  color: #8a3030;
-  cursor: help;
-}
+/* The surface rows themselves are the shared Surfaces component
+   (docs/js/surfaces.js + .surfaces-* in mememage.css). This wrapper just
+   holds its section head; the light dashboard uses the component defaults. */
 
 /* Conceived image in the result view (mirrors the conception page). */
 .mint-result-image-wrap {

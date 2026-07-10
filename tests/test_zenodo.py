@@ -97,7 +97,6 @@ class TestZenodoNonFatal(unittest.TestCase):
         "temperament": "calm", "traits": [], "trait_codes": [], "readings": {}, "summary": "ok"
     })
     @patch("mememage.core.get_current_chunk", return_value=None)
-    @patch("mememage.core.generate_thumbnail", return_value=None)
     @patch("mememage.core.set_parent_id")
     @patch("mememage.core.advance_chunk_index")
     # IA succeeds, Zenodo fails — mint should still succeed.
