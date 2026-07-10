@@ -1,5 +1,6 @@
 """Tests for mememage.mint — mint orchestrator."""
 
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch, ANY
@@ -8,6 +9,15 @@ from PIL import Image
 
 from mememage.bar import extract_bar
 from mememage.mint import MintResult, mint
+
+# `mememage/__init__.py` does `from mememage.mint import mint`, so the name
+# `mememage.mint` on the PACKAGE resolves to the FUNCTION, shadowing the
+# submodule. mock's dotted-string resolution walks that attribute chain, and
+# how it recovers changed after 3.11 — so `patch("mememage.mint.upload_metadata")`
+# works on 3.12+ and raises `AttributeError: <function mint> does not have the
+# attribute 'upload_metadata'` on 3.10/3.11 (it had CI red on both). Patch the
+# module object straight out of sys.modules instead: unambiguous everywhere.
+_MINT_MODULE = sys.modules["mememage.mint"]
 
 
 def _make_test_image(width=1024, height=768):
@@ -19,7 +29,7 @@ def _make_test_image(width=1024, height=768):
 
 
 class TestMint(unittest.TestCase):
-    @patch("mememage.mint.upload_metadata", return_value=("mememage-0001000000000001", "aabbccdd11223344", None, None))
+    @patch.object(_MINT_MODULE, "upload_metadata", return_value=("mememage-0001000000000001", "aabbccdd11223344", None, None))
     def test_mint_returns_result(self, _upload):
         path = _make_test_image()
         meta = {"prompt": "test", "seed": 1, "width": 1024, "height": 768}
@@ -33,7 +43,7 @@ class TestMint(unittest.TestCase):
         self.assertIn(".soul", result.url)
         self.assertEqual(result.image_path, path)
 
-    @patch("mememage.mint.upload_metadata")
+    @patch.object(_MINT_MODULE, "upload_metadata")
     def test_mint_encodes_bar(self, _upload):
         """Minted image should have a readable bar.
 
@@ -61,7 +71,7 @@ class TestMint(unittest.TestCase):
         self.assertEqual(bar[0], result.identifier)
         self.assertEqual(bar[1], result.content_hash)
 
-    @patch("mememage.mint.upload_metadata", return_value=("mememage-0003000000000003", "ffff0000aaaa1111", None, None))
+    @patch.object(_MINT_MODULE, "upload_metadata", return_value=("mememage-0003000000000003", "ffff0000aaaa1111", None, None))
     def test_mint_passes_gps_to_upload(self, mock_upload):
         # Isolate from any password the user's real chain config /
         # .env might supply — mint() now routes through
@@ -90,7 +100,7 @@ class TestMint(unittest.TestCase):
         meta = {"prompt": "no gps", "seed": 1, "width": 512, "height": 512}
 
         with patch("mememage.chains.resolve_password", return_value=None), \
-             patch("mememage.mint.upload_metadata") as mock_upload:
+             patch.object(_MINT_MODULE, "upload_metadata") as mock_upload:
             mock_upload.return_value = ("mememage-abc123", "deadbeefcafe1234", None, None)
             mint(meta, gps=None, image_path=path)
             mock_upload.assert_called_once_with(
@@ -128,7 +138,7 @@ class TestPatchRecord(unittest.TestCase):
 
             # Mock chains.path to return our temp records dir
             from pathlib import Path
-            with patch("mememage.mint.soul_store_dir", return_value=Path(records_dir)), \
+            with patch.object(_MINT_MODULE, "soul_store_dir", return_value=Path(records_dir)), \
                  patch("mememage.core.soul_store_dir", return_value=Path(records_dir)), \
                  patch("mememage.channels.load_channels", return_value=[]), \
                  patch("mememage.channels.blast",
@@ -155,7 +165,7 @@ class TestPatchRecord(unittest.TestCase):
                 json.dump({"identifier": ident}, f)
 
             from pathlib import Path
-            with patch("mememage.mint.soul_store_dir", return_value=Path(records_dir)), \
+            with patch.object(_MINT_MODULE, "soul_store_dir", return_value=Path(records_dir)), \
                  patch("mememage.core.soul_store_dir", return_value=Path(records_dir)), \
                  patch("mememage.channels.load_channels", return_value=[]), \
                  patch("mememage.channels.blast", return_value={}) as mock_blast, \

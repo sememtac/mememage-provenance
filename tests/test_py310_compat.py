@@ -15,6 +15,7 @@ which is the failure we're preventing).
 
 import ast
 import pathlib
+import sys
 import unittest
 
 PKG = pathlib.Path(__file__).resolve().parent.parent / "mememage"
@@ -36,6 +37,15 @@ def _fstring_backslash_offenders():
     return offenders
 
 
+# On 3.10/3.11 an ``ast.FormattedValue`` inherits the enclosing JoinedStr's
+# position, so ``get_source_segment`` hands back the WHOLE f-string literal —
+# any backslash in the literal part (``\u2713``, ``\n``) then reads as a
+# backslash "inside the expression" and the guard cries wolf. Precise
+# FormattedValue positions arrive with PEP 701 in 3.12. The module docstring
+# already says this check "runs on any Python >= 3.12"; enforce that, rather
+# than failing every 3.10/3.11 CI job on a false positive.
+@unittest.skipIf(sys.version_info < (3, 12),
+                 "FormattedValue source positions are imprecise before 3.12")
 class TestPy310FStringCompat(unittest.TestCase):
     def test_no_backslash_in_fstring_expression(self):
         offenders = _fstring_backslash_offenders()

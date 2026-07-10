@@ -199,20 +199,34 @@ class TestBlast(unittest.TestCase):
 
     @patch.dict(os.environ, {"FAKE_TRACED_OK_KEY": "yes"})
     def test_phase_2_runs_in_parallel(self):
-        # Two phase-2 channels each sleep 50ms. If serialized total ≥
-        # 100ms; if parallelized total ≈ 50ms + executor overhead.
-        # Use 80ms as the threshold — generous enough to absorb thread
-        # scheduling on a busy CI box without losing signal.
-        _BLAST_TRACE.clear()
-        a = _build("_fake_traced_ok", id="par-a")
-        b = _build("_fake_traced_ok", id="par-b")
+        # Each phase-2 channel sleeps 50ms. Serialized => ~2x one channel;
+        # parallelized => ~1x plus executor overhead.
+        #
+        # Measure the RATIO against a single-channel baseline rather than an
+        # absolute wall-clock bound. A shared CI runner inflates every timing
+        # together (the old `< 80ms` bound saw 194ms on a loaded macOS box and
+        # failed a correctly-parallel blast), but it cannot inflate one leg
+        # without inflating the other, so the ratio keeps the signal.
         import time as _t
-        t0 = _t.monotonic()
-        results = blast([a, b], "mememage-test1234", b"{}")
-        elapsed = _t.monotonic() - t0
+
+        def _timed(channels, ident):
+            _BLAST_TRACE.clear()
+            t0 = _t.monotonic()
+            res = blast(channels, ident, b"{}")
+            return _t.monotonic() - t0, res
+
+        solo, _ = _timed([_build("_fake_traced_ok", id="par-solo")],
+                         "mememage-test1234")
+        pair, results = _timed([_build("_fake_traced_ok", id="par-a"),
+                                _build("_fake_traced_ok", id="par-b")],
+                               "mememage-test1234")
+
         self.assertEqual(set(results.keys()), {"par-a", "par-b"})
-        self.assertLess(elapsed, 0.08,
-                        f"Expected parallel execution under 80ms, took {elapsed*1000:.1f}ms")
+        # Serial would be ~2.0x solo. Anything under 1.8x means they overlapped.
+        self.assertLess(pair, solo * 1.8,
+                        f"Expected parallel execution: two channels took "
+                        f"{pair*1000:.1f}ms vs {solo*1000:.1f}ms for one "
+                        f"({pair/solo:.2f}x; serial would be ~2x)")
 
     def test_unconfigured_channels_skipped(self):
         # No env vars set → is_configured() returns False → blast
