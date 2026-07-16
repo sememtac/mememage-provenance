@@ -59,6 +59,10 @@ dev = [
     "pillow-heif>=0.16",
     "qrcode>=7.4",
     "playwright>=1.40",
+    # `mint`/`desktop` ship certifi, so the tests that pin default_https_context
+    # to a real validating context only pass where it's installed. Without it
+    # here, CI exercised the certifi-missing fallback instead of the shipped path.
+    "certifi",
 ]
 
 [tool.setuptools.packages.find]
