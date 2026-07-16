@@ -186,11 +186,14 @@ def cmd_decode(args):
 
     if args.json:
         print(_json.dumps({"identifier": bar.identifier, "content_hash": bar.content_hash,
-                           "match": bool(v), "reason": v.reason}))
+                           "match": bool(v), "supported": v.supported, "reason": v.reason}))
         sys.exit(0 if v else 1)
 
     print(f"Bar:  {bar.identifier}")
     print(f"Hash: {bar.content_hash}")
+    if not v.supported:
+        print(f"UNSUPPORTED — {v.reason}")
+        sys.exit(3)
     if v:
         print("VERIFIED — record matches the image")
         if record.get("encrypted_fields"):

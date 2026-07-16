@@ -257,10 +257,11 @@ async function resolveMetadata(identifier, contentHash) {
       if (!resp.ok) continue;
       var record = await resp.json();
       if (!record || typeof record !== 'object') continue;
-      // V1 records keep gen params under `origin`; fall back to flat
-      // fields for legacy records. "Has origin metadata" is the marker.
+      // Accept any Mememage record — content_hash is the marker. Don't require
+      // prompt/seed: Mememage is provenance for ANY image, not just AI-gen
+      // (matches fetchFromSource). prompt/seed kept only as legacy fallbacks.
       var _ro = record.origin || {};
-      if (!_ro.prompt && !_ro.seed && !record.prompt && !record.seed) continue;
+      if (!_ro.prompt && !_ro.seed && !record.prompt && !record.seed && !record.content_hash) continue;
 
       if (contentHash) {
         var computed = await computeContentHash(record);
@@ -287,7 +288,7 @@ async function resolveMetadata(identifier, contentHash) {
               var fResp = await _fetchTimeout('https://archive.org/download/' + identifier + '/' + fname + '?t=' + Date.now(), {cache: 'no-store'}, 5000);
               if (!fResp.ok) continue;
               var fRecord = await fResp.json();
-              if (fRecord && (fRecord.prompt || fRecord.seed)) {
+              if (fRecord && (fRecord.content_hash || fRecord.prompt || fRecord.seed)) {
                 if (contentHash) {
                   var fComputed = await computeContentHash(fRecord);
                   if (fComputed && fComputed !== contentHash) continue;

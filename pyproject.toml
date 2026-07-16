@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mememage-provenance"
-version = "0.1.4"
+version = "0.1.5"
 description = "Self-hostable image provenance built on mememage — stamp images with a tamper-evident bar, keep verifiable records, and run your own decoder, validator, and mint server"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,7 +37,10 @@ thumbnails = ["Pillow>=10.0"]
 # `qrcode` powers the GPS-capture mint page's phone-handoff QR. Lives
 # in `mint` because that's the install set that gates the running
 # server (the validator/decoder don't need it).
-mint = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4"]
+# `certifi`: validate outbound HTTPS (IA / souls / channels) against Mozilla's
+# current roots instead of a possibly-stale OS trust store, which on fresh
+# Windows machines fails valid Let's Encrypt certs as "certificate has expired".
+mint = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4", "certifi"]
 # `encrypt` = core field encryption (encode(password=…) / unlock). Same dep as
 # `sign`; named for what core uses cryptography for (signing is a provenance layer).
 encrypt = ["cryptography>=41.0"]
@@ -47,7 +50,7 @@ heic = ["Pillow>=10.0", "pillow-heif>=0.16"]
 # plus the tray/menu-bar UI and the bundler. `pystray` drives the tray on
 # Windows/macOS/Linux from one menu (macOS also pulls pyobjc transitively).
 # Build with: python tools/build_app.py
-desktop = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4", "cryptography>=41.0", "pillow-heif>=0.16", "pystray>=0.19", "pyinstaller>=6.0"]
+desktop = ["Pillow>=10.0", "numpy>=1.24", "qrcode>=7.4", "cryptography>=41.0", "pillow-heif>=0.16", "pystray>=0.19", "pyinstaller>=6.0", "certifi"]
 dev = [
     "pytest>=7.0",
     "Pillow>=10.0",

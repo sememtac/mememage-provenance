@@ -1,6 +1,8 @@
-"""Shared network helpers — retry with exponential backoff."""
+"""Shared network helpers — retry with exponential backoff, plus a robust
+default TLS context so HTTPS validation doesn't depend on a stale OS trust store."""
 
 import json
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -13,6 +15,33 @@ MAX_RETRIES = 3
 BASE_DELAY = 1.0  # seconds
 BACKOFF_FACTOR = 2.0
 
+_HTTPS_CTX = None
+
+
+def default_https_context():
+    """A TLS context that validates HTTPS against certifi's current CA bundle.
+
+    Python validates HTTPS against the OS trust store; on Windows especially, a
+    fresh or un-updated machine has a stale store, and OpenSSL path-builds
+    through an old expired root — so a perfectly valid Let's Encrypt cert fails
+    as "certificate has expired" and every mint blast / record fetch dies with a
+    cryptic error the user can't fix without terminal surgery. certifi ships
+    Mozilla's current roots (a dependency of the mint/desktop extras), so
+    validating against it works out of the box on any machine, no env var.
+
+    Verification is never disabled here — a self-signed peer passes its own
+    ``CERT_NONE`` context explicitly and never routes through this. Falls back to
+    urllib's default (return ``None``) if certifi somehow isn't importable, so
+    there's no regression. Cached: built once, reused."""
+    global _HTTPS_CTX
+    if _HTTPS_CTX is None:
+        try:
+            import certifi
+            _HTTPS_CTX = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            _HTTPS_CTX = False   # sentinel → fall back to urllib's default context
+    return _HTTPS_CTX or None
+
 
 def urlopen_with_retry(req, *, max_retries=MAX_RETRIES, base_delay=BASE_DELAY,
                         timeout=60, context=None):
@@ -22,11 +51,16 @@ def urlopen_with_retry(req, *, max_retries=MAX_RETRIES, base_delay=BASE_DELAY,
         context: Optional ``ssl.SSLContext``. When set, used for HTTPS
             verification — needed by channels pushing to self-signed
             peers (the http_push channel passes a no-verify context
-            when its ``verify_tls`` config is False).
+            when its ``verify_tls`` config is False). When ``None`` (the
+            default), HTTPS validates against certifi's current roots via
+            :func:`default_https_context` rather than the (possibly stale)
+            OS trust store.
 
     Returns the response body as bytes.
     Raises RuntimeError on permanent failure.
     """
+    if context is None:
+        context = default_https_context()
     last_exc = None
     for attempt in range(max_retries + 1):
         try:

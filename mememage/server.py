@@ -911,11 +911,160 @@ def _catalog_eligible(s):
     return ip
 
 
+# ---------------------------------------------------------------------------
+# Feed source — generalized (local, ephemeral) vs. IA-backed (permanent wall).
+#
+# The default feed is the local sessions + blasted images, culled with the
+# image (see _public_feed). That's the right generalized behaviour: a surface
+# shows what it recently conceived and cycles itself, so it never grows without
+# bound and needs no external dependency.
+#
+# But a creator who anchors their canonical chain on the Internet Archive has
+# a permanent, public copy of every light-energy image that never goes away.
+# For that surface, `server.json` may set:
+#
+#     "feed": { "source": "ia", "prefix": "mememage" }
+#
+# and the feed becomes a permanent wall of that chain: enumerated from IA
+# (so it survives a local cull), filtered to the operator's OWN living chain
+# (so the namespace's dev/test husks don't leak onto the wall), images served
+# straight from IA. `prefix` defaults to the active chain's identifier prefix.
+# ---------------------------------------------------------------------------
+
+_IA_DOWNLOAD = "https://archive.org/download"
+_ia_feed_cache = {"at": 0.0, "items": None}   # (timestamp, [{identifier, position}])
+# The wall is enumerated from the LOCAL living chain (below), which has a new
+# star the instant its soul is blasted in — so a fresh mint appears right away
+# rather than waiting on IA's search index. The cache is a short load-shield
+# only (the chain walk parses every soul), and it's cleared outright the moment
+# a new image lands (see _receive_image), so "instant" holds even under it.
+_IA_FEED_TTL = 30  # seconds
+
+
+def _feed_source():
+    """Return (source, prefix). source is "ia" only when server.json opts in;
+    otherwise "local" (the default ephemeral feed)."""
+    cfg = _get_server_config().get("feed") or {}
+    if not isinstance(cfg, dict) or cfg.get("source") != "ia":
+        return ("local", None)
+    prefix = cfg.get("prefix")
+    if not prefix:
+        try:
+            from mememage import chains
+            prefix = chains.get_identifier_prefix()
+        except Exception:
+            prefix = "mememage"
+    return ("ia", prefix)
+
+
+def _invalidate_ia_feed():
+    """Drop the wall cache so the next request re-walks the chain. Called when a
+    new image lands (a fresh conception blasted in) so the operator's own new
+    star shows on the wall immediately, not after the cache TTL."""
+    _ia_feed_cache["items"] = None
+
+
+def _living_chain_positions():
+    """Map ``{identifier: outer_position}`` for the operator's OWN light-energy
+    chain. Two jobs: the membership filter that keeps the namespace's dev/test
+    husks off the wall (dark-matter is excluded here too — its image is never
+    on IA), AND the authoritative ORDER. outer_position is the lineage sequence
+    (genesis = 0), so sorting by it is correct by construction — unlike IA's
+    addeddate, which only *happens* to match while uploads stay sequential and
+    would misplace a tile if an item were ever deleted-and-recreated on IA."""
+    try:
+        from mememage import site_embed
+        return {
+            r["identifier"]: int(r.get("outer_position") or 0)
+            for r in site_embed.walk_living_chain()
+            if int(r.get("chain_visibility", 0) or 0) == 0
+        }
+    except Exception as e:
+        log.warning("living-chain walk for feed failed (%s): %s", type(e).__name__, e)
+        return {}
+
+
+def _ia_feed_items(prefix=None):
+    """The permanent IA wall, newest-first.
+
+    Enumerated from the operator's OWN living chain (walk_living_chain), NOT
+    from IA's search index: the local walk has a new star the instant its soul
+    is blasted in, so a fresh mint appears immediately, whereas IA's index lags
+    a conception by minutes. Husk-free by construction (the walk follows the
+    lineage) and dark-matter-free (light-energy filter in _living_chain_
+    positions). Images still come from IA — permanent — via the thumb/full
+    endpoints. Ordered by chain position (outer_position desc, genesis last),
+    which is the authoritative sequence. Short-cached; cleared on a new image
+    (see _receive_image / _invalidate_ia_feed)."""
+    now = time.time()
+    if _ia_feed_cache["items"] is not None and (now - _ia_feed_cache["at"]) < _IA_FEED_TTL:
+        return _ia_feed_cache["items"]
+    positions = _living_chain_positions()
+    items = [{"identifier": ident, "position": pos} for ident, pos in positions.items()]
+    items.sort(key=lambda x: x["position"], reverse=True)
+    _ia_feed_cache["at"] = now
+    _ia_feed_cache["items"] = items
+    return items
+
+
+def _ia_feed_member(identifier):
+    """True if ``identifier`` is in the current IA wall. The thumb/full
+    endpoints serve/redirect by identifier, so this gates which identifiers are
+    allowed — only the operator's own chain members, never an arbitrary
+    archive.org item passed in the URL."""
+    _s, prefix = _feed_source()
+    return any(it["identifier"] == identifier for it in _ia_feed_items(prefix))
+
+
+def _ia_feed_thumb_bytes(identifier):
+    """A CRISP 460px tile for the IA wall (not IA's tiny auto-thumbnail).
+
+    Prefers the local image the VPS already holds (received/<id>.png) so the
+    tile is the same quality the feed always produced; if that image is gone,
+    fetches the permanent IA copy once and thumbnails that. Cached by
+    identifier inside _feed_thumb_bytes. Returns None on failure (graceful
+    tile degradation)."""
+    ip = _feed_image_path(identifier)
+    if ip:
+        return _feed_thumb_bytes(identifier, ip)
+    # Local image culled — fall back to the permanent IA PNG, fetched once.
+    if identifier in _feed_thumb_cache:
+        return _feed_thumb_cache[identifier]
+    import tempfile
+    import urllib.request
+    url = f"{_IA_DOWNLOAD}/{identifier}/{identifier}.png"
+    tmp = None
+    try:
+        from mememage import net
+        with urllib.request.urlopen(url, timeout=20, context=net.default_https_context()) as resp:
+            blob = resp.read()
+        fd, tmp = tempfile.mkstemp(suffix=".png")
+        with os.fdopen(fd, "wb") as f:
+            f.write(blob)
+        return _feed_thumb_bytes(identifier, tmp)
+    except Exception as e:
+        log.warning("IA thumb fetch failed for %s (%s): %s",
+                    identifier, type(e).__name__, e)
+        return None
+    finally:
+        if tmp:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
 def _public_feed():
     """Recent public conceptions for the catalog — newest-first, identifier ONLY
-    (the session token never leaves). See _catalog_eligible for what qualifies;
-    inherently live + ephemeral (drops off when the image culls or the soul is
-    removed)."""
+    (the session token never leaves).
+
+    Two sources (see _feed_source): the IA-backed permanent wall when the
+    surface opts in, else the default local + blasted feed described below,
+    which is inherently live + ephemeral (drops off when the image culls or
+    the soul is removed)."""
+    source, prefix = _feed_source()
+    if source == "ia":
+        return _ia_feed_items(prefix)
     items = []
     seen = set()
     for _tok, s in list(_sessions.items()):
@@ -2690,6 +2839,9 @@ class MintHandler(BaseHTTPRequestHandler):
         tmp.replace(target)
         # New image → its feed thumbnail must be recomputed, not served stale.
         _feed_thumb_cache.pop(m.group(1), None)
+        # …and the wall must re-enumerate so this fresh conception shows now,
+        # not after the cache TTL (IA-backed feed). No-op for the local feed.
+        _invalidate_ia_feed()
         log.info("Received feed image %s (%d bytes, streamed)", filename, written)
         self._send_json({"ok": True, "stored_at": str(target)})
 
@@ -2819,10 +2971,38 @@ class MintHandler(BaseHTTPRequestHandler):
             "total": len(full),
         })
 
+    def _redirect(self, url, code=302):
+        """A bare 302 to ``url`` — used to hand feed image requests off to IA's
+        permanent copies instead of serving bytes from this box."""
+        self.send_response(code)
+        self.send_header("Location", url)
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+
     def _feed_thumb(self, identifier):
-        """GET /api/feed/thumb/<identifier> — JPEG thumbnail of the conceived
-        image. Public; resolves identifier→minted-image internally so the token
-        is never exposed. 404 once the conception is culled (image gone)."""
+        """GET /api/feed/thumb/<identifier> — crisp JPEG thumbnail of the
+        conceived image. Public; resolves identifier→minted-image internally so
+        the token is never exposed. 404 once the conception is culled (image
+        gone).
+
+        On an IA-backed feed the tile is still generated at full crispness
+        (460px LANCZOS), NOT IA's tiny ~180px auto-thumbnail — from the local
+        image the VPS already holds, falling back to a one-time fetch of the
+        permanent IA copy if the local image is gone. Only the full-size
+        lightbox image (_feed_full) is handed off to IA."""
+        if _feed_source()[0] == "ia":
+            if not _ia_feed_member(identifier):
+                return self.send_error(404)
+            data = _ia_feed_thumb_bytes(identifier)
+            if not data:
+                return self.send_error(404)
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         ip = _feed_image_path(identifier)
         data = _feed_thumb_bytes(identifier, ip) if ip else None
         if not data:
@@ -2837,7 +3017,11 @@ class MintHandler(BaseHTTPRequestHandler):
     def _feed_full(self, identifier):
         """GET /api/feed/full/<identifier> — the full-resolution conceived image,
         for the catalog lightbox. Same public/light, soul-present gate as the
-        thumbnail. The minted image is PNG (bar embedded in place)."""
+        thumbnail. The minted image is PNG (bar embedded in place).
+
+        IA-backed feed: redirect to the permanent PNG on the Archive."""
+        if _feed_source()[0] == "ia" and _ia_feed_member(identifier):
+            return self._redirect(f"{_IA_DOWNLOAD}/{identifier}/{identifier}.png")
         ip = _feed_image_path(identifier)
         if not ip:
             return self.send_error(404)
@@ -5852,7 +6036,8 @@ class MintHandler(BaseHTTPRequestHandler):
                 "Authorization": f"Bearer {peer_token}" if peer_token else "",
             },
         )
-        ctx = None
+        from mememage import net
+        ctx = net.default_https_context()      # certifi roots, not the stale OS store
         if accept_self_signed:
             import ssl as _ssl
             ctx = _ssl.create_default_context()
@@ -6278,7 +6463,8 @@ class MintHandler(BaseHTTPRequestHandler):
                 "Authorization": f"Bearer {peer_token}" if peer_token else "",
             },
         )
-        ctx = None
+        from mememage import net
+        ctx = net.default_https_context()      # certifi roots, not the stale OS store
         if accept_self_signed:
             import ssl as _ssl
             ctx = _ssl.create_default_context()

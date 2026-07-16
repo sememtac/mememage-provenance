@@ -480,7 +480,8 @@ def _identifier_exists(identifier: str) -> bool:
     url = f"{IA_METADATA_URL}/{identifier}"
     req = urllib.request.Request(url, method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        from mememage import net
+        with urllib.request.urlopen(req, timeout=10, context=net.default_https_context()) as resp:
             body = resp.read()
         try:
             data = json.loads(body) if body else {}

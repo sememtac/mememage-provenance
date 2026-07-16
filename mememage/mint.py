@@ -91,7 +91,8 @@ def _patch_record(identifier, content_hash, patch):
         for ext in ("json", "soul"):
             url = f"{IA_DOWNLOAD_URL}/{identifier}/{identifier}.{ext}"
             try:
-                resp = urllib.request.urlopen(url)
+                from mememage import net
+                resp = urllib.request.urlopen(url, context=net.default_https_context())
                 record = json.loads(resp.read().decode("utf-8"))
                 break
             except Exception:

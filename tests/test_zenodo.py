@@ -103,15 +103,20 @@ class TestZenodoNonFatal(unittest.TestCase):
     @patch("mememage.zenodo.upload_to_zenodo", side_effect=RuntimeError("Zenodo down"))
     @patch("mememage.channels.internet_archive.urlopen_with_retry", return_value=b"")
     def test_upload_succeeds_despite_one_channel_failure(self, mock_ia, mock_zen, *mocks):
-        # Force-enable both channels for this test so Zenodo actually
-        # runs and can fail. Default channels.json has Zenodo disabled.
+        # Enable BOTH channels explicitly so the test is self-contained: IA
+        # succeeds (its urlopen is mocked), Zenodo fails (mocked to raise), and
+        # the mint still succeeds because at least one channel landed. The
+        # default set has both DISABLED — this test used to pass only because
+        # it read the operator's real profile (where IA was on), which also
+        # blasted the test soul to the live VPS. conftest now isolates the
+        # profile, so the test must set up its own enabled channels.
         from mememage import channels as _channels
         original_load = _channels.load_channels
 
         def both_enabled():
             chs = original_load()
             for c in chs:
-                if c.TYPE == "zenodo":
+                if c.TYPE in ("zenodo", "internet_archive"):
                     c.enabled = True
             return chs
 

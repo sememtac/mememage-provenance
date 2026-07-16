@@ -31,6 +31,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from mememage.net import default_https_context
+
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ def search_items(uploader: str | None = None,
             "output": "json",
         }
         url = f"{IA_SEARCH_URL}?{urllib.parse.urlencode(params, doseq=True)}"
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        with urllib.request.urlopen(url, timeout=30, context=default_https_context()) as resp:
             data = json.load(resp)
         docs = (data.get("response") or {}).get("docs") or []
         if not docs:
@@ -108,7 +110,7 @@ def list_files(identifier: str) -> list[str]:
     """
     url = f"{IA_METADATA_URL}/{identifier}"
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        with urllib.request.urlopen(url, timeout=30, context=default_https_context()) as resp:
             data = json.load(resp)
     except urllib.error.HTTPError as e:
         if e.code in (403, 404, 503):
@@ -136,7 +138,7 @@ def darken_item(identifier: str, access: str, secret: str) -> dict:
     req = urllib.request.Request(target, data=body, method="POST")
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=60, context=default_https_context()) as resp:
             payload = json.loads(resp.read().decode("utf-8", errors="replace"))
         if payload.get("success"):
             return {"ok": True, "error": ""}
@@ -165,7 +167,7 @@ def delete_files(identifier: str, access: str, secret: str,
         req.add_header("Authorization", f"LOW {access}:{secret}")
         req.add_header("x-archive-cascade-delete", "1")
         try:
-            urllib.request.urlopen(req, timeout=60)
+            urllib.request.urlopen(req, timeout=60, context=default_https_context())
             out["deleted"] += 1
         except urllib.error.HTTPError as e:
             body_str = e.read().decode("utf-8", errors="replace")[:200]

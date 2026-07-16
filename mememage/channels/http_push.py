@@ -605,12 +605,15 @@ class HttpPushChannel(Channel):
         accept_self_signed = self.config.get("accept_self_signed")
         if accept_self_signed is None:
             accept_self_signed = (self.config.get("verify_tls") is False)
-        ctx = None
         if accept_self_signed:
             import ssl as _ssl
             ctx = _ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = _ssl.CERT_NONE
+        else:
+            # Validate against certifi's roots, not the (possibly stale) OS store.
+            from mememage import net
+            ctx = net.default_https_context()
         return ctx, headers
 
     def search(self, *, pattern: str = "mememage-*", limit: int = 200,

@@ -90,15 +90,28 @@ var Starfield = (function() {
     if (!document.hidden && timer === null && canvas) tick();
   }
 
+  var lastW = 0;
   function resize() {
     if (!canvas) return;
-    var W = window.innerWidth, H = window.innerHeight;
+    // Mobile browsers fire 'resize' while you scroll, as the address bar shows
+    // or hides: window.innerHeight (the VISUAL viewport) changes but the width
+    // does not. Reassigning canvas.width/height CLEARS the backing store, so
+    // honoring those events repaints the field on every scroll frame — the
+    // flicker. Two changes fix it, without a debounce:
+    //   1. Rebuild the backing store ONLY when the width actually changes
+    //      (a real resize or rotation). A height-only 'resize' is ignored.
+    //   2. Size to the LAYOUT viewport (documentElement.clientHeight), which
+    //      is stable across the address-bar toggle, and let CSS own the display
+    //      size (#starfield is position:fixed; height:100%), so the fixed
+    //      canvas stretches to cover with no JS repaint.
+    var W = window.innerWidth;
+    if (W === lastW) return;
+    lastW = W;
+    var H = document.documentElement.clientHeight || window.innerHeight;
     var longest = Math.max(W, H);
     var s = longest > MAX_LONG ? (MAX_LONG / longest) : 1;
     canvas.width = Math.round(W * s);
     canvas.height = Math.round(H * s);
-    canvas.style.width = W + 'px';
-    canvas.style.height = H + 'px';
     renderScale = s;
   }
 

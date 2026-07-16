@@ -120,6 +120,44 @@ class TestUrlOpenWithRetry(unittest.TestCase):
         assert delays[1] == 2.0   # 1.0 * 2^1
 
 
+class TestDefaultHttpsContext(unittest.TestCase):
+    def test_returns_certifi_context(self):
+        import ssl
+        from mememage.net import default_https_context
+        ctx = default_https_context()
+        self.assertIsInstance(ctx, ssl.SSLContext)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)   # never disables verification
+
+    @patch("mememage.net.urllib.request.urlopen")
+    def test_urlopen_defaults_to_certifi_context(self, mock_urlopen):
+        import ssl
+        mock_resp = MagicMock()
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_resp.read.return_value = b"ok"
+        mock_urlopen.return_value = mock_resp
+        urlopen_with_retry(urllib.request.Request("https://example.com"))
+        # a real validating context is supplied, not left to the OS default store
+        _, kwargs = mock_urlopen.call_args
+        self.assertIsInstance(kwargs.get("context"), ssl.SSLContext)
+
+    @patch("mememage.net.urllib.request.urlopen")
+    def test_explicit_context_is_preserved(self, mock_urlopen):
+        # a caller's self-signed no-verify context must not be overridden
+        import ssl
+        mock_resp = MagicMock()
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_resp.read.return_value = b"ok"
+        mock_urlopen.return_value = mock_resp
+        noverify = ssl.create_default_context()
+        noverify.check_hostname = False
+        noverify.verify_mode = ssl.CERT_NONE
+        urlopen_with_retry(urllib.request.Request("https://x"), context=noverify)
+        _, kwargs = mock_urlopen.call_args
+        self.assertIs(kwargs.get("context"), noverify)
+
+
 class TestFetchJson(unittest.TestCase):
     @patch("mememage.net.urlopen_with_retry")
     def test_returns_parsed_json(self, mock_urlopen):
