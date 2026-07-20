@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
+.claude/scheduled_tasks.lock
 docs/standalone.html
 mememage/getloc
 mememage/getloc.swift
@@ -39,6 +40,7 @@ sample_souls/
 # Build / publish staging
 dist/
 tests/golden_baseline.json
+Payload/
 
 # Validation scratch — kept locally to re-run the human checklist, never committed
 HUMAN_VALIDATION.md

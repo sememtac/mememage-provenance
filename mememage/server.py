@@ -25,6 +25,7 @@ import sys
 import secrets
 import threading
 import time
+from collections import OrderedDict
 from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
@@ -877,8 +878,126 @@ def _cached_machine_gps(ttl: float = 300.0):
 # keeps a hot page from re-parsing souls on every visit.
 _FEED_MAX = 200
 # Thumbnails of the ACTUAL conceived image, generated on demand from the minted
-# file and cached by identifier. Keyed bytes so a hot catalog never re-resizes.
-_feed_thumb_cache = {}
+# file. Two tiers so a hot catalog never re-resizes AND a restart / local-image
+# cull never forces a full-resolution re-download from the Internet Archive:
+#   • in-memory LRU (_feed_thumb_cache) — fastest, bounded, lost on restart
+#   • on-disk cache (_feed_thumb_dir)   — survives restart + volume cull, so an
+#     IA-backed wall pays the multi-MB IA PNG download at most once per tile
+#
+# The memory cap sits ABOVE the default catalog_limit (500) so a full wall stays
+# resident. The old ceiling was 400 (< 500) and cleared WHOLESALE on overflow,
+# so any wall past the limit re-generated every tile on the next scroll — the
+# thrash this replaces. All memory mutations go through the locked helpers below
+# (the server is threaded; bare OrderedDict method calls can race).
+_FEED_THUMB_MEM_MAX = 1024
+# On-disk tiles are tiny (~20KB JPEG); cap the directory generously so scrolling
+# well past the wall stays IA-free while disk stays bounded (~80MB at the cap).
+_FEED_THUMB_DISK_MAX = 4096
+_feed_thumb_cache = OrderedDict()
+_feed_thumb_lock = threading.Lock()
+
+
+def _feed_thumb_dir():
+    """On-disk thumbnail cache dir (``<MEMEMAGE_ROOT>/feed_thumbs``), resolved at
+    call time so a test-patched root stays isolated. Created lazily on write."""
+    return _chains.MEMEMAGE_ROOT / "feed_thumbs"
+
+
+def _feed_thumb_path(identifier):
+    """Disk-cache path for one tile, or None if ``identifier`` isn't a safe
+    single path segment. Identifiers are validated ``<prefix>-<hex>`` upstream,
+    but this cache is driven by a public endpoint so never build a path from an
+    unvetted string (path-traversal defense)."""
+    if (not identifier or "/" in identifier or "\\" in identifier
+            or identifier in (".", "..")):
+        return None
+    return _feed_thumb_dir() / (identifier + ".jpg")
+
+
+def _feed_thumb_mem_get(identifier):
+    """Read the in-memory LRU, refreshing recency on a hit."""
+    with _feed_thumb_lock:
+        data = _feed_thumb_cache.get(identifier)
+        if data is not None:
+            _feed_thumb_cache.move_to_end(identifier)
+        return data
+
+
+def _feed_thumb_mem_put(identifier, data):
+    """Insert into the in-memory LRU, evicting the oldest entries one at a time
+    past the cap (never the wholesale clear that made an over-cap wall re-fetch
+    everything)."""
+    with _feed_thumb_lock:
+        _feed_thumb_cache[identifier] = data
+        _feed_thumb_cache.move_to_end(identifier)
+        while len(_feed_thumb_cache) > _FEED_THUMB_MEM_MAX:
+            _feed_thumb_cache.popitem(last=False)
+
+
+def _feed_thumb_mem_pop(identifier):
+    """Drop one tile from the in-memory LRU only (disk copy retained)."""
+    with _feed_thumb_lock:
+        _feed_thumb_cache.pop(identifier, None)
+
+
+def _feed_thumb_disk_get(identifier):
+    """Read a cached tile off disk, or None. Warms nothing — the caller decides
+    whether to also populate the memory tier."""
+    p = _feed_thumb_path(identifier)
+    if p is None:
+        return None
+    try:
+        return p.read_bytes()
+    except OSError:
+        return None
+
+
+def _feed_thumb_disk_put(identifier, data):
+    """Persist a tile to disk, best-effort — a full/unwritable disk must never
+    break tile serving. Atomic replace so a concurrent reader never sees a
+    half-written JPEG."""
+    p = _feed_thumb_path(identifier)
+    if p is None:
+        return
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".jpg.tmp")
+        tmp.write_bytes(data)
+        tmp.replace(p)
+    except OSError as e:
+        log.debug("feed thumb disk write failed for %s: %s", identifier, e)
+
+
+def _feed_thumb_forget(identifier):
+    """Drop a tile from BOTH tiers — used when the source image is REPLACED or
+    fully WITHDRAWN, so the next request regenerates it. NOT used on a volume
+    cull: a culled image still wants its disk thumbnail (that copy is exactly
+    what spares the IA re-fetch)."""
+    _feed_thumb_mem_pop(identifier)
+    p = _feed_thumb_path(identifier)
+    if p is not None:
+        try:
+            p.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _feed_thumb_disk_cull():
+    """Bound the on-disk thumbnail cache to the newest ``_FEED_THUMB_DISK_MAX``
+    tiles (by write time), unlinking the rest. Best-effort; called from the
+    normal cleanup pass. Ordered by mtime, which is set at cache-write time, so
+    the most-recently-generated tiles survive — on an IA wall that tracks what's
+    been scrolled recently."""
+    try:
+        d = _feed_thumb_dir()
+        if not d.is_dir():
+            return
+        thumbs = sorted(d.glob("*.jpg"),
+                        key=lambda p: p.stat().st_mtime, reverse=True)
+        for p in thumbs[_FEED_THUMB_DISK_MAX:]:
+            p.unlink(missing_ok=True)
+    except OSError as e:
+        log.debug("feed thumb disk cull failed: %s", e)
 
 
 def _soul_on_surface(identifier):
@@ -1027,9 +1146,18 @@ def _ia_feed_thumb_bytes(identifier):
     ip = _feed_image_path(identifier)
     if ip:
         return _feed_thumb_bytes(identifier, ip)
-    # Local image culled — fall back to the permanent IA PNG, fetched once.
-    if identifier in _feed_thumb_cache:
-        return _feed_thumb_cache[identifier]
+    # Local image culled — serve a cached tile if either tier has one before
+    # paying for the full-resolution IA download. The disk tier is what makes
+    # this cheap across restarts and cache evictions on the permanent wall.
+    cached = _feed_thumb_mem_get(identifier)
+    if cached is not None:
+        return cached
+    disk = _feed_thumb_disk_get(identifier)
+    if disk is not None:
+        _feed_thumb_mem_put(identifier, disk)
+        return disk
+    # Not cached anywhere — fetch the permanent IA PNG once; _feed_thumb_bytes
+    # then persists the resulting tile to disk so this download never repeats.
     import tempfile
     import urllib.request
     url = f"{_IA_DOWNLOAD}/{identifier}/{identifier}.png"
@@ -1150,9 +1278,17 @@ def _feed_thumb_bytes(identifier, image_path, size=460):
     bar is cropped off first (it must never show in a tile), then a centered
     square is taken. None on any failure (missing Pillow, unreadable image) so
     the tile degrades gracefully."""
-    cached = _feed_thumb_cache.get(identifier)
+    cached = _feed_thumb_mem_get(identifier)
     if cached is not None:
         return cached
+    # A prior run (or this run, pre-eviction) may already hold the tile on disk —
+    # skip the resize entirely, and on an IA wall skip re-downloading the source.
+    # Keyed by identifier alone, which is safe because every caller uses the
+    # default size (460px); revisit if a second size is ever requested.
+    disk = _feed_thumb_disk_get(identifier)
+    if disk is not None:
+        _feed_thumb_mem_put(identifier, disk)
+        return disk
     try:
         import io
         from PIL import Image
@@ -1171,9 +1307,8 @@ def _feed_thumb_bytes(identifier, image_path, size=460):
         data = buf.getvalue()
     except Exception:
         return None
-    if len(_feed_thumb_cache) > 400:
-        _feed_thumb_cache.clear()
-    _feed_thumb_cache[identifier] = data
+    _feed_thumb_mem_put(identifier, data)
+    _feed_thumb_disk_put(identifier, data)
     return data
 
 
@@ -1207,7 +1342,7 @@ def _withdraw_conception_image(identifier):
             img_n += 1
     except Exception:
         pass
-    _feed_thumb_cache.pop(identifier, None)
+    _feed_thumb_forget(identifier)
     if drop:
         _save_sessions()
     return img_n, len(drop)
@@ -1758,9 +1893,14 @@ def _cleanup_expired():
                               key=lambda p: p.stat().st_mtime, reverse=True)
                 for p in imgs[limit:]:
                     p.unlink(missing_ok=True)
-                    _feed_thumb_cache.pop(p.stem, None)
+                    # Keep the disk thumbnail — a culled full image is exactly
+                    # when the cached tile spares an IA re-download. Only evict
+                    # the in-memory copy to reclaim RAM.
+                    _feed_thumb_mem_pop(p.stem)
         except Exception as e:
             log.warning("Cleanup: received-image cull failed: %s", e)
+    # Bound the on-disk thumbnail cache independently of the image cull.
+    _feed_thumb_disk_cull()
 
 
 def _cleanup_orphan_uploads():
@@ -2837,8 +2977,9 @@ class MintHandler(BaseHTTPRequestHandler):
             self._send_json({"error": f"Body rejected: {e}"}, 400)
             return
         tmp.replace(target)
-        # New image → its feed thumbnail must be recomputed, not served stale.
-        _feed_thumb_cache.pop(m.group(1), None)
+        # New image → its feed thumbnail must be recomputed, not served stale
+        # (drop the disk copy too, else the old tile would be served back).
+        _feed_thumb_forget(m.group(1))
         # …and the wall must re-enumerate so this fresh conception shows now,
         # not after the cache TTL (IA-backed feed). No-op for the local feed.
         _invalidate_ia_feed()

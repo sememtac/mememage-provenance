@@ -120,10 +120,20 @@ class TestIaFeedThumbCrisp(unittest.TestCase):
     and the tiles went blurry."""
 
     def setUp(self):
-        server._feed_thumb_cache.clear()
+        self._clear_thumb_caches()
 
     def tearDown(self):
+        self._clear_thumb_caches()
+
+    @staticmethod
+    def _clear_thumb_caches():
+        # Both tiers: the disk cache is session-persistent (conftest root is
+        # session-scoped), so two tests sharing an identifier would otherwise
+        # bleed — the IA-fallback test must actually hit urlopen, not a tile a
+        # sibling test cached to disk.
         server._feed_thumb_cache.clear()
+        import shutil
+        shutil.rmtree(server._feed_thumb_dir(), ignore_errors=True)
 
     @staticmethod
     def _make_png(path, w=800, h=1000):
