@@ -40,7 +40,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
     <span class="welcome-card-title">Welcome to Mememage</span>
     <button type="button" class="welcome-card-dismiss" id="welcomeCardDismiss" title="Hide — re-open from the Setup link">&times;</button>
   </div>
-  <p class="welcome-card-body">Four steps to your first conception. Each row links to where to do it.</p>
+  <p class="welcome-card-body">Four steps to your first conception. Each row links to where you do it.</p>
   <div class="welcome-steps" id="welcomeSteps"><em>Loading&hellip;</em></div>
 </div>
 <div class="welcome-reopen-row">
@@ -139,7 +139,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
       <div class="mint-meta-editor" id="mintMetaEditor"></div>
       <div class="mint-meta-actions">
         <button type="button" class="mint-meta-add" id="mintMetaAdd">+ Add field</button>
-        <span class="mint-meta-hint">Embedded image metadata prefilled when present; add or edit your own</span>
+        <span class="mint-meta-hint">Prefilled from the image’s embedded metadata when present. Add or edit your own.</span>
       </div>
     </details>
 
@@ -154,7 +154,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
          act that happens on the page the user actually goes to. -->
     <div class="mint-handoff" id="mintHandoff">
       <div class="mint-handoff-ticket">
-        <span class="mint-handoff-ticket-hint">Save this — paste it into the empty Conceive tab to resume later (7-day TTL)</span>
+        <span class="mint-handoff-ticket-hint">Save this ticket. Paste it into the empty Conceive tab to resume later (7-day expiry)</span>
         <span class="mint-handoff-ticket-group">
           <span class="mint-handoff-ticket-label">Ticket</span>
           <span class="mint-handoff-ticket-val" id="mintTicket">&hellip;</span>
@@ -163,7 +163,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
       </div>
       <p class="mint-handoff-head" id="mintHandoffHead">Ready for conception</p>
       <p class="mint-handoff-body" id="mintHandoffBody">
-        Scan the QR with your phone, tap the Discord notification,
+        Scan the QR code with your phone, tap the Discord notification,
         or open the page here. Whoever opens the link first conceives
         the image.
       </p>
@@ -287,7 +287,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
     <div class="payload-m-row">
       <label class="payload-m-label" for="payloadM">Age length (M)</label>
       <input class="payload-m-input" id="payloadM" type="number" min="1" step="1">
-      <span class="payload-m-hint">stars per Age &middot; must be &ge; the largest layer&rsquo;s chunk count</span>
+      <span class="payload-m-hint">stars per Age &middot; must be at least the largest layer&rsquo;s chunk count</span>
     </div>
     <!-- Constellation size — stars per constellation (heart + siblings). Also
          the data chunk count + Bayer span. Staged through Apply like M;
@@ -308,7 +308,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
     <p class="payload-template-lead">You&rsquo;re editing a <strong>payload template draft</strong>.</p>
     <ul class="payload-template-actions">
       <li><strong>Save preset</strong> &mdash; keep this draft under a name.</li>
-      <li><strong>Apply to chain</strong> &mdash; commit it to the chain&rsquo;s next Age. Locked while an Age is in progress.</li>
+      <li><strong>Apply to chain</strong> &mdash; commit it to the chain&rsquo;s next Age. It is locked while an Age is in progress.</li>
     </ul>
   </div>
 
@@ -326,8 +326,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
       <li>
         <strong>Choose your payload.</strong>
         Click <em>Presets &#x25BE;</em> and load a saved template, or build from scratch with
-        <em>+ Add entry</em> / <em>+ Add layer</em> / <em>+ Add pinned</em>. Presets are portable &mdash;
-        any chain can load any preset.
+        <em>+ Add entry</em> / <em>+ Add layer</em> / <em>+ Add pinned</em>. Presets are portable: any chain can load any preset.
       </li>
       <li>
         <strong>Wire entries to sources.</strong>
@@ -337,20 +336,20 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
       <li>
         <strong>Apply to chain.</strong>
         Once the draft validates, click <em>Apply to chain</em>. This writes the template into
-        <code>chain.json</code> and records the preset name. Only allowed when the lock badge says
-        <em>EDITABLE</em> &mdash; the chain locks while an Age is in progress.
+        <code>chain.json</code> and records the preset name. This is allowed only when the lock badge says
+        <em>EDITABLE</em>. The chain locks while an Age is in progress.
       </li>
       <li>
         <strong>Build the artifacts.</strong>
         Click <em>Build</em> to materialize <code>Payload/&lt;chain&gt;/&hellip;</code> from your
-        sources. Rebuild whenever you change a source file &mdash; the chain template stays put.
+        sources. Rebuild it whenever you change a source file. The chain template stays put.
       </li>
       <li>
         <strong>Seal the Age.</strong>
         Click <em>Seal</em> to begin distributing the new payload. Future mints land chunks
-        into this Age&rsquo;s positions; the config is frozen into the seal record, so editing the
-        preset later won&rsquo;t affect this Age. To iterate, wait for the cycle to complete, then
-        apply &amp; seal again.
+        into this Age&rsquo;s positions. The config is frozen into the seal record, so editing the
+        preset later does not affect this Age. To iterate, wait for the cycle to complete, then
+        apply and seal again.
       </li>
     </ol>
   </details>
@@ -368,7 +367,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
       <button class="payload-btn" id="payloadSaveAsNewBtn" title="Save the current draft as a new preset (does not overwrite the loaded one)">Save as new&hellip;</button>
     </div>
     <div class="payload-preset-list" id="payloadPresetList"></div>
-    <p class="payload-preset-note">Presets are portable templates (entries / layers / pinned), no per-chain identity baked in. Loading one overwrites the current draft &mdash; unsaved edits are discarded.</p>
+    <p class="payload-preset-note">Presets are portable templates (entries, layers, pinned), with no per-chain identity baked in. Loading one overwrites the current draft, so unsaved edits are discarded.</p>
   </div>
 
   <!-- Inline validation messages (errors block save; warnings don't) -->
@@ -439,7 +438,7 @@ if (__t && __t.indexOf('{{') !== 0) window._MINT_API_TOKEN = __t;
   <details class="config-section" data-section="diagnostics">
     <summary>Diagnostics</summary>
     <div class="config-section-body">
-      <p class="config-note">Checks that this server is reachable and trusted from any device (including iPhone). Run after changing the domain, port, or cert.</p>
+      <p class="config-note">Checks that any device can reach and trust this server, including an iPhone. Run it after you change the domain, the port, or the cert.</p>
       <div class="config-row">
         <button class="config-btn config-btn-primary" id="configDoctorRun">Run diagnostics</button>
       </div>

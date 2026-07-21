@@ -1176,10 +1176,10 @@ setInterval(function() {
     var head, body;
     if (src === 'phone') {
       head = 'Conception link ready (phone GPS)';
-      body = 'Scan the QR with your phone, tap the Discord notification, or open below. The conception page will capture precise GPS via the phone\u2019s sensors.';
+      body = 'Scan the QR code with your phone, tap the Discord notification, or open below. The conception page captures precise GPS through the phone\u2019s sensors.';
     } else if (src === 'machine') {
       head = 'Conception link ready (machine GPS)';
-      body = 'Open the conception page on any device — the server will fetch its own approximate GPS (city-level) when you press Conceive. Scan the QR, tap Discord, or click Open below.';
+      body = 'Open the conception page on any device. The server fetches its own approximate GPS (city-level) when you press Conceive. Scan the QR code, tap Discord, or click Open below.';
       // Explain the fallback when the chain WANTED phone but no phone can
       // reach this host — otherwise "machine GPS" looks like a silent change.
       if (state.gpsSourceConfigured === 'phone' && state.phoneReachable === false) {
@@ -1188,7 +1188,7 @@ setInterval(function() {
       }
     } else {
       head = 'Conception link ready (no GPS)';
-      body = 'Open the conception page on any device and press Conceive — this chain records no GPS, and the cert will show "BIRTHPLACE — NOT RECORDED".';
+      body = 'Open the conception page on any device and press Conceive. This chain records no GPS, so the certificate shows "BIRTHPLACE — NOT RECORDED".';
     }
     if (els.handoffHead) els.handoffHead.textContent = head;
     if (els.handoffBody) els.handoffBody.textContent = body;
@@ -1431,8 +1431,8 @@ setInterval(function() {
     els.deleteSession.addEventListener('click', async function() {
       if (!state.token) { reset(); return; }
       if (!window.confirm(
-        'Permanently delete this pending session? The staged image + ' +
-        'metadata will be dropped server-side. This can\u2019t be undone.'
+        'Permanently delete this pending session? The server drops the ' +
+        'staged image and metadata. You cannot undo this.'
       )) return;
       var tok = state.token;
       els.deleteSession.disabled = true;
@@ -1468,7 +1468,7 @@ setInterval(function() {
         return;
       }
       if (!window.confirm('Permanently delete the session for ticket "' +
-          v.trim() + '"? The pending image + metadata will be dropped.')) return;
+          v.trim() + '"? The server drops the pending image and metadata.')) return;
       els.resumeDelete.disabled = true;
       try {
         var resp = await fetch('/api/mint/' + encodeURIComponent(v.trim()), {
@@ -1961,7 +1961,7 @@ setInterval(function() {
           '<span class="payload-apply-lock-status">' +
             escapeHtml(ageLabel) + ' in progress' + progress + '</span>' +
           '<span class="payload-apply-lock-note">Applied changes take effect on the ' +
-            'next Age — the current Age keeps its sealed payload.</span>';
+            'next Age. The current Age keeps its sealed payload.</span>';
         els.applyLockBanner.hidden = false;
       } else {
         els.applyLockBanner.hidden = true;
@@ -2013,7 +2013,7 @@ setInterval(function() {
     (cfg.layers || []).forEach(function(ly) { if (ly.K > maxK) maxK = ly.K; });
     if (maxK > (cfg.M || 0)) {
       msgs.push({severity: 'error',
-                 text: 'Age length (' + cfg.M + ') is smaller than the largest layer’s chunk count (' + maxK + '). That layer can never finish a full copy within an Age — raise the Age length or lower the chunk count.'});
+                 text: 'Age length (' + cfg.M + ') is smaller than the largest layer’s chunk count (' + maxK + '). That layer can never finish a full copy within an Age. Raise the Age length, or lower the chunk count.'});
     }
     // Constellation size range (mirrors chain_config.validate).
     if (cfg.constellation_size != null &&
@@ -2043,7 +2043,7 @@ setInterval(function() {
     if (typeof cfg.M === 'number' && cfg.M > 10000) {
       var years = Math.round(cfg.M / 365);
       msgs.push({severity: 'warning',
-                 text: 'M=' + cfg.M + ' is large. At one mint per day, completing an Age would take \u2248' + years + ' years; the validator\u2019s orbit grid will also render slowly. Most chains keep M \u2264 1000.'});
+                 text: 'M=' + cfg.M + ' is large. At one mint per day, an Age takes about ' + years + ' years to complete. The validator\u2019s orbit grid also renders slowly. Most chains keep M at 1000 or less.'});
     }
     // Entry references
     var entries = cfg.entries || {};
@@ -2159,11 +2159,11 @@ setInterval(function() {
       out += '<span class="payload-lock-badge" data-state="unknown">checking…</span>';
     } else if (state.chainLocked) {
       out += '<span class="payload-lock-badge" data-state="in-age" title="' +
-        escapeHtml('An Age is in progress. Edits are allowed — they take effect on the next Age.') +
+        escapeHtml('An Age is in progress. Edits are allowed. They take effect on the next Age.') +
         '">MID-AGE</span>';
     } else {
       out += '<span class="payload-lock-badge" data-state="editable" title="' +
-        escapeHtml('No Age in progress on this chain. Applying a new template will commit it ' +
+        escapeHtml('No Age in progress on this chain. When you apply a new template, it commits ' +
           'as the chain’s next Age starts.') + '">EDITABLE</span>';
     }
     var key = _aggregateBuildState(state.buildStatus);
@@ -2251,7 +2251,7 @@ setInterval(function() {
         // that drops in a starter decoder scaffold, rather than auto-showing
         // a phantom decoder entry the user never created.
         els.entries.innerHTML = '<div class="payload-edit-row entry-row">' +
-          '<span style="grid-column:1/-1; opacity:0.6;">No payload configured — this chain is provenance-only. ' +
+          '<span style="grid-column:1/-1; opacity:0.6;">No payload configured. This chain is provenance-only. ' +
           '<button class="payload-section-add" data-action="start-payload" title="Drop in a starter decoder scaffold you can build on">+ Start a payload</button></span></div>';
       } else {
         els.entries.innerHTML = '<div class="payload-edit-row entry-row">' +
@@ -2292,7 +2292,7 @@ setInterval(function() {
               : (dotState === 'missing_source'
                 ? ('Source unreadable' + (entryStat.error ? ': ' + entryStat.error : '.'))
                 : 'Not built yet. Click Build.')))
-        : (state.buildStatus ? 'Not an artifact target yet — applied + built once to track.' : 'Build state unknown.');
+        : (state.buildStatus ? 'Not an artifact target yet. Apply and build it once to track it.' : 'Build state unknown.');
       return '<div class="payload-edit-row entry-row" data-entry="' + escapeHtml(name) + '">' +
         '<span class="entry-status-dot" data-state="' + escapeHtml(dotState) + '" title="' + escapeHtml(dotTitle) + '"></span>' +
         '<input class="payload-edit-input" data-field="name" type="text" value="' + escapeHtml(name) + '">' +
@@ -2491,7 +2491,7 @@ setInterval(function() {
       var row = btn.closest('[data-entry], [data-layer], [data-pinned]');
       if (action === 'delete-entry') {
         var name = row.getAttribute('data-entry');
-        if (!window.confirm('Delete entry "' + name + '"? Any layers/pinned positions that reference it will be invalid.')) return;
+        if (!window.confirm('Delete entry "' + name + '"? Any layers or pinned positions that reference it become invalid.')) return;
         // Capture the entry's source paths BEFORE deleting so we can
         // sweep any now-orphaned uploads off disk.
         var orphanCandidates = ((state.working.entries[name] || {}).sources || []).slice();
@@ -2716,7 +2716,7 @@ setInterval(function() {
       renderAll();
       refreshNuxVisibility();
     } catch (e) {
-      showError('Failed to load chain config: ' + e.message);
+      showError('Could not load the chain config: ' + e.message);
     }
     // Age status (separate, ok if it fails)
     try {
@@ -2826,7 +2826,7 @@ setInterval(function() {
         els.sealBtn.textContent = 'Seal';
         els.sealBtn.disabled = false;
         els.sealBtn.title =
-          'Outer cycle complete — Seal advances to Age ' + (info.age + 1) + '.';
+          'Outer cycle complete. Seal advances to Age ' + (info.age + 1) + '.';
       } else {
         els.sealBtn.textContent = 'Sealed';
         els.sealBtn.disabled = true;
@@ -2900,9 +2900,9 @@ setInterval(function() {
     }
     var statuses = (s && s.statuses) || {};
     var lines = [];
-    if (stateKey === 'missing') lines.push('Source file(s) unreadable — fix paths or upload, then Build.');
-    else if (stateKey === 'drifted') lines.push('Sources changed since last build — click Build to refresh.');
-    else if (stateKey === 'not_built') lines.push('Some artifacts not built yet — click Build.');
+    if (stateKey === 'missing') lines.push('Source files unreadable. Fix the paths or upload, then Build.');
+    else if (stateKey === 'drifted') lines.push('Sources changed since the last build. Click Build to refresh.');
+    else if (stateKey === 'not_built') lines.push('Some artifacts are not built yet. Click Build.');
     Object.keys(statuses).forEach(function(name) {
       var st = statuses[name] || {};
       if (st.status !== 'in_sync') lines.push('  \u2022 ' + name + ': ' + st.status + (st.error ? ' (' + st.error + ')' : ''));
@@ -2946,7 +2946,7 @@ setInterval(function() {
       if (!state.chainLocked && state.chainLocked !== undefined) {
         els.sealBtn.disabled = !canSeal;
         if (!canSeal) {
-          els.sealBtn.title = 'Build the payload first — Seal needs all artifacts in sync.';
+          els.sealBtn.title = 'Build the payload first. Seal needs all artifacts in sync.';
         }
         // When canSeal: leave the title alone. renderAgeStatus already
         // set it contextually ("Begin Age 1" for fresh chain, "advances
@@ -3005,7 +3005,7 @@ setInterval(function() {
     var head, body;
     if (info && info.cycle_complete) {
       head = 'Advance to Age ' + (info.age + 1) + '?';
-      body = 'The current outer cycle is complete. Sealing begins the next Age — irreversible.';
+      body = 'The current outer cycle is complete. Seal starts the next Age. You cannot undo this.';
     } else {
       head = 'Begin Age 1?';
       // Outer-cycle length is per-chain (cfg.M), not always the canonical
@@ -3169,8 +3169,8 @@ setInterval(function() {
   async function loadPreset(name) {
     if (!name) return;
     if (isDirty() && !window.confirm(
-      'Loading the preset will overwrite your current editor state. ' +
-      'Unsaved edits will be lost. Continue?'
+      'If you load the preset, it overwrites your current editor state. ' +
+      'You lose unsaved edits. Continue?'
     )) return;
     showError('');
     try {
@@ -3248,8 +3248,8 @@ setInterval(function() {
     // visibility) and M so the cleared draft is still a valid frame the
     // user can build into.
     if (isDirty() && !window.confirm(
-      'Start a blank template? Your current draft will be discarded. ' +
-      'Save it as a preset first if you want to keep it.'
+      'Start a blank template? This discards your current draft. ' +
+      'To keep the draft, save it as a preset first.'
     )) return;
     var current = state.working || state.saved || {};
     state.working = {
@@ -3375,7 +3375,7 @@ setInterval(function() {
       refreshDirtyUI();
       refreshNuxVisibility();
     } catch (e) {
-      showError('Failed to initialize Payload tab: ' + e.message);
+      showError('Could not set up the Payload tab: ' + e.message);
     }
     // Age status (separate, ok if it fails).
     try {
@@ -3655,9 +3655,9 @@ setInterval(function() {
   function renderIdentity(identity) {
     if (!identity.signing_available) {
       els.identity.innerHTML =
-        '<p>Signing is <strong>optional</strong> — your conceptions are already verifiable by their content hash. ' +
-        'Add it to also prove they’re <em>yours</em> (the AUTHENTICATED badge). It needs the ' +
-        '<code>cryptography</code> library, which you can install right here — no terminal:</p>' +
+        '<p>Signing is <strong>optional</strong>. Your conceptions are already verifiable by their content hash. ' +
+        'Add signing to also prove they are <em>yours</em> (the AUTHENTICATED badge). Signing needs the ' +
+        '<code>cryptography</code> library. You can install it here. No terminal is necessary:</p>' +
         '<div class="config-row">' +
         '  <button class="config-btn config-btn-primary" id="configInstallSigning">Install signing support</button>' +
         '</div>' +
@@ -3669,11 +3669,11 @@ setInterval(function() {
       // No key yet — show the keygen form, framed as the optional-but-valuable
       // step it is (you already get WITNESSED; a key adds AUTHENTICATED).
       els.identity.innerHTML =
-        '<p>A signing key proves your conceptions are <em>yours</em> — the ' +
-        '<strong>AUTHENTICATED</strong> badge. Optional (your work is already ' +
-        'verifiable by content hash without it), but it’s the heart of the idea: ' +
-        '<em>the artist is the authority</em>. The key lives only on this machine; ' +
-        'no account, no platform.</p>' +
+        '<p>A signing key proves your conceptions are <em>yours</em>. This is the ' +
+        '<strong>AUTHENTICATED</strong> badge. It is optional, because your work is already ' +
+        'verifiable by content hash without it. But it’s the heart of the idea: ' +
+        '<em>the artist is the authority</em>. The key lives only on this machine. ' +
+        'There is no account and no platform.</p>' +
         '<div class="config-field">' +
         '  <label class="config-field-label" for="configKeygenName">Your name or handle</label>' +
         '  <input class="config-input" id="configKeygenName" type="text" placeholder="how you want to be credited">' +
@@ -3737,7 +3737,7 @@ setInterval(function() {
     zone.style.display = '';
     zone.innerHTML =
       '<h4>Rotate identity key</h4>' +
-      '<p>This generates a new Ed25519 keypair, archives the current key under <code>~/.mememage/keychain/</code>, signs a succession record with the OLD key, and uploads that record to the Internet Archive so verifiers can follow the trail. <strong>Records signed by the old key still verify</strong> — but any record minted after this point is signed by the new key.</p>' +
+      '<p>This generates a new Ed25519 keypair, archives the current key under <code>~/.mememage/keychain/</code>, signs a succession record with the old key, and uploads that record to the Internet Archive so verifiers can follow the trail. <strong>Records signed by the old key still verify.</strong> Records minted after this point are signed by the new key.</p>' +
       '<div class="config-field"><span class="config-field-label">Creator name on the new key</span>' +
       '  <input class="config-input" id="configRotateName" type="text" placeholder="(reuse current name if blank)">' +
       '</div>' +
@@ -3796,7 +3796,7 @@ setInterval(function() {
     zone.style.display = '';
     zone.innerHTML =
       '<h4 style="color:#b04040;">Revoke identity key</h4>' +
-      '<p><strong>Irreversible.</strong> Publishes the pre-signed revocation cert to the Internet Archive. Every record ever signed by this key will display a revocation warning after the cert propagates. Use only if your private key is compromised. The revocation cert was pre-signed at keygen time, so an attacker who steals the key cannot forge a revocation — but neither can you un-revoke.</p>' +
+      '<p><strong>Irreversible.</strong> This publishes the pre-signed revocation cert to the Internet Archive. Every record ever signed by this key displays a revocation warning after the cert propagates. Use this only if your private key is compromised. The revocation cert was pre-signed at keygen time. An attacker who steals the key cannot forge a revocation. You also cannot un-revoke it.</p>' +
       '<div class="config-field"><span class="config-field-label">Type <code>REVOKE</code> to confirm</span>' +
       '  <input class="config-input" id="configRevokeConfirm" type="text" autocomplete="off">' +
       '</div>' +
@@ -3892,12 +3892,12 @@ setInterval(function() {
       '<div class="config-field">' +
       '  <span class="config-field-label">Port</span>' +
       '  <input class="config-input" id="configServerPort" type="number" min="1" max="65535" value="' + escapeHtml(String(port)) + '" placeholder="8443">' +
-      '  <span class="config-channel-field-hint">listen port (1–65535). Changing it needs a restart.</span>' +
+      '  <span class="config-channel-field-hint">listen port (1–65535). A change needs a server restart.</span>' +
       '</div>' +
       '<div class="config-field">' +
       '  <span class="config-field-label">Catalog</span>' +
       '  <input class="config-input" id="configCatalogLimit" type="number" min="0" step="1" value="' + escapeHtml(String(catalogLimit)) + '" placeholder="500">' +
-      '  <span class="config-channel-field-hint">images kept on the public wall — oldest evicted past this count, not by age (0 = unlimited). Each is staged on disk. Takes effect immediately.</span>' +
+      '  <span class="config-channel-field-hint">images kept on the public wall. The server evicts the oldest past this count, not by age (0 = unlimited). Each image is staged on disk. This takes effect immediately.</span>' +
       '</div>' +
       '<p class="config-note advanced-only">TLS cert/key paths use the native file picker:</p>' +
       '<ul class="config-note-list advanced-only">' +
@@ -3948,10 +3948,10 @@ setInterval(function() {
       // visible so they can copy it before hitting OK.
       if (!v) return;
       var ok = window.confirm(
-        'About to set MINT_API_TOKEN to:\n\n' + v +
-        '\n\nCopy this value FIRST — every dashboard session ' +
-        '(including this one) will need it after save.\n\n' +
-        'Press OK to commit, Cancel to back out.'
+        'This sets MINT_API_TOKEN to:\n\n' + v +
+        '\n\nCopy this value first. Every dashboard session needs it ' +
+        'after you save, including this one.\n\n' +
+        'Click OK to commit. Click Cancel to stop.'
       );
       if (!ok) return;
       setEnvSecretGlobal('MINT_API_TOKEN', v, document.getElementById('configServerToken').closest('.config-field'));
@@ -4069,7 +4069,7 @@ setInterval(function() {
         body: JSON.stringify(body),
       });
       statusEl.textContent = res.restart_needed
-        ? 'Saved. Restart server to apply cert/key/port.'
+        ? 'Saved. Restart the server to apply the cert, key, or port.'
         : 'Saved.';
       statusEl.style.color = res.restart_needed ? '#a06010' : '#1a7a1a';
       setTimeout(function() { statusEl.textContent = ''; }, 4000);
@@ -4150,7 +4150,7 @@ setInterval(function() {
           var isSlack = (w.kind === 'slack') || /hooks\.slack\.com/.test(w.url || '');
           var slackBlock = isSlack
             ? '<div class="config-webhook-slack">' +
-                '<p class="config-webhook-slack-note">Slack file attachments need a bot token (<code>xoxb-…</code>, <code>files:write</code> scope) + a channel ID. Without them, the attachment toggle posts text only.</p>' +
+                '<p class="config-webhook-slack-note">Slack file attachments need a bot token (<code>xoxb-…</code>, <code>files:write</code> scope) and a channel ID. Without them, the attachment toggle posts text only.</p>' +
                 '<label class="config-webhook-slack-field"><span>Bot token</span>' +
                   '<span class="config-password-wrap">' +
                     '<input class="config-input" data-webhook-slack-token="' + i + '" type="password" autocomplete="off" value="' + escapeHtml(w.slack_bot_token || '') + '" placeholder="xoxb-…">' +
@@ -4167,7 +4167,7 @@ setInterval(function() {
           var isTelegram = (w.kind === 'telegram') || /api\.telegram\.org/.test(w.url || '');
           var telegramBlock = isTelegram
             ? '<div class="config-webhook-slack">' +
-                '<p class="config-webhook-slack-note">Telegram needs a bot token (from <code>@BotFather</code>) + a chat ID. <strong>To DM yourself:</strong> message the bot first (it can’t initiate), then use your <em>numeric</em> user ID (from <code>@userinfobot</code>) — not the bot’s <code>@name</code>. <strong>Channel/group:</strong> <code>@channelname</code> or the numeric id, with the bot added as member/admin. Attachment sends the image + .soul as photo + document.</p>' +
+                '<p class="config-webhook-slack-note">Telegram needs a bot token (from <code>@BotFather</code>) and a chat ID. <strong>To message yourself:</strong> message the bot first, because it cannot start the chat. Then use your <em>numeric</em> user ID (from <code>@userinfobot</code>). Do not use the bot’s <code>@name</code>. <strong>For a channel or group:</strong> use <code>@channelname</code> or the numeric id, and add the bot as a member or admin. The attachment sends the image and the .soul file as a photo and a document.</p>' +
                 '<label class="config-webhook-slack-field"><span>Bot token</span>' +
                   '<span class="config-password-wrap">' +
                     '<input class="config-input" data-webhook-tg-token="' + i + '" type="password" autocomplete="off" value="' + escapeHtml(w.telegram_bot_token || '') + '" placeholder="123456:ABC-DEF…">' +
@@ -4213,7 +4213,7 @@ setInterval(function() {
               '<div class="config-webhook-main">' +
                 '<label class="config-webhook-ev"><input type="checkbox" data-webhook-ev="' + i + '" value="conceived" ' + (allEv || hasC ? 'checked' : '') + '> conceived</label>' +
                 '<label class="config-webhook-ev"><input type="checkbox" data-webhook-ev="' + i + '" value="ready"     ' + (allEv || hasR ? 'checked' : '') + '> ready</label>' +
-                '<label class="config-webhook-ev" title="Send the minted image + .soul to the recipient on conceived events. Each platform attaches its own way — Discord: multipart; Slack: files.uploadV2 (needs the bot token + channel below); generic: links in the body."><input type="checkbox" data-webhook-attach="' + i + '" ' + (attachFiles ? 'checked' : '') + '> attachment</label>' +
+                '<label class="config-webhook-ev" title="Send the minted image and the .soul file to the recipient on conceived events. Each platform attaches in its own way. Discord uses multipart. Slack uses files.uploadV2 (it needs the bot token and channel below). A generic webhook puts links in the body."><input type="checkbox" data-webhook-attach="' + i + '" ' + (attachFiles ? 'checked' : '') + '> attachment</label>' +
               '</div>' +
               '<details class="config-webhook-hdrs-section" ' + (hCount > 0 ? 'open' : '') + '>' +
                 '<summary>Headers (' + hCount + ')</summary>' +
@@ -4836,9 +4836,9 @@ setInterval(function() {
     }
     if (include.webhooks) {
       var ok = window.confirm(
-        'Webhooks include embedded Discord/Slack bot tokens. The peer ' +
-        'will receive those tokens in plaintext and will fire to the ' +
-        'same surfaces this host does.\n\nProceed?'
+        'Webhooks include embedded Discord and Slack bot tokens. The peer ' +
+        'receives those tokens in plaintext. The peer fires to the ' +
+        'same surfaces as this host.\n\nContinue?'
       );
       if (!ok) return;
     }
@@ -4942,9 +4942,9 @@ setInterval(function() {
     }
     if (include.webhooks) {
       var ok = window.confirm(
-        'Webhooks include embedded Discord/Slack bot tokens. The ' +
-        'downloaded file will contain those tokens in plaintext.\n\n' +
-        'Only download to a location you trust (personal backup).'
+        'Webhooks include embedded Discord and Slack bot tokens. The ' +
+        'downloaded file contains those tokens in plaintext.\n\n' +
+        'Download only to a location you trust, such as a personal backup.'
       );
       if (!ok) return;
     }
@@ -5485,13 +5485,13 @@ setInterval(function() {
     try {
       var resp = await fetch('/api/channels/raw', { headers: authHeaders() });
       if (!resp.ok) {
-        bodyEl.textContent = 'Failed to load (HTTP ' + resp.status + ')';
+        bodyEl.textContent = 'Could not load (HTTP ' + resp.status + ')';
         return;
       }
       var text = await resp.text();
       bodyEl.textContent = text;
     } catch (e) {
-      bodyEl.textContent = 'Failed to load: ' + e.message;
+      bodyEl.textContent = 'Could not load: ' + e.message;
     }
 
     var copyBtn = document.getElementById('configChannelsRawCopy');
@@ -5590,7 +5590,7 @@ setInterval(function() {
       // record.url — pick_primary_url quietly falls back to another surface.
       if (!c.enabled || !c.configured) {
         statusBits.push('<span class="config-channel-status-warn">primary, but ' +
-          (!c.enabled ? 'disabled' : 'not set up') + ' \u2014 record URL will fall back</span>');
+          (!c.enabled ? 'disabled' : 'not set up') + '. The record URL falls back</span>');
       }
     }
 
@@ -5771,7 +5771,7 @@ setInterval(function() {
     var removeBtn = row.querySelector('[data-channel-remove]');
     if (removeBtn) {
       removeBtn.addEventListener('click', function() {
-        if (!confirm('Remove surface "' + (channel.name || channel.id) + '"? Existing records that already shipped to it are unaffected; future mints will skip it.')) return;
+        if (!confirm('Remove surface "' + (channel.name || channel.id) + '"? Existing records that already shipped to it are unaffected. Future mints skip it.')) return;
         row.remove();
         saveChannelsFromDom(host);
       });
@@ -6199,12 +6199,12 @@ setInterval(function() {
         var cid = input.getAttribute('data-chain-gpsvis-set');
         // Public GPS is an irreversible per-record exposure — confirm once.
         if (input.value === 'public' && !window.confirm(
-          'Make GPS PUBLIC for this chain?\n\n' +
-          'Future conceptions will store the exact coordinates in plaintext — ' +
-          'the certificate shows where each image was made, to anyone who has ' +
-          'it. This is baked into each record and can’t be undone.\n\n' +
-          '(Already-minted records are unaffected. The ~10-year time-lock is ' +
-          'kept either way.)'
+          'Make GPS public for this chain?\n\n' +
+          'Future conceptions store the exact coordinates in plaintext. ' +
+          'The certificate shows where each image was made, to anyone who has ' +
+          'it. This is part of each record and you cannot undo it.\n\n' +
+          '(Already-minted records are unaffected. The chain keeps the ' +
+          '~10-year time-lock either way.)'
         )) {
           // Cancelled — revert SYNCHRONOUSLY to time-locked. Re-checking the
           // radio here (vs an async loadChains() re-fetch) guarantees the UI
@@ -6236,11 +6236,11 @@ setInterval(function() {
       var text = await resp.text();
       var data; try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {}; }
       if (!resp.ok) {
-        alert(data.error || ('Failed to set watermark (HTTP ' + resp.status + ')'));
+        alert(data.error || ('Could not set the watermark (HTTP ' + resp.status + ')'));
         loadChains();  // revert UI to server truth
       }
     } catch (e) {
-      alert('Failed to set watermark: ' + e.message);
+      alert('Could not set the watermark: ' + e.message);
       loadChains();
     }
   }
@@ -6255,11 +6255,11 @@ setInterval(function() {
       var text = await resp.text();
       var data; try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {}; }
       if (!resp.ok) {
-        alert(data.error || ('Failed to set GPS source (HTTP ' + resp.status + ')'));
+        alert(data.error || ('Could not set the GPS source (HTTP ' + resp.status + ')'));
         loadChains();  // revert UI to server truth
       }
     } catch (e) {
-      alert('Failed to set GPS source: ' + e.message);
+      alert('Could not set the GPS source: ' + e.message);
       loadChains();
     }
   }
@@ -6274,11 +6274,11 @@ setInterval(function() {
       var text = await resp.text();
       var data; try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {}; }
       if (!resp.ok) {
-        alert(data.error || ('Failed to set GPS visibility (HTTP ' + resp.status + ')'));
+        alert(data.error || ('Could not set GPS visibility (HTTP ' + resp.status + ')'));
         loadChains();  // revert UI to server truth
       }
     } catch (e) {
-      alert('Failed to set GPS visibility: ' + e.message);
+      alert('Could not set GPS visibility: ' + e.message);
       loadChains();
     }
   }
@@ -6335,8 +6335,8 @@ setInterval(function() {
     if (clear) clear.addEventListener('click', function() {
       if (!window.confirm('Clear the stored password for ' + chainId + '? '
           + (visibility === 'dark_matter'
-              ? 'Conceptions will fail until you set a new one (or pass MEMEMAGE_PASSWORD in env).'
-              : 'Future records on this chain will be fully public.'))) return;
+              ? 'Conceptions fail until you set a new one, or pass MEMEMAGE_PASSWORD in the environment.'
+              : 'Future records on this chain become fully public.'))) return;
       saveChainPassword(chainId, '');
     });
     cancel.addEventListener('click', function() {
@@ -6384,8 +6384,8 @@ setInterval(function() {
       'Migrate legacy state to chains/' + targetId + '/?\n\n' +
       'This moves your existing sealed_chunks.json, chunk_state.json, ' +
       'records/, mememage.db and last_id.json into ' +
-      '~/.mememage/chains/' + targetId + '/. The original layout is logged to ' +
-      '~/.mememage/migration.log.'
+      '~/.mememage/chains/' + targetId + '/. The migration logs the original ' +
+      'layout to ~/.mememage/migration.log.'
     )) return;
     showError('');
     try {
@@ -6416,7 +6416,7 @@ setInterval(function() {
       if (window.__resetPayloadTab) window.__resetPayloadTab();
       await loadChains();
       showChainBanner(
-        'Active chain is now \u201c' + chainId + '\u201d. The Payload tab will reload from this chain. ' +
+        'Active chain is now \u201c' + chainId + '\u201d. The Payload tab reloads from this chain. ' +
         'Conceptions and seals are routed to this chain immediately.'
       );
     } catch (e) {
@@ -6909,86 +6909,86 @@ setInterval(function() {
   var ENTRIES = [
     // --- The model ---
     { id: 'soul', label: 'Soul',
-      body: 'A JSON record holding every fact about a conception — meaning to the image’s body. Stored as <code>.soul</code> files, on your disk plus wherever your surfaces carry it (peer mirror, archive, content-addressed network).' +
+      body: 'A JSON record that holds every fact about a conception — the meaning to the image’s body. Mememage stores it as a <code>.soul</code> file: on your disk, and wherever your surfaces carry it (a peer mirror, an archive, a content-addressed network).' +
         '<pre class="glossary-snippet">{\n  "identifier":   "mememage-…",\n  "content_hash": "…",\n  "origin":       { /* your fields */ },\n  "birth":        { /* sky + machine + GPS */ },\n  "signature":    "…",\n  /* …more fields… */\n}</pre>' },
     { id: 'bar', label: 'Bar',
-      body: 'A 2-pixel-tall steganographic strip at the bottom of every conceived image. Carries:<ul><li><strong>identifier</strong> — any decoder can look up the soul</li><li><strong>content hash</strong> — makes tampering detectable</li></ul>Reed-Solomon FEC and color delimiter bands survive JPEG re-encoding and crops to common social-media sizes.' },
+      body: 'A steganographic strip at the bottom of every conceived image, 2 pixels tall. It carries:<ul><li><strong>identifier</strong> — any decoder can look up the soul</li><li><strong>content hash</strong> — makes tampering detectable</li></ul>Reed-Solomon FEC and color delimiter bands let it survive JPEG re-encoding and crops to common social-media sizes.' },
     { id: 'conception', label: 'Conception',
-      body: 'The conscious act of binding image to soul. The server:<ul><li>hashes the record</li><li>signs it with your active key</li><li>writes the bar into the image</li><li>blasts the soul to your surfaces</li></ul>GPS is mandatory by default; opt out per chain via <code>gps_source: none</code>.' },
+      body: 'The conscious act that binds an image to its soul. The server:<ul><li>hashes the record</li><li>signs it with your active key</li><li>writes the bar into the image</li><li>blasts the soul to your surfaces</li></ul>GPS is mandatory by default. Opt out per chain with <code>gps_source: none</code>.' },
     { id: 'identifier', label: 'Identifier',
-      body: 'The key for finding a soul. Format <code>&lt;prefix&gt;-&lt;16 hex&gt;</code>:<ul><li><strong>prefix</strong> — set once per chain, then locked (default <code>mememage</code>); each chain owns its namespace</li><li><strong>16 hex</strong> — a fingerprint of the conception’s details and moment; unique even across two mints of one image</li></ul>Lives in the bar; readers fetch the soul from any source — no URL in the pixels.' },
+      body: 'The key for finding a soul. The format is <code>&lt;prefix&gt;-&lt;16 hex&gt;</code>:<ul><li><strong>prefix</strong> — set once per chain, then locked (default <code>mememage</code>). Each chain owns its namespace.</li><li><strong>16 hex</strong> — a fingerprint of the conception’s details and moment. It is unique even across two mints of one image.</li></ul>The identifier lives in the bar. Readers fetch the soul from any source, so no URL sits in the pixels.' },
     { id: 'content_hash', label: 'Content hash',
-      body: 'SHA-256 of the soul’s canonical JSON, first 16 hex chars. Baked into the bar: anyone can verify a soul matches its image, even a file from a stranger. The integrity authority, independent of where the soul came from.' },
+      body: 'The SHA-256 of the soul’s canonical JSON, first 16 hex characters. Mememage bakes it into the bar. So anyone can verify that a soul matches its image, even a file from a stranger. It is the integrity authority, independent of where the soul came from.' },
     { id: 'origin', label: 'Origin fields',
-      body: 'The soul’s open section — fields you declare about your image: title, creator, camera, a story, anything to attest to. Add, edit, or remove freely; the certificate’s Origin panel shows whatever you put here. Embedded image metadata (e.g. PNG text fields) prefills them.' },
+      body: 'The soul’s open section: the fields you declare about your image — a title, a creator, a camera, a story, anything you want to attest to. Add, edit, or remove them freely. The certificate’s Origin panel shows whatever you put here. Embedded image metadata (for example PNG text fields) prefills them.' },
     // --- Chains + Profiles ---
     { id: 'chain', label: 'Chain',
-      body: 'A universe of conceptions. One host can run several — a public art chain, a password-gated private chain, a test chain. Each has its own Age cycle, records, visibility, optional password, and shape (cycle length, payload layout, GPS contract).' },
+      body: 'A universe of conceptions. One host can run several: a public art chain, a password-gated private chain, a test chain. Each chain has its own Age cycle, records, visibility, optional password, and shape (cycle length, payload layout, GPS contract).' },
     { id: 'chain_badge', label: 'Chain badge',
-      body: 'Shown on every chain surface (Conceive, Payload, Config, tickets, conception page) so you always know which chain you’re on. Carries the <strong>official id</strong> (slug, e.g. <code>watermark</code>), a renameable <strong>friendly name</strong>, and a <strong>status dot</strong> for readiness:<div class="glossary-badge-legend"><div><span class="chain-dot" data-state="ready"></span> <strong>Green — Ready.</strong> Sealed and good to conceive.</div><div><span class="chain-dot" data-state="nopayload"></span> <strong>Yellow — No payload.</strong> Provenance works; no distribution set up.</div><div><span class="chain-dot" data-state="pending"></span> <strong>Orange — Update pending.</strong> A payload change is staged for the next Age.</div><div><span class="chain-dot" data-state="notready"></span> <strong>Red — Not ready.</strong> Needs a password, or no sealed Age yet.</div></div>' },
+      body: 'Shown on every chain surface (Conceive, Payload, Config, tickets, the conception page), so you always know which chain you are on. It carries the <strong>official id</strong> (a slug, for example <code>watermark</code>), a renameable <strong>friendly name</strong>, and a <strong>status dot</strong> for readiness:<div class="glossary-badge-legend"><div><span class="chain-dot" data-state="ready"></span> <strong>Green — Ready.</strong> Sealed and good to conceive.</div><div><span class="chain-dot" data-state="nopayload"></span> <strong>Yellow — No payload.</strong> Provenance works; no distribution set up.</div><div><span class="chain-dot" data-state="pending"></span> <strong>Orange — Update pending.</strong> A payload change is staged for the next Age.</div><div><span class="chain-dot" data-state="notready"></span> <strong>Red — Not ready.</strong> Needs a password, or no sealed Age yet.</div></div>' },
     { id: 'age', label: 'Age',
-      body: 'A version epoch of a chain. Records minted during an Age share one decoder, ruleset, and cycle-position counter. Sealing locks the Age; the next begins fresh. Cycle length is per-chain — the demo runs a 365-position year; any chain can set its own.' },
+      body: 'A version epoch of a chain. Records minted during an Age share one decoder, one ruleset, and one cycle-position counter. Sealing locks the Age, and the next one begins fresh. Cycle length is per-chain. The demo runs a 365-position year, and any chain can set its own.' },
     { id: 'constellation', label: 'Constellation',
-      body: 'A group of conceptions within an Age. The first — the <em>heart star</em> — names the family from its sky; the rest are lettered in conception order. Family claims (name, heart-star id, position) are tamper-evident in the content hash.' },
+      body: 'A group of conceptions within an Age. The first one is the <em>heart star</em>. It names the family from its sky, and the rest are lettered in conception order. Family claims (name, heart-star id, position) are tamper-evident in the content hash.' },
     { id: 'heart_star', label: 'Heart star',
-      body: 'The first conception in a constellation — α. Its identifier names the family; its conditions (sky, vitals) seed the family’s identity. Every later star references back to it.' },
+      body: 'The first conception in a constellation — α. Its identifier names the family, and its conditions (sky, vitals) seed the family’s identity. Every later star references back to it.' },
     { id: 'constellation_size', label: 'Constellation size',
-      body: 'How many stars make one constellation (heart star + siblings) — a per-chain knob, 1–24, default 12. The same number sets:<ul><li>the data-chunk count (one chunk per star)</li><li>the Bayer letters naming the stars — <strong>α</strong> for the heart star, then β, γ, δ … in birth order</li></ul>Staged like Age length: takes effect next Age on sealed chains.' },
+      body: 'How many stars make one constellation (the heart star plus its siblings). It is a per-chain knob, 1 to 24, default 12. The same number sets:<ul><li>the data-chunk count (one chunk per star)</li><li>the Bayer letters that name the stars: <strong>α</strong> for the heart star, then β, γ, δ, and so on in birth order</li></ul>It is staged like Age length: it takes effect next Age on a sealed chain.' },
     { id: 'profile', label: 'Profile',
-      body: 'One Ed25519 signing identity; one is active at a time — the key that signs your next conception. Carry many, typically one per machine, keeping your laptop’s primary key off a remote host. Profiles link into one human via signed records, never shared key bytes: <strong>Alias</strong> (run from each side) or <strong>Pair</strong> (one-click handshake) — each side keeps its private key, only public keys move.' },
+      body: 'One Ed25519 signing identity. One is active at a time: the key that signs your next conception. Carry many, typically one per machine, to keep your laptop’s primary key off a remote host. Profiles link into one human through signed records, never through shared key bytes. Use <strong>Alias</strong> (run it from each side) or <strong>Pair</strong> (a one-click handshake). Each side keeps its private key, and only public keys move.' },
     { id: 'active_profile', label: 'Active profile',
-      body: 'The profile whose key signs the next conception — one active at a time per host. Switching is instant; bar, notification, and cert reflect the new signer from the next conception on.' },
+      body: 'The profile whose key signs the next conception. One is active at a time per host. Switching is instant. The bar, the notification, and the certificate reflect the new signer from the next conception on.' },
     { id: 'alias', label: 'Alias',
-      body: 'A signed record naming another profile as a sibling. When both sign matching aliases pointing at each other (bidirectional), verifiers treat the two keys as one human.' },
+      body: 'A signed record that names another profile as a sibling. When both sides sign matching aliases that point at each other (bidirectional), verifiers treat the two keys as one human.' },
     { id: 'pair', label: 'Pair (cross-host alias handshake)',
-      body: 'One-click cross-host pairing: this host calls the peer, both sign aliases naming the other, both publish. A bidirectional alias in one round-trip, no private keys copied.' },
+      body: 'One-click cross-host pairing. This host calls the peer, both sides sign aliases that name the other, and both publish. You get a bidirectional alias in one round-trip, with no private keys copied.' },
     { id: 'sync', label: 'Sync (config push)',
-      body: 'One-shot push of your chains and surfaces (optionally webhooks) to a peer host, applied additively — existing entries stay. No private keys, API tokens, or surface credentials cross the wire (webhooks excepted, opt-in).' },
+      body: 'A one-shot push of your chains and surfaces (and optionally your webhooks) to a peer host. It applies additively: existing entries stay. No private keys, API tokens, or surface credentials cross the wire. Webhooks are the exception, and they are opt-in.' },
     // --- Channels ---
     { id: 'channel', label: 'Surface',
-      body: 'A pluggable destination for souls. Every enabled surface gets a copy on each conception; at least one must succeed. The <strong>primary</strong> surface’s URL becomes the bar’s record link and notification target. Credentials live in <code>.env</code>. Built-in types:<ul><li><code>http_push</code> — a mememage host; your own server is the default primary</li><li><code>internet_archive</code>, <code>zenodo</code> — opt-in, off until you add credentials</li></ul>Authors can register more (S3, IPFS, …).' },
+      body: 'A pluggable destination for souls. Every enabled surface gets a copy on each conception, and at least one must succeed. The <strong>primary</strong> surface’s URL becomes the bar’s record link and the notification target. Credentials live in <code>.env</code>. The built-in types are:<ul><li><code>http_push</code> — a mememage host. Your own server is the default primary.</li><li><code>internet_archive</code>, <code>zenodo</code> — opt-in, off until you add credentials.</li></ul>Authors can register more (S3, IPFS, and others).' },
     { id: 'surface_cleanup', label: 'Surface cleanup',
-      body: 'Hide or empty items on any configured surface — clearing test mints before genesis, or general housekeeping. Each surface decides what it supports:<ul><li><strong>Hide</strong> — remove from public search (Internet Archive: noindex)</li><li><strong>Purge</strong> — delete the content files (IA: the item empties; its name stays yours, re-writable)</li></ul>New mints always compute fresh identifiers — cleanup is tidiness, not collision avoidance.' },
+      body: 'Hide or empty items on any configured surface. Use it to clear test mints before genesis, or for general housekeeping. Each surface decides what it supports:<ul><li><strong>Hide</strong> — remove the item from public search (Internet Archive: noindex).</li><li><strong>Purge</strong> — delete the content files (Internet Archive: the item empties, and its name stays yours to re-write).</li></ul>New mints always compute fresh identifiers. Cleanup is tidiness, not collision avoidance.' },
     { id: 'primary', label: 'Primary surface',
-      body: 'The surface whose URL becomes <code>record.url</code> — the bar reference and notification link. Exactly one at a time; promote or demote via the radio button.' },
+      body: 'The surface whose URL becomes <code>record.url</code>: the bar reference and the notification link. Exactly one is primary at a time. Promote or demote a surface with the radio button.' },
     { id: 'per_profile_channels', label: 'Per-profile surfaces',
-      body: 'Each profile owns its own surfaces (its <code>channels.json</code>). Switching the active profile swaps the whole blast setup — surfaces and credentials — with no reconfiguring. A conception publishes to every enabled surface in the active profile. To keep a profile (e.g. a VPS key) off a public archive, don’t add that surface to it.' },
+      body: 'Each profile owns its own surfaces (its <code>channels.json</code>). Switching the active profile swaps the whole blast setup — surfaces and credentials — with no reconfiguring. A conception publishes to every enabled surface in the active profile. To keep a profile (for example a VPS key) off a public archive, do not add that surface to it.' },
     { id: 'distribution', label: 'Distribution',
-      body: 'The publish-results map (<code>{surface → url}</code>) returned by <code>channels.blast()</code>. Shown in webhook templates as <code>{{distribution}}</code> and the dashboard handoff card. Never written into the soul: the artifact is surface-agnostic, and any mirror can serve it — location stays out of the record.' },
+      body: 'The publish-results map (<code>{surface → url}</code>) that <code>channels.blast()</code> returns. Webhook templates show it as <code>{{distribution}}</code>, and so does the dashboard handoff card. Mememage never writes it into the soul. The artifact is surface-agnostic, and any mirror can serve it, so location stays out of the record.' },
     // --- Sessions + Tickets ---
     { id: 'session', label: 'Session',
-      body: 'A pending conception, not yet confirmed. Created when you stage an image on the dashboard, completed when the conception page POSTs back (with GPS if the chain requires it). Lives 7 days unless deleted.' },
+      body: 'A pending conception, not yet confirmed. Mememage creates it when you stage an image on the dashboard, and completes it when the conception page POSTs back (with GPS if the chain requires it). It lives 7 days unless you delete it.' },
     { id: 'ticket', label: 'Ticket',
-      body: 'The short 8-char prefix of a session token (e.g. <code>E33C9891</code>) — a pasteable handle for resuming or deleting a pending session without the full token.' },
+      body: 'The short 8-character prefix of a session token (for example <code>E33C9891</code>). It is a pasteable handle for resuming or deleting a pending session, without the full token.' },
     { id: 'resume', label: 'Resume / Delete',
-      body: '<strong>Resume</strong> brings a pending conception back up — to keep editing its fields or re-copy its handoff URL. <strong>Delete</strong> throws it away for good, rather than waiting out the 7-day expiry. Both act on a session by its ticket.' },
+      body: '<strong>Resume</strong> brings a pending conception back up, so you can keep editing its fields or re-copy its handoff URL. <strong>Delete</strong> throws it away for good, rather than waiting out the 7-day expiry. Both act on a session by its ticket.' },
     // --- Verification badges ---
     { id: 'witnessed', label: 'WITNESSED',
-      body: 'Hash match — the image’s bar carries the same content_hash the soul claims. Body and soul joined; verifiable from any source, the hash is the authority.' },
+      body: 'A hash match. The image’s bar carries the same content_hash that the soul claims. Body and soul are joined. It verifies from any source, because the hash is the authority.' },
     { id: 'authenticated', label: 'AUTHENTICATED',
-      body: 'Ed25519 signature verifies — only the holder of the signing key could have produced this record. It also binds the thumbnail hash, so swapping the portrait breaks authorship, not just EMBODIED. Trust is silent (TOFU): the creator’s name auto-appears on first encounter; later records under the same key inherit it.' },
+      body: 'The Ed25519 signature verifies. Only the holder of the signing key could have produced this record. The signature also binds the thumbnail hash, so swapping the portrait breaks authorship, not just EMBODIED. Trust is silent (TOFU): the creator’s name appears on first encounter, and later records under the same key inherit it.' },
     { id: 'embodied', label: 'EMBODIED',
-      body: 'Portrait match via dHash — the image you hold IS the original body, not a re-encode that shares the bar. A post-conception thumbnail comparison, protected by the signature, not the content hash.' },
+      body: 'A portrait match via dHash. The image you hold IS the original body, not a re-encode that shares the bar. It is a post-conception thumbnail comparison, protected by the signature, not by the content hash.' },
     // --- Chain visibility + GPS ---
     { id: 'light_energy', label: 'Light chain',
-      body: 'Public chain. The soul is unencrypted — anyone with the identifier fetches and verifies it fully. GPS is the exception: always sealed in a time-lock puzzle (anyone can open it in ~10 years), and a chain password, if set, opens it instantly for the creator.' },
+      body: 'A public chain. The soul is unencrypted, so anyone with the identifier fetches and verifies it fully. GPS is the exception. It is always sealed in a time-lock puzzle (anyone can open it in about 10 years), and a chain password, if set, opens it instantly for the creator.' },
     { id: 'dark_matter', label: 'Dark chain',
-      body: 'Password-gated chain. The whole soul is encrypted — origin, dimensions, birth certificate, GPS, traits, rarity, thumbnail, content chunks. Readers need the chain password for any of it. Only the public anchors (identifier, content_hash, hash_version) and grid position stay visible, so the bar still verifies and the record still places in the Observatory.' },
+      body: 'A password-gated chain. The whole soul is encrypted: origin, dimensions, birth certificate, GPS, traits, rarity, thumbnail, and content chunks. Readers need the chain password for any of it. Only the public anchors (identifier, content_hash, hash_version) and the grid position stay visible. So the bar still verifies, and the record still places in the Observatory.' },
     { id: 'access_layer', label: 'Access layer (chain password)',
-      body: 'An optional password that encrypts what the world sees — the third pillar of creator control, beside your signing key (identity) and content hash (integrity):<ul><li><strong>Light chain</strong> — seals only the GPS (your private time capsule)</li><li><strong>Dark chain</strong> — seals the whole soul</li></ul>Mememage never stores or learns it: you bring the key, we hold the lock — encrypt, keep the ciphertext, forget. Lose it and the sealed fields are gone.' },
+      body: 'An optional password that encrypts what the world sees. It is the third pillar of creator control, beside your signing key (identity) and the content hash (integrity):<ul><li><strong>Light chain</strong> — seals only the GPS, your private time capsule.</li><li><strong>Dark chain</strong> — seals the whole soul.</li></ul>Mememage never stores it or learns it: you bring the key, we hold the lock — encrypt, keep the ciphertext, forget. Lose it, and the sealed fields are gone.' },
     { id: 'gps_source', label: 'GPS source',
-      body: 'Chain-level setting for how location is captured at conception:<ul><li><code>phone</code> — browser <code>watchPosition</code>, precise</li><li><code>machine</code> — server-side IP geolocation, approximate</li><li><code>none</code> — no GPS, no time-lock puzzle</li></ul>A <code>phone</code> chain falls back to <code>machine</code> when no phone can reach the server (loopback-only desktop, no Tailscale). The handoff shows which source will be used — never a silent swap.' },
+      body: 'A chain-level setting for how Mememage captures location at conception:<ul><li><code>phone</code> — the browser’s <code>watchPosition</code>, precise</li><li><code>machine</code> — server-side IP geolocation, approximate</li><li><code>none</code> — no GPS, and no time-lock puzzle</li></ul>A <code>phone</code> chain falls back to <code>machine</code> when no phone can reach the server (a loopback-only desktop, no Tailscale). The handoff shows which source it will use. There is never a silent swap.' },
     { id: 'rotate_key', label: 'Rotate key',
-      body: 'Generates a new Ed25519 keypair and signs a <strong>succession record</strong> with the OLD key, published to the Internet Archive so verifiers can follow the keychain to the new one. Old-key records still verify; everything minted after is signed by the new key. The old key is archived under the profile’s keychain (<code>~/.mememage/profiles/&lt;profile&gt;/keychain/</code>).' },
+      body: 'Generates a new Ed25519 keypair and signs a <strong>succession record</strong> with the OLD key. Mememage publishes it to the Internet Archive, so verifiers can follow the keychain to the new key. Old-key records still verify, and everything minted after is signed by the new key. The old key is archived under the profile’s keychain (<code>~/.mememage/profiles/&lt;profile&gt;/keychain/</code>).' },
     { id: 'revoke_key', label: 'Revoke key',
-      body: 'Publishes the <strong>pre-signed revocation cert</strong> to the Internet Archive; once it propagates, every record signed by this key shows a revocation warning. Irreversible — use only if your private key is compromised. Pre-signed at keygen, so a thief can’t forge a revocation — but neither can you un-revoke.' },
+      body: 'Publishes the <strong>pre-signed revocation cert</strong> to the Internet Archive. Once it propagates, every record signed by this key shows a revocation warning. This is irreversible. Use it only if someone compromises your private key. It is pre-signed at keygen, so a thief cannot forge a revocation. But you cannot un-revoke it either.' },
     { id: 'webhooks', label: 'Webhooks',
-      body: 'Outbound notifications fired on each mint — to Discord, Slack, Telegram, or a generic endpoint. Two events:<ul><li><code>conceived</code> — image minted</li><li><code>ready</code> — the GPS-capture link is generated</li></ul>Custom auth headers (e.g. a Discord bot token) aren’t editable here — set them in <code>~/.mememage/server.json</code>; they survive saves.' },
+      body: 'Outbound notifications, fired on each mint, to Discord, Slack, Telegram, or a generic endpoint. There are two events:<ul><li><code>conceived</code> — the image is minted</li><li><code>ready</code> — the GPS-capture link is generated</li></ul>You cannot edit custom auth headers here (for example a Discord bot token). Set them in <code>~/.mememage/server.json</code>, and they survive saves.' },
     // --- Misc tech ---
     { id: 'sigil', label: 'Sigil',
-      body: 'A rare event — the kernel’s entropy at conception happens to contain the bar’s magic bytes (<code>AD4E</code>) in the random hex: identity radiating unbidden from pure noise. ~0.09% per conception; adds to the rarity score and floors the tier to at least Rare.' },
+      body: 'A rare event. The kernel’s entropy at conception happens to contain the bar’s magic bytes (<code>AD4E</code>) in the random hex: identity radiating unbidden from pure noise. It occurs about 0.09% of the time per conception. It adds to the rarity score and floors the tier to at least Rare.' },
     { id: 'hash_version', label: 'Hash version',
-      body: 'Which inclusion set computed this record’s content_hash. Lets the tamper-evident field set evolve without invalidating older records — verifiers dispatch on it at hash time.' },
+      body: 'Which inclusion set computed this record’s content_hash. It lets the tamper-evident field set evolve without invalidating older records. Verifiers dispatch on it at hash time.' },
   ];
 
   // Build a lookup map for deep-linking.

@@ -68,6 +68,19 @@ class TestJsDecoderParity(unittest.TestCase):
             jc = self._run([sys.executable, os.path.join(JSTEST, "check-js-crypto.py"), jsout], cwd=ROOT)
             self.assertEqual(jc.returncode, 0, f"Python can't open JS encryption:\n{jc.stdout}\n{jc.stderr}")
 
+            # 4. the JS PNG WRITER (toPngBytes): a barred .png written entirely by
+            #    JS must open in PIL and pass the Python core's own api.verify.
+            png_path = os.path.join(td, "js-out.png")
+            rec_path = os.path.join(td, "js-out-record.json")
+            pw = self._run([NODE, os.path.join(JSTEST, "png-out.mjs"), png_path, rec_path])
+            self.assertEqual(pw.returncode, 0, f"JS png-out failed:\n{pw.stdout}\n{pw.stderr}")
+            import json as _json
+            from mememage import api
+            with open(rec_path, encoding="utf-8") as f:
+                rec = _json.load(f)
+            v = api.verify(png_path, rec)
+            self.assertTrue(v.match, f"Python can't verify the JS-written PNG: {v.reason}")
+
 
 if __name__ == "__main__":
     unittest.main()
