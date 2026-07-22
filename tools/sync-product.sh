@@ -77,6 +77,13 @@ cp "$DOCS_DIR/install.html" "$SITE_REPO/install/index.html"
 cp "$DOCS_DIR/install.sh"   "$SITE_REPO/install.sh"    # macOS / Linux pipe target
 cp "$DOCS_DIR/install.ps1"  "$SITE_REPO/install.ps1"   # Windows PowerShell pipe target
 
+# Privacy policy for the Chrome extension, at /privacy (a directory index so the
+# URL is clean: mememage.art/privacy). The Chrome Web Store listing links here —
+# a hosted policy is required for an extension with broad host access.
+rm -rf "$SITE_REPO/privacy"
+mkdir -p "$SITE_REPO/privacy"
+cp "$DOCS_DIR/privacy.html" "$SITE_REPO/privacy/index.html"
+
 # This repo owns the apex; .nojekyll so Pages skips Jekyll ({{...}} markers).
 echo "$APEX" > "$SITE_REPO/CNAME"
 touch "$SITE_REPO/.nojekyll"
