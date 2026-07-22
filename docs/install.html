@@ -121,6 +121,15 @@
       <div class="block" data-os="mac linux"><code><span class="cc">$ </span>curl -fsSL https://mememage.art/install.sh | bash</code></div>
       <div class="block" data-os="win"><code><span class="cc">PS&gt; </span>irm https://mememage.art/install.ps1 | iex</code></div>
     </section>
+
+    <section id="verify">
+      <p class="rec">Verify your download</p>
+      <p class="note">The one-line installs check the SHA-256 checksum automatically before running. For a direct download, compare it against
+        <a href="https://github.com/sememtac/mememage-provenance/releases/latest/download/SHA256SUMS.txt">SHA256SUMS.txt</a> &mdash; print the file's hash and match it to the line for your file:</p>
+      <div class="block" data-os="mac linux"><code><span class="cc"># prints the SHA-256 of the file you downloaded</span>
+shasum -a 256 Mememage-Provenance-macOS.zip</code></div>
+      <div class="block" data-os="win"><code>(Get-FileHash Mememage-Provenance-Windows.exe -Algorithm SHA256).Hash</code></div>
+    </section>
   </section>
 
   <footer>

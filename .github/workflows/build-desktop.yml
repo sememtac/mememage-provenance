@@ -85,3 +85,33 @@ jobs:
             Mememage-Provenance-Windows.exe
             Mememage-Provenance-Linux
           fail_on_unmatched_files: false
+
+  # After all three builds, publish ONE SHA256SUMS.txt over the binaries so users
+  # (and install.sh / install.ps1) can verify the download by SHA-256. Standard
+  # `sha256sum -c` / `Get-FileHash` format. GitHub-hosted over HTTPS, same as the
+  # binaries. (Integrity + verifiability; authenticity via signing is a follow-up.)
+  checksums:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true          # flatten every artifact into dist/
+
+      - name: Generate SHA256SUMS.txt
+        run: |
+          cd dist
+          sha256sum Mememage-Provenance-* > SHA256SUMS.txt
+          echo "=== SHA256SUMS.txt ==="
+          cat SHA256SUMS.txt
+
+      - name: Attach SHA256SUMS.txt to the Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/SHA256SUMS.txt
+          fail_on_unmatched_files: true
