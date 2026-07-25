@@ -48,3 +48,5 @@ VALIDATION_PLAN.md
 docs/plans/canonical-payload-seal.md
 test_pattern.png
 photobook_20260622_163012.png
+.ships/
+docs/install/

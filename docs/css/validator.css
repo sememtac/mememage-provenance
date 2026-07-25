@@ -375,7 +375,8 @@ body > *:not(#starfield):not(.touch-tooltip):not(.planetarium):not(.cosmic-playe
 .panel-error-head { color: #f87171; }
 .panel-error-body { color: #8a8a94; }
 .panel-error-body strong { color: #c0c0c8; }
-.img-console-thumb { max-width: 100%; max-height: 160px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); display: block; margin: 0 auto 0.6rem; }
+/* Square — never round the displayed image; the M/Y/C bar must stay visible. */
+.img-console-thumb { max-width: 100%; max-height: 160px; border-radius: 0; border: 1px solid rgba(255,255,255,0.08); display: block; margin: 0 auto 0.6rem; }
 .img-console-id { font-family: monospace; font-size: 0.78rem; font-weight: 600; color: #d0d0d8; }
 .img-console-id a { color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.25); cursor: pointer; }
 .img-console-hash { font-family: monospace; font-size: 0.66rem; color: #7a7a84; margin-top: 0.15rem; }
@@ -470,7 +471,8 @@ body > *:not(#starfield):not(.touch-tooltip):not(.planetarium):not(.cosmic-playe
   max-width: 96vw;
   max-height: 92vh;
   image-rendering: pixelated;
-  border-radius: 4px;
+  /* Square — never round the displayed image; the M/Y/C bar must stay visible. */
+  border-radius: 0;
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
 }
 /* The full image preview enlarges smooth (a photo, not bar pixels to inspect). */

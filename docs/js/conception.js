@@ -67,7 +67,9 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:1.5rem;';
       var fullImg = document.createElement('img');
       fullImg.src = thumbEl.src;
-      fullImg.style.cssText = 'max-width:92vw;max-height:92vh;object-fit:contain;border-radius:8px;box-shadow:0 4px 40px rgba(0,0,0,0.6);';
+      // Square — never round a full-image display; the rounded corner clipped the
+    // M/Y/C bands, the only visible part of the bar. See dashboard.js.
+    fullImg.style.cssText = 'max-width:92vw;max-height:92vh;object-fit:contain;border-radius:0;box-shadow:0 4px 40px rgba(0,0,0,0.6);';
       overlay.appendChild(fullImg);
       overlay.addEventListener('click', function() { overlay.remove(); });
       document.addEventListener('keydown', function esc(e) {

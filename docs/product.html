@@ -52,37 +52,57 @@
     <div class="page-header"><h1>Mememage</h1></div>
     <p class="product-tagline">Encode an image. Own its data.</p>
     <p class="product-sub">An identifier encoded into the pixels survives compression and re-uploads. It points back to data you keep.</p>
+    <!-- The genesis image (the minted mememage-0000000000000000 — bar and all, so it
+         decodes + verifies if saved). Clicking opens it full-res in the lightbox below. -->
+    <div class="product-hero-figure">
+      <button class="product-hero-zoom" id="heroZoom" type="button"
+              aria-label="View the genesis image full size">
+        <img class="product-hero-img" src="img/genesis.png" alt="the genesis conception">
+      </button>
+    </div>
     <div class="cta-row">
       <a class="cta cta-gold" id="ctaTry" href="#">See live examples &rarr;</a>
-      <a class="cta cta-code" href="/install">pip install mememage</a>
     </div>
-    <!-- The actual minted genesis image (mememage-0000000000000000) — bar and
-         all, so it decodes + verifies if saved. Clicking opens it full-res in
-         the lightbox below. -->
-    <button class="product-hero-zoom" id="heroZoom" type="button"
-            aria-label="View the genesis image full size">
-      <img class="product-hero-img" src="img/genesis.png" alt="the genesis conception">
-    </button>
   </header>
 
   <!-- The mechanism: identifier → data → encryption -->
-  <section class="product-section">
+  <section class="product-section mechanism-section">
     <p class="section-lead">Encode an image. Look up your data. Encrypt what's private.</p>
     <div class="tri">
-      <div class="tri-cell tri-m"><h4>Identifier</h4><p>A short code baked into the pixels. Survives compression and re-uploads. Heavy downscaling is where it ends.</p></div>
+      <div class="tri-cell tri-m"><h4>Identifier</h4><p>A short code baked into the pixels. Survives compression and re-uploads.</p></div>
       <div class="tri-cell tri-y"><h4>Data</h4><p>A record whose fields you define. Stored wherever you keep it.</p></div>
       <div class="tri-cell tri-c"><h4>Encryption</h4><p>Encrypt your data, in full or field by field. Add it with the encrypt extra.</p></div>
     </div>
   </section>
 
-  <!-- The API -->
-  <section class="product-section" id="install">
-    <p class="section-kicker">API</p>
-    <p class="section-lead">encode &middot; decode &middot; verify</p>
-    <div class="code-block"><pre><span class="cc"># pip install mememage</span>
-<span class="ck">result</span> = mememage.<span class="ck">encode</span>(<span class="cs">"photo.png"</span>, {<span class="cs">"title"</span>: <span class="cs">"Morning fog"</span>})  <span class="cc"># encode image</span>
-mememage.<span class="ck">decode</span>(<span class="cs">"photo.png"</span>)  <span class="cc"># return id + hash</span>
-mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, result.record)  <span class="cc"># truthy if match</span></pre></div>
+  <!-- The ecosystem: two language platforms; click one to see what's built on it.
+       Icons desaturate at rest and light up on hover (styles in product.css; data +
+       marks injected by the script below). The language cards are also the install
+       surface — each shows its own install command. -->
+  <section class="product-section eco-section">
+    <p class="eco-label">Mememage ecosystem</p>
+    <div class="eco-wall" id="ecoWall">
+      <button class="eco-lang" data-l="py" type="button">
+        <span class="eco-licon"><svg viewBox="0 0 24 24">
+          <path fill="#4B8BBE" d="M11.9 2.3c-4.7 0-4.4 2-4.4 2l.01 2.1h4.5v.63H5.72s-3.02-.34-3.02 4.42 2.64 4.6 2.64 4.6h1.57v-2.19s-.08-2.64 2.6-2.64h4.37s2.5.04 2.5-2.42V4.72s.38-2.42-4.5-2.42zM9.44 3.72c.45 0 .8.36.8.8s-.35.8-.8.8-.8-.36-.8-.8.36-.8.8-.8z"/>
+          <path fill="#FFD43B" d="M12.1 21.7c4.7 0 4.4-2 4.4-2l-.01-2.1H12v-.63h6.28s3.02.34 3.02-4.42-2.64-4.6-2.64-4.6h-1.57v2.19s.08 2.64-2.6 2.64H10.5s-2.5-.04-2.5 2.42v3.87s-.38 2.42 4.1 2.42zM14.56 20.28c-.45 0-.8-.36-.8-.8s.35-.8.8-.8.8.36.8.8-.36.8-.8.8z"/>
+        </svg></span>
+        <span class="eco-lname">Python</span><span class="eco-lcmd">pip install mememage</span>
+      </button>
+      <button class="eco-lang" data-l="js" type="button">
+        <span class="eco-licon"><svg viewBox="-1 -6.5 20 20">
+          <path fill="#CB3837" d="M0,0h18v6H9v1H5V6H0V0z M1,5h2V2h1v3h1V1H1V5z M6,1v5h2V5h2V1H6z M8,2h1v2H8V2z M11,1v4h2V2h1v3h1V2h1v3h1V1H11z"/>
+          <polygon fill="#fff" points="1,5 3,5 3,2 4,2 4,5 5,5 5,1 1,1"/>
+          <path fill="#fff" d="M6,1v5h2V5h2V1H6z M9,4H8V2h1V4z"/>
+          <polygon fill="#fff" points="11,1 11,5 13,5 13,2 14,2 14,5 15,5 15,2 16,2 16,5 17,5 17,1"/>
+        </svg></span>
+        <span class="eco-lname">JavaScript</span><span class="eco-lcmd">npm install mememage</span>
+      </button>
+    </div>
+    <div class="eco-panel" id="ecoPanel">
+      <div class="eco-head"><span class="eco-dot"></span><span id="ecoTitle"></span></div>
+      <ul class="eco-rows" id="ecoRows"></ul>
+    </div>
   </section>
 
   <!-- Close -->
@@ -90,24 +110,14 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
     <p class="section-lead">Give any image an identifier, and it carries a way home to its data.</p>
     <p style="max-width:28rem;margin:0 auto;">Store, encrypt, share.</p>
     <div class="product-foot-links">
-      <!-- Applications built on the core: our demo trio + the ComfyUI node pack
-           (links to the registry, i.e. how you install it from ComfyUI Manager). -->
+      <!-- The live surfaces + community. Source now lives on each package's own home
+           (the ecosystem selector above) and on the install page's GitHub link. -->
       <a id="linkFeed" href="#">Feed</a>
       <a id="linkDecoder" href="#">Decoder</a>
       <a id="linkValidator" href="#">Validator</a>
-      <a href="https://registry.comfy.org/nodes/mememage-comfy">ComfyUI Nodes</a>
-    </div>
-    <div class="product-foot-links product-foot-source">
-      <!-- Source, all public. Core = the pip package; Provenance = the full
-           self-host demo; ComfyUI = the node-pack repo. (No Web repo link — the
-           github-hosted decoder site is deprecated; the live decoder/validator
-           ride the mint server.) -->
-      <a href="https://github.com/sememtac/mememage">Core</a>
-      <a href="https://github.com/sememtac/mememage-provenance">Provenance</a>
-      <a href="https://github.com/sememtac/mememage-comfy">ComfyUI</a>
       <a id="linkDiscord" href="#" target="_blank" rel="noopener">Discord</a>
     </div>
-    <p class="product-fineprint">Mememage is an image encoding technique. Check out the feed, decoder, and validator for our demo application.</p>
+    <p class="product-fineprint">Mememage is an image encoding technique. The ecosystem above is built on it.</p>
   </footer>
 
 </div>
@@ -180,15 +190,14 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
   });
 })();
 
-// Install shadowbox: the pip CTA opens /install in an overlay iframe, so the
-// visitor never leaves mememage.art. Plain left-clicks open the modal; modified
-// clicks (cmd/ctrl/shift/alt/middle) fall through to the real /install link.
+// Install shadowbox: opens /install in an overlay iframe so the visitor never leaves
+// mememage.art. Triggered by the "Mememage Provenance" item in the ecosystem list —
+// the ecosystem script below calls window.openInstallModal.
 (function () {
-  var cta = document.querySelector('.cta-code');
   var modal = document.getElementById('installModal');
   var frame = document.getElementById('installFrame');
   var closeBtn = document.getElementById('installModalClose');
-  if (!cta || !modal || !frame) return;
+  if (!modal || !frame) return;
   // Escape mememage.css's `body > *` position:relative (same as the lightbox).
   document.documentElement.appendChild(modal);
   function open() {
@@ -202,16 +211,109 @@ mememage.<span class="ck">verify</span>(<span class="cs">"photo.png"</span>, res
     modal.hidden = true;
     document.body.style.overflow = '';
   }
-  cta.addEventListener('click', function (e) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-    e.preventDefault();
-    open();
-  });
   if (closeBtn) closeBtn.addEventListener('click', close);
   modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
+  window.openInstallModal = open;
+})();
+</script>
+
+<!-- Ecosystem selector: two languages, each expanding to what's built on it.
+     Our items wear the Mememage polaroid mark; ComfyUI + Chrome wear their own. -->
+<script>
+(function () {
+  var ICON = {
+    // official Mememage polaroid: white card, dark photo, M/Y/C bar
+    mm:'<svg viewBox="0 0 24 24">'
+      +'<rect x="2.5" y="2.5" width="19" height="19" rx="1.3" fill="#f4f4f6"/>'
+      +'<rect x="4" y="4" width="16" height="12.2" fill="#0c0c12"/>'
+      +'<rect x="4" y="16.7" width="5.33" height="3.3" fill="#dc50dc"/>'
+      +'<rect x="9.33" y="16.7" width="5.33" height="3.3" fill="#dcc83c"/>'
+      +'<rect x="14.66" y="16.7" width="5.34" height="3.3" fill="#3cc8dc"/></svg>',
+    // official ComfyUI mark (comfy.org): #172DD7 tile, #F0FF41 "C"
+    comfy:'<svg viewBox="0 0 84 84"><rect width="84" height="84" rx="8" fill="#172DD7"/>'
+      +'<path fill="#F0FF41" d="M28.5899 69.2727C27.3242 69.2727 26.303 68.8023 25.637 67.9128C24.9524 66.9989 24.774 65.723 25.1471 64.4133L26.6455 59.1518C26.765 58.7329 26.6818 58.2821 26.4212 57.9336C26.1606 57.5858 25.7529 57.381 25.3198 57.381H21.0116C19.7453 57.381 18.724 56.9112 18.0583 56.0218C17.3738 55.1072 17.1953 53.8314 17.5687 52.5216L22.7163 34.5286L23.2847 32.5517C24.0487 29.869 26.8349 27.6888 29.4966 27.6888H34.6517C35.2668 27.6888 35.8079 27.2787 35.9773 26.6835L37.6821 20.6987C38.4453 18.0187 41.2316 15.8385 43.8933 15.8385L54.9181 15.8189L62.9891 15.8182C64.2551 15.8182 65.2763 16.288 65.942 17.1774C66.6265 18.0913 66.805 19.3672 66.4319 20.6769L64.124 28.7803C63.3611 31.4595 60.5748 33.6391 57.9131 33.6391L46.8637 33.6601H41.7104C41.0959 33.6601 40.5555 34.0695 40.3851 34.6641L36.0883 49.6722C35.9681 50.0919 36.0513 50.5441 36.3126 50.8925C36.5732 51.2403 36.9809 51.445 37.4136 51.445L44.7152 51.4308H52.7622C54.0282 51.4308 55.0494 51.9006 55.7151 52.7901C56.3996 53.7046 56.5781 54.9805 56.2047 56.2902L53.8969 64.3923C53.1339 67.0722 50.3476 69.2517 47.686 69.2517L36.6369 69.2727H28.5899Z"/></svg>',
+    // Chrome (official palette, flat at icon size)
+    chrome:'<svg viewBox="0 0 24 24">'
+      +'<path fill="#db4437" d="M12 12 3.34 7A10 10 0 0 1 20.66 7Z"/>'
+      +'<path fill="#ffcd40" d="M12 12 20.66 7A10 10 0 0 1 12 22Z"/>'
+      +'<path fill="#0f9d58" d="M12 12 12 22A10 10 0 0 1 3.34 7Z"/>'
+      +'<circle cx="12" cy="12" r="4.7" fill="#f1f1f1"/><circle cx="12" cy="12" r="3.5" fill="#4285f4"/></svg>'
+  };
+  var DATA = {
+    py: { title: 'Built on Python', al: '#4B8BBE', items: [
+      { ic:'mm', nm:'mememage', tag:'library', ds:'The core: encode · decode · verify · unlock. Pure Python, no dependencies.',
+        release:{ label:'PyPI', url:'https://pypi.org/project/mememage/' }, git:'https://github.com/sememtac/mememage' },
+      { ic:'comfy', nm:'mememage-comfy', tag:'nodes', ds:'Encode and Decode nodes. Stamp a verifiable bar as you generate an image.',
+        release:{ label:'ComfyUI', url:'https://registry.comfy.org/nodes/mememage-comfy' }, git:'https://github.com/sememtac/mememage-comfy' },
+      { ic:'mm', nm:'Mememage Provenance', tag:'desktop app', ds:'The reference app and mint server. Runs on macOS, Windows, and Linux.',
+        release:{ label:'Download', install:true }, git:'https://github.com/sememtac/mememage-provenance' }
+    ]},
+    js: { title: 'Built on JavaScript', al: '#CB3837', items: [
+      { ic:'mm', nm:'mememage', tag:'SDK', ds:'The JavaScript SDK: decode · verify · encode. Matches the Python core.',
+        release:{ label:'npm', url:'https://www.npmjs.com/package/mememage' }, git:'https://github.com/sememtac/mememage-js' },
+      { ic:'mm', nm:'mememage-detector', tag:'library', ds:'Find every marked image on a page and track it. Works with any framework.',
+        release:{ label:'npm', url:'https://www.npmjs.com/package/mememage-detector' }, git:'https://github.com/sememtac/mememage-detector' },
+      { ic:'mm', nm:'mememage-resolver', tag:'library', ds:'Resolve an identifier to its record across mirrors. Verify it by hash.',
+        release:{ label:'npm', url:'https://www.npmjs.com/package/mememage-resolver' }, git:'https://github.com/sememtac/mememage-resolver' },
+      { ic:'chrome', nm:'Chrome extension', tag:'extension', ds:'Find and verify marked images as you browse.',
+        release:{ label:'Web Store', url:'https://chromewebstore.google.com/detail/mememage/iibfeggbpigkojefaellhpiiklfanhdc' }, git:'https://github.com/sememtac/mememage-chrome' }
+    ]}
+  };
+  var wall = document.getElementById('ecoWall'),
+      rows = document.getElementById('ecoRows'),
+      title = document.getElementById('ecoTitle'),
+      panel = document.getElementById('ecoPanel');
+  if (!wall || !rows || !panel) return;
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function render(key) {
+    var d = DATA[key];
+    panel.style.setProperty('--al', d.al);
+    title.textContent = d.title;
+    rows.innerHTML = d.items.map(function (x) {
+      // Each item shows two links: its release page + its GitHub source. The Provenance
+      // "Download" opens the /install shadowbox in place; the rest are external. An item
+      // with no release page shows GitHub only.
+      var links = '';
+      if (x.release) {
+        var rel = x.release.install ? ' href="/install/" data-install="1"'
+                                    : ' href="' + esc(x.release.url) + '" target="_blank" rel="noopener"';
+        links += '<a class="eco-link"' + rel + '>' + esc(x.release.label) + ' ↗</a>';
+      }
+      links += '<a class="eco-link" href="' + esc(x.git) + '" target="_blank" rel="noopener">GitHub ↗</a>';
+      return '<li class="eco-row">'
+        + '<span class="eco-ic">' + ICON[x.ic] + '</span>'
+        + '<span class="eco-body">'
+        + '<span class="eco-h"><span class="eco-nm">' + esc(x.nm) + '</span><span class="eco-tag">' + esc(x.tag) + '</span></span>'
+        + '<span class="eco-ds">' + esc(x.ds) + '</span>'
+        + '<span class="eco-links">' + links + '</span>'
+        + '</span>'
+        + '</li>';
+    }).join('');
+  }
+  wall.addEventListener('click', function (e) {
+    var b = e.target.closest('.eco-lang'); if (!b) return;
+    var wasActive = b.classList.contains('active');
+    var kids = wall.children;
+    for (var i = 0; i < kids.length; i++) kids[i].classList.remove('active');
+    if (wasActive) {                       // click the selected card again -> collapse
+      panel.classList.remove('open');
+      return;
+    }
+    b.classList.add('active');
+    render(b.dataset.l);
+    panel.classList.add('open');           // expand (or swap content if already open)
+  });
+  // The Provenance "Download" link opens the install shadowbox in place; the rest are
+  // ordinary links.
+  rows.addEventListener('click', function (e) {
+    var inst = e.target.closest('a[data-install]'); if (!inst) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    if (window.openInstallModal) { e.preventDefault(); window.openInstallModal(); }
+  });
+  // No language is selected on load — the list appears only when a card is clicked.
 })();
 </script>
 </body>

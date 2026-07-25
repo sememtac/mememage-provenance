@@ -911,7 +911,9 @@ function attachLightbox(imgEl) {
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:2rem;';
     var fullImg = document.createElement('img');
     fullImg.src = imgEl.src;
-    fullImg.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 4px 40px rgba(0,0,0,0.5);';
+    // Square — never round the displayed image; the M/Y/C bar runs edge to edge
+    // along the bottom and a radius would clip it (the bar must stay visible).
+    fullImg.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:0;box-shadow:0 4px 40px rgba(0,0,0,0.5);';
     overlay.appendChild(fullImg);
     overlay.addEventListener('click', function() { overlay.remove(); });
     document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); } });

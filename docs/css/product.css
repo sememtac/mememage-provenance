@@ -41,7 +41,7 @@
   /* Top padding matches the decoder/validator title height: they sit at 40px
      via mememage.css's `body { padding-top: 2.5rem }`; this page zeroes that
      body padding, so the hero re-supplies the same 2.5rem. */
-  padding: 2.5rem 0 1.75rem;
+  padding: 2rem 0 0.5rem;
 }
 .product-hero .page-header { margin-bottom: 0; }
 .product-tagline {
@@ -49,13 +49,13 @@
   font-weight: 400;
   color: #f0f0f6;
   letter-spacing: 0.01em;
-  margin: 1.4rem 0 0.6rem;
+  margin: 1rem 0 0.5rem;
 }
 .product-sub {
   font-size: 0.92rem;
   color: #9a9ab0;
   max-width: 34rem;
-  margin: 0 auto 2rem;
+  margin: 0 auto 1rem;
 }
 /* Genesis hero image — a constrained portrait that lifts on hover and opens
    full-res in a lightbox on click. */
@@ -69,10 +69,14 @@
 }
 .product-hero-img {
   display: block;
-  width: auto;
-  max-width: min(88vw, 19rem);
-  max-height: 27rem;
-  border-radius: 12px;
+  /* Width matched to the "See live examples" button so the image and the CTA align.
+     The genesis image is a tall portrait, so its height follows from this width. */
+  width: 12.4rem;
+  max-width: 88vw;
+  height: auto;
+  /* Square — never round the genesis image's corners; the M/Y/C bar runs edge
+     to edge along the bottom and a radius would clip it. */
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
   transition: transform 0.45s ease, box-shadow 0.45s ease;
@@ -81,6 +85,11 @@
   transform: translateY(-4px);
   box-shadow: 0 20px 58px rgba(0, 0, 0, 0.6);
 }
+/* The genesis image leads the hero — its own centered block above the CTA. */
+.product-hero-figure { text-align: center; margin: 0.2rem 0 0.8rem; }
+/* Mechanism section leads straight off the hero — tighten its top so the ecosystem
+   cards below stay near the fold. */
+.mechanism-section { padding: 0.4rem 0 1rem; }
 
 /* Lightbox — examine the hero image full-res on a dimmed backdrop. */
 .lightbox {
@@ -100,7 +109,8 @@
 .lightbox-img {
   max-width: 100%;
   max-height: 94vh;
-  border-radius: 10px;
+  /* Square — show the full M/Y/C bar (see .product-hero-img). */
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
 }
@@ -222,7 +232,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.9rem;
-  margin-top: 1.4rem;
+  margin-top: 0.9rem;
 }
 .tri-cell {
   border: 1px solid rgba(255,255,255,0.07);
@@ -315,4 +325,82 @@
   .code-block pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.68rem; }
   .prove { flex-direction: column; gap: 0.1rem; }
   .prove b { min-width: 0; }
+}
+
+/* ---- Ecosystem: language selector + consumer list ----
+   Two language platforms; click one to reveal what's built on it. Icons render in
+   full colour and desaturate at rest (grayscale filter keeps the internal detail),
+   then light up on hover. */
+/* Tighten the top of the ecosystem section so the language cards sit above the fold. */
+.eco-section { padding-top: 0.6rem; }
+.eco-label {
+  text-align: center; font-size: 1.05rem; font-weight: 400; color: #ececf4;
+  letter-spacing: 0.01em; margin: 0 0 1.1rem;
+}
+.eco-wall { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.eco-lang {
+  font-family: inherit; cursor: pointer; background: rgba(255,255,255,0.015);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.2rem 1.7rem;
+  width: 186px; display: flex; flex-direction: column; align-items: center; gap: 0.55rem;
+  transition: border-color 0.3s, background 0.3s, transform 0.3s;
+}
+.eco-lang:hover { transform: translateY(-3px); background: rgba(255,255,255,0.03); }
+.eco-lang.active { border-color: var(--al); background: rgba(255,255,255,0.04); }
+.eco-lang[data-l="py"] { --al: #4B8BBE; }
+.eco-lang[data-l="js"] { --al: #CB3837; }
+.eco-licon { width: 44px; height: 44px; }
+.eco-licon svg, .eco-ic svg {
+  width: 100%; height: 100%; display: block;
+  filter: grayscale(1) brightness(1.18) contrast(0.95); transition: filter 0.4s ease;
+}
+.eco-lang:hover .eco-licon svg, .eco-lang.active .eco-licon svg { filter: none; }
+.eco-lname { font-size: 0.92rem; color: #dfe0ea; }
+.eco-lcmd { font-size: 0.62rem; color: #6a6a82; }
+.eco-lang:hover .eco-lcmd, .eco-lang.active .eco-lcmd { color: #9a9ab0; }
+
+.eco-panel {
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+  background: #0c0c14; overflow: hidden;
+  /* Accordion: nothing selected on load. Click a card to expand its list; click the
+     same card again to collapse it. Both directions animate. */
+  max-height: 0; opacity: 0; margin-top: 0; border-color: transparent;
+  transition: max-height 0.36s ease, opacity 0.3s ease, margin-top 0.36s ease, border-color 0.3s ease;
+}
+.eco-panel.open {
+  max-height: 640px; opacity: 1; margin-top: 1.6rem;
+  border-color: rgba(255,255,255,0.08);
+}
+.eco-head {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: #6a6a82;
+}
+.eco-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--al); }
+.eco-rows { list-style: none; margin: 0; padding: 0.4rem; }
+.eco-row {
+  display: flex; gap: 0.85rem; align-items: flex-start; padding: 0.7rem 0.8rem;
+  border-radius: 8px; transition: background 0.18s;
+}
+.eco-row:hover { background: rgba(255,255,255,0.03); }
+.eco-ic { width: 27px; height: 27px; flex: 0 0 auto; }
+.eco-row:hover .eco-ic svg { filter: none; }
+.eco-body { flex: 1; min-width: 0; }
+.eco-h { display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap; }
+.eco-nm { font-size: 0.82rem; color: #e8e8f2; }
+.eco-tag {
+  font-size: 0.54rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6a6a82;
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 0.08rem 0.5rem;
+}
+.eco-ds { font-size: 0.72rem; color: #9a9ab0; margin-top: 0.2rem; }
+/* Release + source links, always shown under the item. */
+.eco-links { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.eco-link {
+  font-size: 0.68rem; color: var(--al); text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 0.2rem 0.7rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.eco-link:hover { background: rgba(255,255,255,0.05); border-color: var(--al); }
+
+@media (max-width: 560px) {
+  .eco-lang { width: calc(50% - 0.5rem); padding: 1.1rem; }
 }

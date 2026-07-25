@@ -80,7 +80,11 @@ log = logging.getLogger(__name__)
 
 def _make_verifier(password):
     salt = os.urandom(16)
-    h = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PW_VERIFIER_ITERS)
+    # NFC-normalized through the same helper the envelope key uses, so the gate
+    # and the lock can never disagree about what the password is.
+    from mememage.crypto import normalize_password
+    pw = normalize_password(password).encode("utf-8")
+    h = hashlib.pbkdf2_hmac("sha256", pw, salt, _PW_VERIFIER_ITERS)
     return {"v": 1, "salt": salt.hex(), "iter": _PW_VERIFIER_ITERS, "hash": h.hex()}
 
 
@@ -88,7 +92,9 @@ def _check_verifier(password, verifier):
     try:
         salt = bytes.fromhex(verifier["salt"])
         iters = int(verifier.get("iter", _PW_VERIFIER_ITERS))
-        h = hashlib.pbkdf2_hmac("sha256", (password or "").encode("utf-8"), salt, iters)
+        from mememage.crypto import normalize_password
+        pw = normalize_password(password or "").encode("utf-8")
+        h = hashlib.pbkdf2_hmac("sha256", pw, salt, iters)
         return hmac.compare_digest(h.hex(), verifier["hash"])
     except Exception:
         return False
