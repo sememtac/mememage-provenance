@@ -32,7 +32,12 @@
   boxImg.className = 'feed-lightbox-img';
   boxImg.alt = '';
   box.appendChild(boxImg);
-  box.addEventListener('click', close);
+  // Tap anywhere to close — except the click that trails a swipe (see below).
+  var swiped = false;
+  box.addEventListener('click', function () {
+    if (swiped) { swiped = false; return; }
+    close();
+  });
   // Append to <html>, not <body>: mememage.css's `body > *` rule forces every
   // body child to position:relative, which would break the fixed full-screen
   // centering. As an html child it keeps position:fixed and centers properly.
@@ -69,6 +74,43 @@
     else if (e.key === 'ArrowLeft') { e.preventDefault(); nav(-1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); nav(1); }
   });
+
+  // Swipe = the arrow keys for a touch screen. Swipe LEFT to go forward (the
+  // image follows your finger's direction of travel), RIGHT to go back.
+  //
+  // Three things it must not do: fight a pinch-zoom (ignore anything with more
+  // than one finger), fire on a vertical drag (a swipe must be clearly more
+  // horizontal than vertical), or let the tap-to-close handler run afterwards —
+  // a swipe ends in a click event, which would close the lightbox the moment you
+  // navigated. `swiped` swallows exactly that one click.
+  var SWIPE_MIN = 45;        // px of travel before it counts as a swipe
+  var SWIPE_RATIO = 1.5;     // how much more horizontal than vertical it must be
+  var SWIPE_MAX_MS = 800;    // slower than this is a drag, not a swipe
+  var t0 = null;
+
+  box.addEventListener('touchstart', function (e) {
+    // Clear the flag at the START of every touch. A browser suppresses the
+    // trailing click when a touch travelled far enough to be a drag, so the
+    // click `swiped` is waiting for may never arrive — and a stale flag would
+    // swallow the user's next genuine tap-to-close instead.
+    swiped = false;
+    if (e.touches.length !== 1) { t0 = null; return; }   // pinch — leave it alone
+    var t = e.touches[0];
+    t0 = { x: t.clientX, y: t.clientY, at: Date.now() };
+  }, { passive: true });
+
+  box.addEventListener('touchend', function (e) {
+    if (!t0 || e.changedTouches.length !== 1) { t0 = null; return; }
+    var t = e.changedTouches[0];
+    var dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    var quick = Date.now() - t0.at <= SWIPE_MAX_MS;
+    t0 = null;
+    if (!quick || Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+    swiped = true;
+    nav(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  box.addEventListener('touchcancel', function () { t0 = null; }, { passive: true });
 
   function escAttr(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {

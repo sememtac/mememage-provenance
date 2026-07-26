@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Pipe targets for `curl | sh`, not pages — keep them out of the index.
+Disallow: /install.sh
+Disallow: /install.ps1
+
 Sitemap: https://mememage.art/sitemap.xml

@@ -4,17 +4,29 @@
 
 # Mememage — Provenance
 
-A self-hostable toolkit for **image provenance**. Give any image a tamper-evident mark that is tied to a record you keep. Then anyone can confirm where the image came from, and that no one has changed it, from any copy. The toolkit is built on [mememage](https://github.com/sememtac/mememage): a 2-pixel bar links an image to a JSON record, verified by hash alone. This repository bundles the full stack around that core: a **mint server** to stamp and publish images, and a web **decoder** and **validator** to read and verify them.
+## This is a demo app
 
-The identifier and the hash are the base. On top of them, the reference chain can record a rich snapshot of the moment you publish an image:
+It is a demo app built on [mememage](https://github.com/sememtac/mememage). It is an artistic take on image provenance. Its provenance features fit one artist's work.
+
+The core is common to every app built on Mememage. A 2-pixel bar links an image to a JSON record. A hash proves that the two belong together. The core is four functions, and it does not define what a record contains.
+
+Install it and try it on your own images. Build your own app on the core. Use this repository as an example of what to do with the data, not as a specification. You do not have to run this app to use Mememage.
+
+## What the demo app does
+
+It stamps images and verifies them. A **mint server** stamps and publishes an image. A web **decoder** and **validator** read the bar and check it. The bar points to a record you keep, so anyone can confirm the origin of the image from any copy.
+
+This app also adds a snapshot of the moment it publishes an image. Each item below is an invention of this app. The format does not require any of them.
 
 - **Celestial birth certificate** — the positions of the sun, the moon, and the planets, computed from Meeus' astronomical algorithms.
 - **Machine reading** — a hardware and live-state snapshot of the publishing machine (macOS and Linux): cores, memory, load, and kernel entropy.
 - **Rarity** — a score from the celestial state, the machine vitals, and raw entropy.
 - **Time-locked GPS** — the coordinate, behind an RSA time-lock puzzle (sequential squaring, about 10 years).
-- **Lineage** — a `parent_id` linked list that chains every image back to a genesis.
+- **Lineage** — a `parent_id` chain from every image back to a genesis.
 
 The record also carries fields that the creator defines: a caption, a credit, a license. Enter them in the mint editor, or prefill them from the image's EXIF data (camera, lens, date).
+
+**Build your own record.** A newsroom's record can hold a photographer and an assignment. A shop's record can hold an order number. Choose the fields that fit your work.
 
 ## What's here
 
