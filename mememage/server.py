@@ -2446,6 +2446,42 @@ class MintHandler(BaseHTTPRequestHandler):
                 or host.endswith(".local")
                 or host.endswith(".ts.net"))
 
+    # Crawler policy. Two faces, two answers, and both are served by the same
+    # helper so they stay visible next to each other.
+    #
+    # The decode tools are worth finding, so the souls face allows them. Records
+    # and machine endpoints are not pages, so they are not offered.
+    #
+    # On the mint face the feed at "/" is ONE stable URL, so indexing it cannot
+    # rot. The per-image URLs under /api/ are the ones that cull after about a
+    # week, and those would decay into soft 404s, so they are refused. Admin
+    # surfaces never belong in an index.
+    #
+    # The /<token> dashboard URL is deliberately ABSENT: robots.txt is public,
+    # so naming a secret path here would advertise it.
+    # NO "Allow: /" line. It is redundant (anything not disallowed is allowed)
+    # and it is actively harmful: a first-match parser, which is what Python's
+    # own urllib.robotparser and many simple crawlers use, matches "Allow: /"
+    # against every path and never reaches the Disallow lines below it. Google
+    # uses longest-match and would behave, so the file would have looked correct
+    # while being a no-op for everyone else.
+    _ROBOTS_SOULS = ("User-agent: *\n"
+                     "Disallow: /api/\n"
+                     "Disallow: /*.soul$\n")
+    _ROBOTS_MINT = ("User-agent: *\n"
+                    "Disallow: /api/\n"
+                    "Disallow: /dashboard\n"
+                    "Disallow: /mint/\n")
+
+    def _serve_robots(self, body):
+        """Answer /robots.txt for whichever face asked."""
+        data = body.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def _route_souls_face(self, path, parsed):
         """Router for the public decode face (souls.<domain>).
 
@@ -2467,6 +2503,8 @@ class MintHandler(BaseHTTPRequestHandler):
             return self._feed_thumb(path[len("/api/feed/thumb/"):])
         if path.startswith("/api/feed/full/"):
             return self._feed_full(path[len("/api/feed/full/"):])
+        if path == "/robots.txt":
+            return self._serve_robots(self._ROBOTS_SOULS)
         if path == "/health":
             return self._send_json({"status": "ok"})
         # Raw souls at root — keeps existing souls.<domain>/<id>.soul URLs
@@ -2499,7 +2537,9 @@ class MintHandler(BaseHTTPRequestHandler):
         if self._is_souls_face():
             return self._route_souls_face(path, parsed)
 
-        if path == "/health":
+        if path == "/robots.txt":
+            self._serve_robots(self._ROBOTS_MINT)
+        elif path == "/health":
             self._send_json({"status": "ok"})
         elif path == "":
             # Root → the public catalog (a wall of recently-conceived image

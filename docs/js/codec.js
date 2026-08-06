@@ -174,8 +174,21 @@ function _asymCenterColumns(px,w,h){
   return {centerRgb:centerRgb,centerVal:centerVal};
 }
 function _asymThresholdCurve(px,w,h){
-  var cl=_asymCenterColumns(px,w,h).centerVal,half=ASYM_DELTA/2.0,out=new Array(w);
-  for(var x=0;x<w;x++)out[x]=cl[x]-half;
+  // Midpoint of what the writer REALLY paints, not of the nominal delta. The
+  // writer clamps each channel into 0..255 as it paints, so on dark content
+  // "centre - delta" goes negative and lands at 0, which puts the painted "0"
+  // ABOVE centre-delta/2 — and a correctly written bit reads back as a "1".
+  // Measured on a real 768x1344 mint: 528 of 720 columns had the gap shrunk,
+  // worst by 22.7 of 40, 17 bits flipped, so the page said "bar detected but the
+  // payload is unreadable" about a perfectly good bar. Mirrors bar.py.
+  var c=_asymCenterColumns(px,w,h).centerRgb,d=ASYM_DELTA,out=new Array(w);
+  var cl=function(v){return v<0?0:(v>255?255:v);};
+  for(var x=0;x<w;x++){
+    var r=c[x][0],g=c[x][1],b=c[x][2];
+    var one=(cl(r)+cl(g)+cl(b))/3;
+    var zero=(cl(r-d)+cl(g-d)+cl(b-d))/3;
+    out[x]=(one+zero)/2;
+  }
   return out;
 }
 function _thr(threshold,x){
