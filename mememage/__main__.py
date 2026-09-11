@@ -324,7 +324,8 @@ def cmd_serve(args):
     import sys
     import time
     from pathlib import Path
-    from mememage.server import run_server, _get_server_config, _find_free_port
+    from mememage.server import (run_server, _get_server_config, _find_free_port,
+                                 selfheal_tailscale_domain)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s")
 
@@ -339,10 +340,16 @@ def cmd_serve(args):
     keyfile = args.key
 
     if not args.no_tls and not certfile:
-        config = _get_server_config()
+        # Repair a stale Tailscale identity first — a tailnet rename leaves
+        # server.json naming a host that no longer resolves. No-op unless the
+        # configured domain is a .ts.net name.
+        healed = selfheal_tailscale_domain()
+        config = _get_server_config()          # selfheal may have rewritten it
         cert = config.get("cert")
         key = config.get("key")
-        if cert and key and Path(cert).exists() and Path(key).exists():
+        if healed:
+            certfile, keyfile = healed
+        elif cert and key and Path(cert).exists() and Path(key).exists():
             certfile, keyfile = cert, key
         else:
             cert_dir = Path("~/.mememage/certs").expanduser()

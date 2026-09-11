@@ -12,6 +12,8 @@ import hashlib
 import json
 import logging
 import os
+import random
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -458,6 +460,15 @@ def genesis_identifier(prefix: str = "mememage") -> str:
     return f"{prefix}-{os.urandom(_IDENTIFIER_HASH_LEN // 2).hex()}"
 
 
+# Collision-probe network policy. Escalating per-attempt timeouts: a healthy IA
+# answers in well under a second, so attempt 1 nearly always wins; the long tail
+# is for congestion windows, where the alternative is aborting a conception the
+# user has already captured GPS for.
+_PROBE_TIMEOUTS = (15, 45, 90)
+_PROBE_RETRY_CODES = (429, 503)
+_PROBE_BACKOFF = 2.0
+
+
 def _identifier_exists(identifier: str) -> bool:
     """Check if an identifier is unusable (alive or tombstoned) on IA.
 
@@ -479,34 +490,54 @@ def _identifier_exists(identifier: str) -> bool:
     """
     url = f"{IA_METADATA_URL}/{identifier}"
     req = urllib.request.Request(url, method="GET")
-    try:
-        from mememage import net
-        with urllib.request.urlopen(req, timeout=10, context=net.default_https_context()) as resp:
-            body = resp.read()
+    from mememage import net
+    ctx = net.default_https_context()
+    last_err = None
+    for attempt, timeout in enumerate(_PROBE_TIMEOUTS):
         try:
-            data = json.loads(body) if body else {}
-        except json.JSONDecodeError:
-            # Unexpected non-JSON response. Assume taken rather than
-            # risk silently overwriting something we can't read.
-            log.warning("Unparseable metadata for %s; treating as taken.", identifier)
-            return True
-        if not data:
-            return False  # {} → never existed
-        if data.get("is_dark"):
-            log.info("Identifier %s is darkened on IA. Will regenerate.", identifier)
-            return True
-        return True  # has files / metadata → alive
-    except urllib.error.HTTPError as e:
-        # The metadata endpoint shouldn't 404 for missing items (returns
-        # {} with 200), but if IA changes behavior, fail closed.
-        if e.code in (404,):
-            return False
-        raise
-    except (urllib.error.URLError, OSError) as e:
-        raise RuntimeError(
-            f"Cannot verify identifier {identifier} — network error: {e}. "
-            "Refusing to proceed without collision check."
-        ) from e
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+                body = resp.read()
+            try:
+                data = json.loads(body) if body else {}
+            except json.JSONDecodeError:
+                # Unexpected non-JSON response. Assume taken rather than
+                # risk silently overwriting something we can't read.
+                log.warning("Unparseable metadata for %s; treating as taken.", identifier)
+                return True
+            if not data:
+                return False  # {} → never existed
+            if data.get("is_dark"):
+                log.info("Identifier %s is darkened on IA. Will regenerate.", identifier)
+                return True
+            return True  # has files / metadata → alive
+        except urllib.error.HTTPError as e:
+            # The metadata endpoint shouldn't 404 for missing items (returns
+            # {} with 200), but if IA changes behavior, fail closed.
+            if e.code in (404,):
+                return False
+            # 503 SlowDown / 429 are IA reporting that its GLOBAL queue is
+            # saturated — a "come back later", not a verdict about this
+            # identifier. Retry those. Other 5xx are ambiguous server
+            # faults; a collision probe fails closed fast instead.
+            if e.code not in _PROBE_RETRY_CODES:
+                raise
+            last_err = e
+        except (urllib.error.URLError, OSError) as e:
+            # The observed failure: IA answers, but SLOWLY (the metadata API
+            # measured 56s in a congestion window), which trips the timeout
+            # and aborts an otherwise-fine conception. Escalating timeouts
+            # keep the healthy case fast and give the degraded case room.
+            last_err = e
+        if attempt < len(_PROBE_TIMEOUTS) - 1:
+            delay = _PROBE_BACKOFF * (2 ** attempt)
+            # Equal jitter. IA's queue ceiling is a GLOBAL resource shared by
+            # every IA client, so congestion is the herd-retry case jitter
+            # exists for.
+            time.sleep(delay / 2 + random.random() * delay / 2)
+    raise RuntimeError(
+        f"Cannot verify identifier {identifier} — network error: {last_err}. "
+        "Refusing to proceed without collision check."
+    ) from last_err
 
 
 def _exists_capable_channels() -> list:

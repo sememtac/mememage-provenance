@@ -92,9 +92,50 @@ class InternetArchiveChannel(Channel):
                 raise NamespaceBlocked(
                     f"IA blocked identifier {identifier}: {body[:200]}"
                 ) from e
-            raise RuntimeError(
-                f"Internet Archive upload failed (HTTP {e.code}): {body[:500]}"
-            ) from e
+            if e.code == 409 and "bucketalreadyexists" in body.lower():
+                # Almost always a RETRY COLLIDING WITH ITS OWN FIRST TRY.
+                # This PUT carries x-amz-auto-make-bucket, so it CREATES the
+                # item. When attempt 1 lands server-side but the client sees a
+                # timeout or a 503, urlopen_with_retry re-sends the identical
+                # PUT — and IA rejects it, because the bucket now exists.
+                #
+                # Observed 2026-09-05 (mememage-5dcbe0788ceb572b): the .soul
+                # was stored correctly and byte-identical to local, yet this
+                # raise aborted upload() before the .json and .png PUTs below,
+                # leaving a record the browser decoder cannot fetch from IA at
+                # all (IA sends no CORS header for .soul — the .json mirror is
+                # what makes it fetchable).
+                #
+                # Re-PUT WITHOUT the creation headers, the same way the .json
+                # and .png adds below do. Success means the item is ours and
+                # the upload carries on. A 403 means the name belongs to
+                # someone else, which is the case IA's message describes, so
+                # re-roll the identifier instead of overwriting a stranger.
+                log.warning(
+                    "IA returned 409 BucketAlreadyExists for %s — re-PUT into "
+                    "the existing item (probable retry self-collision).",
+                    identifier,
+                )
+                retry_req = urllib.request.Request(url, data=soul_bytes, method="PUT")
+                retry_req.add_header("authorization", f"LOW {access_key}:{secret_key}")
+                retry_req.add_header("Content-Type", "application/json")
+                try:
+                    urlopen_with_retry(retry_req)
+                except urllib.error.HTTPError as e2:
+                    body2 = e2.read().decode("utf-8", errors="replace")
+                    if e2.code == 403:
+                        raise NamespaceBlocked(
+                            f"IA identifier {identifier} belongs to another "
+                            f"account: {body2[:200]}"
+                        ) from e2
+                    raise RuntimeError(
+                        f"Internet Archive upload failed (HTTP {e2.code}): "
+                        f"{body2[:500]}"
+                    ) from e2
+            else:
+                raise RuntimeError(
+                    f"Internet Archive upload failed (HTTP {e.code}): {body[:500]}"
+                ) from e
 
         # CORS-friendly .json mirror — non-fatal. The browser decoder
         # probes ``.soul`` first and falls back to ``.json`` because

@@ -3200,12 +3200,28 @@ class MintHandler(BaseHTTPRequestHandler):
         for the catalog lightbox. Same public/light, soul-present gate as the
         thumbnail. The minted image is PNG (bar embedded in place).
 
-        IA-backed feed: redirect to the permanent PNG on the Archive."""
-        if _feed_source()[0] == "ia" and _ia_feed_member(identifier):
-            return self._redirect(f"{_IA_DOWNLOAD}/{identifier}/{identifier}.png")
-        ip = _feed_image_path(identifier)
-        if not ip:
-            return self.send_error(404)
+        IA-backed feed: _ia_feed_member is the AUTHORIZATION gate (it alone
+        excludes dark-matter, which _feed_image_path admits by design), and it
+        keeps that job. What changes is DELIVERY: serve the local image when
+        this box still holds it, and redirect only when it does not — mirroring
+        _ia_feed_thumb_bytes. Membership is decided by a LOCAL chain walk
+        (_living_chain_positions), which says nothing about whether IA actually
+        holds the file. Two ways they diverge, both real: a blast whose IA leg
+        failed (503 SlowDown) never put the PNG there, and a fresh upload is not
+        servable until IA finishes its derive. Redirecting blind gave a tile
+        that rendered from the local image beside a lightbox that 404ed. The
+        bandwidth intent survives where it matters — culled images have no local
+        copy, so the long tail still redirects."""
+        if _feed_source()[0] == "ia":
+            if not _ia_feed_member(identifier):
+                return self.send_error(404)
+            ip = _feed_image_path(identifier)
+            if not ip:
+                return self._redirect(f"{_IA_DOWNLOAD}/{identifier}/{identifier}.png")
+        else:
+            ip = _feed_image_path(identifier)
+            if not ip:
+                return self.send_error(404)
         try:
             with open(ip, "rb") as f:
                 data = f.read()
@@ -8019,6 +8035,93 @@ def _cert_not_expired(certfile, margin_days=1):
         return False
 
 
+def selfheal_tailscale_domain():
+    """Re-point a STALE Tailscale identity in server.json at the live FQDN.
+
+    A tailnet rename changes the MagicDNS suffix, so a ``domain`` / ``cert`` /
+    ``key`` trio written for the old name silently stops working:
+    ``_external_host`` keeps handing out a hostname that no longer resolves,
+    and the phone's GPS-capture link dead-ends. The desktop capture path never
+    had this problem, because ``_tailscale_https_fqdn`` reads ``Self.DNSName``
+    live. This gives the SERVE path the same property.
+
+    Happened 2026-09-11: the tailnet went tail327313 -> tail4ee084, the phone
+    could not reach the Mac, and the cert on disk had quietly expired a month
+    before that.
+
+    Returns ``(certfile, keyfile)`` when it confirmed or repaired a Tailscale
+    identity, else ``None``.
+
+    Three rules keep this safe:
+
+    1. It acts ONLY when the configured domain is already a ``.ts.net`` name.
+       A real domain (a VPS on ``mint.example.com`` with certbot certs) is
+       never touched, and an empty domain is never filled in. This function
+       repairs an existing Tailscale identity. It does not choose one.
+    2. It writes server.json ONLY after ``tailscale cert`` succeeds. A failed
+       provision leaves the old config in place, so the server never advertises
+       a name it has no certificate for.
+    3. Any Tailscale failure is a no-op. Tailscale being absent, logged out, or
+       having HTTPS certificates disabled must not disturb a working config.
+    """
+    config = _get_server_config()
+    configured = (config.get("domain") or "").strip().rstrip(".")
+    if not configured.endswith(".ts.net"):
+        return None                      # rule 1 — not a Tailscale identity
+
+    live = _tailscale_https_fqdn()
+    if not live:
+        # No Tailscale, logged out, or HTTPS certificates turned off in the
+        # admin console. Leave the config alone and let the normal cert
+        # resolution use whatever is on disk.
+        log.debug("Tailscale HTTPS FQDN unavailable — leaving server.json as is")
+        return None
+
+    renamed = live != configured
+    if renamed:
+        log.warning("Tailscale identity changed: %s -> %s. Re-pointing "
+                    "server.json.", configured, live)
+
+    # Idempotent and cheap when the cert is already valid. It also renews an
+    # expired one, which is the second half of the 2026-09-11 failure.
+    provisioned = _provision_tailscale_cert(live)
+    if not provisioned:
+        log.warning("Could not provision a Tailscale cert for %s — server.json "
+                    "left unchanged.", live)
+        return None                      # rule 2 — never advertise a name we cannot serve
+    certfile, keyfile = provisioned
+
+    if renamed or config.get("cert") != certfile or config.get("key") != keyfile:
+        _persist_server_identity(live, certfile, keyfile)
+    return certfile, keyfile
+
+
+def _persist_server_identity(domain, certfile, keyfile):
+    """Write ``domain`` / ``cert`` / ``key`` into server.json, preserving every
+    other key, and drop the in-process config cache.
+
+    The cache reset is load-bearing, not tidiness: ``_external_host`` reads
+    ``_get_server_config()`` per request, so a stale cache would keep handing
+    out the old hostname for the life of the process.
+    """
+    global _server_config
+    try:
+        on_disk = _load_server_config()
+        on_disk["domain"] = domain
+        on_disk["cert"] = str(certfile)
+        on_disk["key"] = str(keyfile)
+        tmp = SERVER_CONFIG_FILE.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(on_disk, indent=2), encoding="utf-8")
+        tmp.replace(SERVER_CONFIG_FILE)
+        _server_config = None            # force a re-read on next access
+        log.info("server.json now points at %s", domain)
+    except OSError as e:
+        # A read-only disk must not stop the server from booting. The caller
+        # still got the cert paths, so this run serves correctly; only the
+        # persistence is lost.
+        log.warning("Could not persist server identity (%s): %s", domain, e)
+
+
 def _resolve_phone_capture(port):
     """Resolve the phone-reachable HTTPS capture endpoint for desktop mode.
 
@@ -8311,10 +8414,20 @@ if __name__ == "__main__":
     keyfile = args.key
 
     if not args.no_tls and not certfile:
+        # Repair a stale Tailscale identity BEFORE reading cert paths: a
+        # tailnet rename leaves server.json naming a host that no longer
+        # resolves. No-op unless the configured domain is a .ts.net name.
+        healed = selfheal_tailscale_domain()
+        config = _get_server_config()          # selfheal may have rewritten it
+        if healed:
+            certfile, keyfile = healed
+            print(f"Using Tailscale TLS certs for {config.get('domain')}")
         # Auto-detect certs: config → ~/.mememage/certs/ → HTTP fallback
         config_cert = config.get("cert")
         config_key = config.get("key")
-        if config_cert and Path(config_cert).exists():
+        if certfile:
+            pass                                # already resolved by selfheal
+        elif config_cert and Path(config_cert).exists():
             certfile = config_cert
             keyfile = config_key
             print(f"Using TLS certs from server.json")

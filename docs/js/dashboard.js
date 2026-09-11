@@ -1285,7 +1285,14 @@ setInterval(function() {
     // Tailscale/nginx TLS — fetching it from the https dashboard is mixed-
     // content ("Failed to fetch"). The relative path inherits the page's
     // scheme+origin and always reaches this server. (Matches conception.js.)
-    var imgUrl = '/api/mint/' + state.token + '/image';
+    // ?v=<content_hash> — the staged-image thumbnail (els.thumb) already
+    // loaded this same path pre-conceive, when the file had no bar.
+    // embed_bar rewrites that file in place, so the URL never changes and
+    // the browser may reuse the bar-less copy it already holds. Keyed on
+    // the hash: it names these exact bytes and is stable across renders.
+    // Same fix as conception.js.
+    var imgUrl = '/api/mint/' + state.token + '/image'
+              + '?v=' + encodeURIComponent(s.content_hash || s.identifier || '');
     // Show the conceived image (matches the conception page's result).
     // Click → full-size lightbox.
     if (els.resultImage) {

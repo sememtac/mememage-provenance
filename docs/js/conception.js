@@ -278,7 +278,19 @@
   function renderConceived(data) {
     showState('conceived');
     var ident = data.identifier || 'mememage';
-    var imgUrl = '/api/mint/' + token + '/image';
+    // Cache-bust on the content hash. The PRE-conceive thumbnail
+    // (conceptionThumb) already loaded this exact path while the file on
+    // disk was the STAGED upload, with no bar. embed_bar rewrites that
+    // same file IN PLACE, so the URL is unchanged while the bytes behind
+    // it are not — and the browser is free to satisfy this <img> from the
+    // copy it already holds, showing a bar-less image. Cache-Control:
+    // no-store governs the HTTP cache; it does not stop a document from
+    // reusing an already-loaded image resource for an identical URL,
+    // which is why the stale preview appeared only sometimes.
+    // The hash is the right key: it names these exact bytes, and it is
+    // deterministic, so a re-render reuses the URL instead of refetching.
+    var imgUrl = '/api/mint/' + token + '/image'
+              + '?v=' + encodeURIComponent(data.content_hash || ident);
 
     imageEl.src = imgUrl;
 

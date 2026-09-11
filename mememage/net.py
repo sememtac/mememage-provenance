@@ -2,10 +2,13 @@
 default TLS context so HTTPS validation doesn't depend on a stale OS trust store."""
 
 import json
+import logging
 import ssl
 import time
 import urllib.error
 import urllib.request
+
+log = logging.getLogger(__name__)
 
 # Transient HTTP codes worth retrying
 _RETRYABLE = {429, 500, 502, 503, 504}
@@ -43,6 +46,25 @@ def default_https_context():
     return _HTTPS_CTX or None
 
 
+def _log_retry(req, attempt, max_retries, reason):
+    """Record that a request is about to be re-sent.
+
+    Retries used to be silent, which hid a real failure mode: a PUT that
+    SUCCEEDS server-side but reports a timeout or a 503 to the client gets
+    re-sent, and the second attempt can fail for a reason that only makes sense
+    if you know the first one happened. On the Internet Archive that surfaces as
+    409 BucketAlreadyExists — the retry colliding with the item its own first
+    attempt created. Log the method and URL so the sequence is readable
+    afterward. WARNING level, because a retried write is not routine.
+    """
+    try:
+        log.warning("Retry %d/%d for %s %s after %s",
+                    attempt + 1, max_retries, req.get_method(),
+                    req.full_url, reason)
+    except Exception:
+        pass   # logging must never break a request
+
+
 def urlopen_with_retry(req, *, max_retries=MAX_RETRIES, base_delay=BASE_DELAY,
                         timeout=60, context=None):
     """Execute a urllib Request with exponential backoff on transient failures.
@@ -72,6 +94,7 @@ def urlopen_with_retry(req, *, max_retries=MAX_RETRIES, base_delay=BASE_DELAY,
         except urllib.error.HTTPError as e:
             if e.code in _RETRYABLE and attempt < max_retries:
                 last_exc = e
+                _log_retry(req, attempt, max_retries, f"HTTP {e.code}")
                 time.sleep(base_delay * (BACKOFF_FACTOR ** attempt))
                 continue
             raise
@@ -79,6 +102,7 @@ def urlopen_with_retry(req, *, max_retries=MAX_RETRIES, base_delay=BASE_DELAY,
             # Network-level failures (DNS, connection refused, timeout)
             if attempt < max_retries:
                 last_exc = e
+                _log_retry(req, attempt, max_retries, str(e) or type(e).__name__)
                 time.sleep(base_delay * (BACKOFF_FACTOR ** attempt))
                 continue
             raise RuntimeError(

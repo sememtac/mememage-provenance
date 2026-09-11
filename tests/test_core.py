@@ -708,5 +708,92 @@ class TestDarkChainEncryptRetry(unittest.TestCase):
         self.assertIn("origin", state._pre_encrypt_record)
 
 
+class TestIdentifierExistsSlowIA(unittest.TestCase):
+    """A SLOW Internet Archive must not abort a conception.
+
+    Observed 2026-08-14: IA hit its global queue ceiling; the metadata API
+    still answered, but took 56s. The probe's single 10s attempt timed out
+    and _identifier_exists raised "Refusing to proceed without collision
+    check" — killing a mint whose GPS the user had already captured. The
+    probe now escalates its timeout across attempts and retries the two
+    congestion codes. It still fails closed when IA never answers.
+    """
+
+    def _ok_body(self, body_bytes):
+        m = MagicMock()
+        m.__enter__.return_value.read.return_value = body_bytes
+        m.__exit__.return_value = False
+        return m
+
+    def _http_error(self, code):
+        import urllib.error
+        return urllib.error.HTTPError(url="x", code=code, msg="", hdrs={}, fp=None)
+
+    def test_timeout_then_answer_is_not_an_abort(self):
+        import urllib.error
+        from mememage.core import _identifier_exists
+        seq = [urllib.error.URLError("timed out"), self._ok_body(b"{}")]
+        with patch("mememage.core.time.sleep"), \
+             patch("mememage.core.urllib.request.urlopen", side_effect=seq):
+            # {} → free. The point is that it returns a VERDICT, not a raise.
+            self.assertFalse(_identifier_exists("mememage-slowia00001"))
+
+    def test_escalating_timeouts_are_used_in_order(self):
+        import urllib.error
+        from mememage import core
+        calls = []
+
+        def fake(req, timeout=None, context=None):
+            calls.append(timeout)
+            if len(calls) < 3:
+                raise urllib.error.URLError("timed out")
+            return self._ok_body(b"{}")
+
+        with patch("mememage.core.time.sleep"), \
+             patch("mememage.core.urllib.request.urlopen", side_effect=fake):
+            core._identifier_exists("mememage-escalate001")
+        self.assertEqual(calls, list(core._PROBE_TIMEOUTS))
+
+    def test_all_attempts_timeout_still_fails_closed(self):
+        import urllib.error
+        from mememage.core import _identifier_exists
+        with patch("mememage.core.time.sleep"), \
+             patch("mememage.core.urllib.request.urlopen",
+                   side_effect=urllib.error.URLError("timed out")):
+            with self.assertRaises(RuntimeError) as ctx:
+                _identifier_exists("mememage-deadia00001")
+        self.assertIn("Refusing to proceed", str(ctx.exception))
+
+    def test_503_slowdown_is_retried(self):
+        # IA signals global-queue saturation with 503 SlowDown. That is a
+        # "come back later", not a verdict about this identifier.
+        from mememage.core import _identifier_exists
+        seq = [self._http_error(503), self._ok_body(b'{"is_dark": true}')]
+        with patch("mememage.core.time.sleep"), \
+             patch("mememage.core.urllib.request.urlopen", side_effect=seq):
+            self.assertTrue(_identifier_exists("mememage-slowdown01"))
+
+    def test_503_exhausted_fails_closed(self):
+        from mememage.core import _identifier_exists
+        with patch("mememage.core.time.sleep"), \
+             patch("mememage.core.urllib.request.urlopen",
+                   side_effect=self._http_error(503)):
+            with self.assertRaises(RuntimeError):
+                _identifier_exists("mememage-slowdown02")
+
+    def test_ambiguous_5xx_still_fails_fast(self):
+        # 500/502/504 are not congestion signals. A collision probe should
+        # not sit on them — this is the pre-existing contract, kept.
+        import urllib.error
+        from mememage.core import _identifier_exists
+        sleeps = []
+        with patch("mememage.core.time.sleep", side_effect=lambda d: sleeps.append(d)), \
+             patch("mememage.core.urllib.request.urlopen",
+                   side_effect=self._http_error(500)):
+            with self.assertRaises(urllib.error.HTTPError):
+                _identifier_exists("mememage-server-err2")
+        self.assertEqual(sleeps, [])
+
+
 if __name__ == "__main__":
     unittest.main()
