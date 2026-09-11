@@ -54,6 +54,47 @@ def _core_modules():
     except Exception:
         return [f"mememage/{m}.py" for m in ("api", "bar", "rs", "hashing", "crypto")]
 
+def _desktop_assets():
+    """The release assets mememage.art/install actually downloads.
+
+    Read from the installer scripts themselves, the same way _core_modules reads
+    publish-core.sh, so the release check cannot drift from what users fetch.
+    A hardcoded list here would be the same class of bug as the one this closes:
+    a check that stops describing reality and keeps passing.
+
+    Falls back to the known set if the scripts are unreadable.
+    """
+    names = set()
+    for fn in ("install.sh", "install.ps1"):
+        try:
+            src = open(os.path.join(ROOT, "docs", fn), encoding="utf-8").read()
+        except OSError:
+            continue
+        names.update(re.findall(r"Mememage-Provenance-[A-Za-z]+(?:\.[A-Za-z]+)?", src))
+    return sorted(names) or ["Mememage-Provenance-Linux",
+                             "Mememage-Provenance-macOS.zip",
+                             "Mememage-Provenance-Windows.exe"]
+
+
+def _release_assets_probe(repo):
+    """Shell probe: the release for {ver} is downloadable by the installers.
+
+    Checks three things, because v0.1.10 satisfied the old probe while being
+    useless to every user:
+      * every asset the installers fetch is attached
+      * the release is NOT a prerelease — /releases/latest skips those, and both
+        installers pull from /releases/latest
+      * (implicitly) the release exists at all; gh exits non-zero otherwise
+
+    The binaries attach asynchronously, minutes after the release is cut, so
+    this is written to be polled — which is exactly what wait_manual does.
+    """
+    checks = " and ".join('index("%s")' % a for a in _desktop_assets())
+    return (f"gh release view v{{ver}} -R {repo} --json assets,isPrerelease "
+            f"-q '([.assets[].name] | {checks}) and (.isPrerelease|not)' "
+            f"| grep -qx true")
+
+
 # ---- the dependency graph --------------------------------------------------
 # Each target: title, `sources` (path prefixes that trigger it), `version` (callable ->
 # str), `downstream` (units to also ship), and `steps`. `parity` (core only) marks the
@@ -198,10 +239,18 @@ TARGETS = {
             {"id": "push", "kind": "auto", "irreversible": True,
              "desc": "append-push the provenance tree",
              "run": "PUSH=1 bash tools/publish-provenance.sh"},
+            # NOT a prerelease: /releases/latest skips prereleases, and both
+            # installers pull from /releases/latest. v0.1.10 was cut as one, its
+            # build ran under workflow_dispatch so no binaries ever attached, and
+            # the old probe (does the release exist?) passed anyway — so every
+            # desktop user sat on v0.1.9 for six weeks with nothing reporting it.
             {"id": "release", "kind": "manual", "irreversible": True,
-             "desc": "cut the GitHub release (triggers build-desktop.yml → binaries)",
-             "hint": "gh release create v{ver} -R sememtac/mememage-provenance --generate-notes",
-             "verify": "gh release view v{ver} -R sememtac/mememage-provenance"},
+             "desc": "cut the GitHub release, NOT a prerelease (the release event "
+                     "triggers build-desktop.yml → binaries attach in ~2 min)",
+             "hint": "gh release create v{ver} -R sememtac/mememage-provenance --generate-notes\n"
+                     "(omit --prerelease — /releases/latest skips prereleases, "
+                     "which is what install.sh and install.ps1 fetch)",
+             "verify": _release_assets_probe("sememtac/mememage-provenance")},
         ],
     },
     "product": {

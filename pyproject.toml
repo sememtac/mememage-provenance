@@ -70,3 +70,9 @@ include = ["mememage*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Collect ONLY test_*.py. pytest's default also matches *_test.py, which swept
+# up tests/feed_swipe_test.py — a manual Playwright harness that only looks like
+# a test. Importing it drove a browser at localhost:8443, so collection aborted
+# the whole suite (exit 2) wherever no server was running. The harness is now
+# guarded by __main__ as well; this keeps the next one from repeating it.
+python_files = ["test_*.py"]

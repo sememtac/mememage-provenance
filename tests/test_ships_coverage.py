@@ -103,3 +103,59 @@ class TestBundlingIsReported(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReleaseVerifyChecksArtifacts(unittest.TestCase):
+    """A release step must verify the ARTIFACT, not just the release object.
+
+    v0.1.10 (2026-08-06) was cut as a prerelease, and its desktop build ran
+    under workflow_dispatch rather than the release event, so no binaries were
+    ever attached. The old probe asked "does the release exist?", which was
+    true, so ships.py reported it shipped. /releases/latest skips prereleases
+    and both installers pull from there, so every desktop user stayed on v0.1.9
+    for six weeks with nothing reporting a problem.
+
+    These pin the shape of the check, not the network result.
+    """
+
+    def _provenance_release_step(self):
+        steps = ships.TARGETS["provenance"]["steps"]
+        step = next(s for s in steps if s["id"] == "release")
+        return step
+
+    def test_asset_names_come_from_the_installers(self):
+        # Read from docs/install.*, never hardcoded — a frozen copy here would
+        # drift exactly like the sources lists this file already guards.
+        names = ships._desktop_assets()
+        for fn in ("install.sh", "install.ps1"):
+            src = open(os.path.join(ROOT, "docs", fn), encoding="utf-8").read()
+            for asset in re.findall(r"Mememage-Provenance-[A-Za-z]+(?:\.[A-Za-z]+)?", src):
+                self.assertIn(asset, names,
+                              f"{fn} downloads {asset} but the release check ignores it")
+
+    def test_every_installer_asset_is_in_the_probe(self):
+        verify = self._provenance_release_step()["verify"]
+        for asset in ships._desktop_assets():
+            self.assertIn(asset, verify,
+                          f"release verify does not require {asset}")
+
+    def test_probe_rejects_a_prerelease(self):
+        # The other half of the v0.1.10 failure: a prerelease is invisible to
+        # /releases/latest, which is what install.sh and install.ps1 fetch.
+        verify = self._provenance_release_step()["verify"]
+        self.assertIn("isPrerelease", verify)
+
+    def test_probe_is_not_merely_release_exists(self):
+        # The regression itself. `gh release view <tag>` alone passes for a
+        # release with zero assets.
+        verify = self._provenance_release_step()["verify"]
+        self.assertIn("assets", verify)
+        self.assertNotEqual(
+            verify.strip(),
+            "gh release view v{ver} -R sememtac/mememage-provenance",
+            "existence-only probe is what let an empty release report as shipped")
+
+    def test_hint_does_not_teach_prerelease(self):
+        hint = self._provenance_release_step().get("hint") or ""
+        self.assertNotIn("--prerelease", hint.split("(")[0],
+                         "the hint must not suggest the flag that hid v0.1.10")
