@@ -30,9 +30,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 JSTEST = os.path.join(ROOT, "packaging", "js", "test")
 NODE = shutil.which("node")
+# packaging/ is workshop-only: publish-provenance.sh does not ship it, so this
+# gate has nothing to compare against in the published demo repo. Absent tree =
+# skip, not fail. The gate still runs where the SDK lives, which is the only
+# place it can drift.
+HAS_SDK = os.path.isfile(os.path.join(JSTEST, "gen-vectors.py"))
 
 
 @unittest.skipUnless(HAS_PIL, "Pillow required")
+@unittest.skipUnless(HAS_SDK, "packaging/js not in this tree (workshop-only)")
 @unittest.skipUnless(NODE, "Node.js required for JS parity")
 class TestJsDecoderParity(unittest.TestCase):
     def _run(self, args, **kw):

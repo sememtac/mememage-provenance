@@ -116,6 +116,11 @@ class TestBarAlpha(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
     @unittest.skipUnless(NODE, "node not installed")
+    @unittest.skipUnless(
+        os.path.isfile(os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "packaging", "js", "src", "codec.js")),
+        "packaging/js not in this tree (workshop-only)")
     def test_js_sdk_produces_identical_rgba_bytes(self):
         """Python is the reference; the JS SDK must match it on all 4 channels."""
         src = _noisy_rgba()
